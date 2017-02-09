@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+## 1.2.3 - 2017-02-08
+### Added
+
+### Changed
+- Upgrade with light-java 1.2.3
+
 ## 1.2.2 - 2017-02-04
 ### Added
 
