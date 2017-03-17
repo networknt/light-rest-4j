@@ -33,7 +33,6 @@ import io.undertow.util.HttpString;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.consumer.InvalidJwtException;
-import org.owasp.encoder.Encode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -148,9 +147,10 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                     if (scopeHeader != null) {
                         if (secondaryScopes == null || !matchedScopes(secondaryScopes, specScopes)) {
                             if(logger.isDebugEnabled()) {
-                                logger.debug("Scopes are not matched in scope token" + Encode.forJava(scopeHeader));
+                                logger.debug("Scopes " + secondaryScopes  + " and specificatio token " +
+                                        specScopes + " are not matched in scope token");
                             }
-                            Status status = new Status(STATUS_SCOPE_TOKEN_SCOPE_MISMATCH);
+                            Status status = new Status(STATUS_SCOPE_TOKEN_SCOPE_MISMATCH, secondaryScopes, specScopes);
                             exchange.setStatusCode(status.getStatusCode());
                             exchange.getResponseSender().send(status.toString());
                             return;
@@ -169,9 +169,10 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                         }
                         if (!matchedScopes(primaryScopes, specScopes)) {
                             if(logger.isDebugEnabled()) {
-                                logger.debug("Authorization jwt token scope is not matched " + Encode.forJava(jwt));
+                                logger.debug("Authorization jwt token scope " + primaryScopes +
+                                        " is not matched with " + specScopes);
                             }
-                            Status status = new Status(STATUS_AUTH_TOKEN_SCOPE_MISMATCH);
+                            Status status = new Status(STATUS_AUTH_TOKEN_SCOPE_MISMATCH, primaryScopes, specScopes);
                             exchange.setStatusCode(status.getStatusCode());
                             exchange.getResponseSender().send(status.toString());
                             return;
