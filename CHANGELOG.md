@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+## 1.2.5 - 2017-03-17
+### Added
+
+### Changed
+- Fixes #2 to log and respond more info regarding to token matching
+- Upgrade with light-java 1.2.6
+
 ## 1.2.5 - 2017-03-03
 ### Added
 
