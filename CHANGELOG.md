@@ -9,7 +9,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
-## 1.2.5 - 2017-03-17
+## 1.2.7 - 2017-03-28
+### Added
+
+### Changed
+- Upgrade with light-java 1.2.7
+- Fixes #3 upgrade to undertow 1.4.11.Final
+
+## 1.2.6 - 2017-03-17
 ### Added
 
 ### Changed
