@@ -19,6 +19,9 @@ package com.networknt.validator.parameter;
 import com.networknt.status.Status;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.math.BigDecimal;
+
 import static com.networknt.validator.ValidatorTestUtil.floatParam;
 
 public class NumberParameterValidatorTest {
@@ -68,20 +71,20 @@ public class NumberParameterValidatorTest {
 
     @Test
     public void validate_withValueGreaterThanMax_shouldFail_ifMaxSpecified() {
-        Status status = classUnderTest.validate("1.1", floatParam(null, 1.0));
+        Status status = classUnderTest.validate("1.1", floatParam(null, new BigDecimal(1.0)));
         Assert.assertNotNull(status);
         Assert.assertEquals("ERR11012", status.getCode()); // request parameter number above max
     }
 
     @Test
     public void validate_withValueLessThanMin_shouldFail_ifMinSpecified() {
-        Status status = classUnderTest.validate("0.9", floatParam(1.0, null));
+        Status status = classUnderTest.validate("0.9", floatParam(new BigDecimal(1.0), null));
         Assert.assertNotNull(status);
         Assert.assertEquals("ERR11011", status.getCode()); // request parameter number below min
     }
 
     @Test
     public void validate_withValueInRange_shouldPass() {
-        Assert.assertNull(classUnderTest.validate("1.1", floatParam(1.0, 1.2)));
+        Assert.assertNull(classUnderTest.validate("1.1", floatParam(new BigDecimal(1.0), new BigDecimal(1.2))));
     }
 }

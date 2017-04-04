@@ -23,6 +23,8 @@ import io.swagger.models.properties.StringProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
+
 import static java.util.Arrays.asList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -40,11 +42,11 @@ public class ValidatorTestUtil {
         return intParam(required, null, null);
     }
 
-    public static SerializableParameter intParam(final Double min, final Double max) {
+    public static SerializableParameter intParam(final BigDecimal min, final BigDecimal max) {
         return intParam(true, min, max);
     }
 
-    public static SerializableParameter intParam(final boolean required, final Double min, final Double max) {
+    public static SerializableParameter intParam(final boolean required, final BigDecimal min, final BigDecimal max) {
         final SerializableParameter result = mock(SerializableParameter.class);
         when(result.getName()).thenReturn("Test Parameter");
         when(result.getType()).thenReturn("integer");
@@ -81,11 +83,11 @@ public class ValidatorTestUtil {
         return floatParam(required, null, null);
     }
 
-    public static SerializableParameter floatParam(final Double min, final Double max) {
+    public static SerializableParameter floatParam(final BigDecimal min, final BigDecimal max) {
         return floatParam(true, min, max);
     }
 
-    public static SerializableParameter floatParam(final boolean required, final Double min, final Double max) {
+    public static SerializableParameter floatParam(final boolean required, final BigDecimal min, final BigDecimal max) {
         final SerializableParameter result = mock(SerializableParameter.class);
         when(result.getName()).thenReturn("Test Parameter");
         when(result.getType()).thenReturn("number");
