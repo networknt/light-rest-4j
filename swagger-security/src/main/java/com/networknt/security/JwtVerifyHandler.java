@@ -146,8 +146,8 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                     // validate scope
                     if (scopeHeader != null) {
                         if (secondaryScopes == null || !matchedScopes(secondaryScopes, specScopes)) {
-                            if(logger.isDebugEnabled()) {
-                                logger.debug("Scopes " + secondaryScopes  + " and specificatio token " +
+                            if(logger.isWarnEnabled()) {
+                                logger.warn("Scopes " + secondaryScopes  + " and specificatio token " +
                                         specScopes + " are not matched in scope token");
                             }
                             Status status = new Status(STATUS_SCOPE_TOKEN_SCOPE_MISMATCH, secondaryScopes, specScopes);
@@ -168,8 +168,8 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                             return;
                         }
                         if (!matchedScopes(primaryScopes, specScopes)) {
-                            if(logger.isDebugEnabled()) {
-                                logger.debug("Authorization jwt token scope " + primaryScopes +
+                            if(logger.isWarnEnabled()) {
+                                logger.warn("Authorization jwt token scope " + primaryScopes +
                                         " is not matched with " + specScopes);
                             }
                             Status status = new Status(STATUS_AUTH_TOKEN_SCOPE_MISMATCH, primaryScopes, specScopes);
