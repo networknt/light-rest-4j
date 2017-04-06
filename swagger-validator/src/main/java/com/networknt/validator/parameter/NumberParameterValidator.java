@@ -49,11 +49,11 @@ public class NumberParameterValidator extends BaseParameterValidator {
         }
 
         final Double d = Double.parseDouble(value);
-        if (parameter.getMinimum() != null && d < parameter.getMinimum()) {
+        if (parameter.getMinimum() != null && d < parameter.getMinimum().doubleValue()) {
             return new Status("ERR11011", value, parameter.getName(), parameter.getMinimum());
         }
 
-        if (parameter.getMaximum() != null && d > parameter.getMaximum()) {
+        if (parameter.getMaximum() != null && d > parameter.getMaximum().doubleValue()) {
             return new Status("ERR11012", value, parameter.getName(), parameter.getMaximum());
         }
         return null;

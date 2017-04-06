@@ -49,11 +49,11 @@ public class IntegerParameterValidator extends BaseParameterValidator {
         }
 
         final Long d = Long.parseLong(value);
-        if (parameter.getMinimum() != null && d < parameter.getMinimum()) {
+        if (parameter.getMinimum() != null && d < parameter.getMinimum().longValue()) {
             return new Status("ERR11011", value, parameter.getName(), parameter.getMinimum());
         }
 
-        if (parameter.getMaximum() != null && d > parameter.getMaximum()) {
+        if (parameter.getMaximum() != null && d > parameter.getMaximum().longValue()) {
             return new Status("ERR11012", value, parameter.getName(), parameter.getMaximum());
         }
         return null;
