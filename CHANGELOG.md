@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+## 1.3.0 - 2017-05-05
+### Added
+
+### Changed
+- Upgrade with light-4j 1.3.0
+- Fixes #6 change project name to light-rest-4j from light-java-rest
+
 ## 1.2.8 - 2017-05-02
 ### Added
 
