@@ -27,6 +27,8 @@ import static java.util.Objects.requireNonNull;
  * <p>
  * This includes the path, method and operation components from the OAI spec object. Used as a
  * convenience to hold related information in one place.
+ *
+ * @author Steve Hu
  */
 public class SwaggerOperation {
     private final NormalisedPath pathString;

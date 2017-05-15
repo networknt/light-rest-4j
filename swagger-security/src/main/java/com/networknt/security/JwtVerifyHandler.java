@@ -41,7 +41,11 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Created by steve on 01/09/16.
+ * This is a middleware handler that handles security verification for light-rest-4j framework. It
+ * verifies token signature and token expiration. And optional scope verification if it is enabled
+ * in security.yml config file.
+ *
+ * @author Steve Hu
  */
 public class JwtVerifyHandler implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(JwtVerifyHandler.class);

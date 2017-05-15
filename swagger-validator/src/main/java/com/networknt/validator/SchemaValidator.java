@@ -39,6 +39,8 @@ import static java.util.Objects.requireNonNull;
  * Validate a value against the schema defined in a Swagger/OpenAPI specification.
  * <p>
  * Supports validation of properties and request/response bodies, and supports schema references.
+ *
+ * @author Steve Hu
  */
 public class SchemaValidator {
     private static final String DEFINITIONS_FIELD = "definitions";

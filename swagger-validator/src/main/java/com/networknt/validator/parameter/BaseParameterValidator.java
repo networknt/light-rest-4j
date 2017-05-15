@@ -20,6 +20,11 @@ import com.networknt.status.Status;
 import io.swagger.models.parameters.Parameter;
 import io.swagger.models.parameters.SerializableParameter;
 
+/**
+ * An abstract implementation of ParameterValidator.
+ *
+ * @author Steve Hu
+ */
 abstract class BaseParameterValidator implements ParameterValidator {
 
     protected BaseParameterValidator() {

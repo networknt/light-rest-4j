@@ -19,7 +19,9 @@ package com.networknt.validator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * Created by steve on 17/09/16.
+ * Validator configuration class that maps to validator.yml properties
+ *
+ * @author Steve Hu
  */
 public class ValidatorConfig {
     boolean enabled;

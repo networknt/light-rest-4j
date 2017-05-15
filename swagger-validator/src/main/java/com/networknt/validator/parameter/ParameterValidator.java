@@ -19,6 +19,11 @@ package com.networknt.validator.parameter;
 import com.networknt.status.Status;
 import io.swagger.models.parameters.Parameter;
 
+/**
+ * Parameter validator interface. All validators must implement it.
+ *
+ * @author Steve Hu
+ */
 public interface ParameterValidator {
 
     String supportedParameterType();

@@ -29,6 +29,8 @@ import static java.util.Objects.requireNonNull;
  * A validator for array parameters.
  * <p>
  * This is a special-case validator as it needs to handle single and collection types for validation.
+ *
+ * @author Steve Hu
  */
 public class ArrayParameterValidator extends BaseParameterValidator {
 

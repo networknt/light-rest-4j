@@ -24,6 +24,8 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Validate a response against an API operation
+ *
+ * @author Steve Hu
  */
 public class ResponseValidator {
     private final SchemaValidator schemaValidator;

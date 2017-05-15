@@ -31,7 +31,7 @@ import java.util.Optional;
  * This class load and cache swagger.json in a static block so that it can be
  * shared by security for scope validation and validator for schema validation
  *
- * Created by steve on 17/09/16.
+ * @author Steve Hu
  */
 public class SwaggerHelper {
 

@@ -23,6 +23,8 @@ import java.util.List;
  * <p>
  * Normalised paths are devoid of path prefixes and contain a normalised starting/ending
  * slash to make comparisons easier.
+ *
+ * @author Steve Hu
  */
 public interface NormalisedPath {
 

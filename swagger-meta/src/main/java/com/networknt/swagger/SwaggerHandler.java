@@ -39,7 +39,7 @@ import java.util.Optional;
  * of the request and attached the operation to the request so that security
  * and validator can use it without parsing it.
  *
- * Created by steve on 30/09/16.
+ * @author Steve Hu
  */
 public class SwaggerHandler implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(SwaggerHandler.class);

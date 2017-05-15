@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
  * production only request validator should be turned on and response validator should only be
  * used during development.
  *
- * Created by steve on 17/09/16.
+ * @author Steve Hu
  */
 public class ValidatorHandler implements MiddlewareHandler {
     public static final String CONFIG_NAME = "validator";

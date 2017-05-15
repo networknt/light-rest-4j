@@ -19,7 +19,11 @@ package com.networknt.validator.parameter;
 import com.networknt.status.Status;
 import io.swagger.models.parameters.SerializableParameter;
 
-
+/**
+ * Number parameter validator
+ *
+ * @author Steve Hu
+ */
 public class NumberParameterValidator extends BaseParameterValidator {
 
     public NumberParameterValidator() {

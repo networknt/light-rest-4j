@@ -34,6 +34,8 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Validate a request against a given API operation.
+ *
+ * @author Steve Hu
  */
 public class RequestValidator {
 

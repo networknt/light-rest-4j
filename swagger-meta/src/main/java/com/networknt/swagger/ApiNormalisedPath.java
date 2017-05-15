@@ -16,7 +16,6 @@
 
 package com.networknt.swagger;
 
-import io.swagger.annotations.Api;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +26,10 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Created by steve on 23/09/16.
+ * This utility normalize the RESTful API path so that they can be
+ * handled identically.
+ *
+ * @author Steve Hu
  */
 public class ApiNormalisedPath implements NormalisedPath {
     Logger logger = LoggerFactory.getLogger(ApiNormalisedPath.class);

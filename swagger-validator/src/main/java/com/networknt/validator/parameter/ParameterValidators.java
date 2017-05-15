@@ -27,6 +27,11 @@ import java.util.Optional;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
+/**
+ * An aggregated validators
+ *
+ * @author Steve Hu
+ */
 public final class ParameterValidators {
 
     private final ArrayParameterValidator arrayValidator;
