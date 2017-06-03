@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+## 1.3.1 - 2017-06-03
+### Added
+
+### Changed
+- Upgrade with light-4j 1.3.1
+- Fixes #7 add Java doc and update online document
+
 ## 1.3.0 - 2017-05-05
 ### Added
 
