@@ -12,3 +12,9 @@ styles and corresponding framework to get started.
  
 For API categories and frameworks, please find details [here](https://networknt.github.io/light-4j/architecture/category/) 
  
+Chances are you are building a public Web API and want to follow RESTful style to make sure everyone
+can understand and consume it. 
+
+Light-rest-4j is a framework that is designed to speed up RESTful API development and deployment. On
+top of light-4j, it has several middleware handlers specifically designed around OpenAPI specification.
+
