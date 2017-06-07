@@ -72,7 +72,7 @@ googleAnalytics = ""
 	weight = 30
 
 [[menu.main]]
-	name   = "Other Components"
+	name   = "Other Component"
 	url    = "other/"
 	weight = 30
 
@@ -82,23 +82,23 @@ googleAnalytics = ""
 	weight = 35
 
 [[menu.main]]
-	name   = "Benchmarks"
-	url    = "benchmarks/"
+	name   = "Benchmark"
+	url    = "benchmark/"
 	weight = 38
 
 [[menu.main]]
-	name   = "Tutorials"
-	url    = "tutorials/"
+	name   = "Tutorial"
+	url    = "tutorial/"
 	weight = 40
 
 [[menu.main]]
-	name   = "Examples"
+	name   = "Example"
 	url    = "example/"
 	weight = 45
 
 [[menu.main]]
-	name   = "Tools"
-	url    = "tools/"
+	name   = "Tool"
+	url    = "tool/"
 	weight = 50
 
 [[menu.main]]
