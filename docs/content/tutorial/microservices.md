@@ -22,42 +22,45 @@ Another clear trend is standalone Gateway is phasing out in the cloud environmen
 with docker containers as most of the traditional gateway features are replaced 
 by container orchestration tool and docker container management tools. In addition, 
 some of the cross cutting concerns gateway provided are addressed in API frameworks
-like Light-4J.
+like light-4j and light-rest-4j.
+
+The following section shows you how to build and deploy multiple microservices that
+interact with each other. 
+
 
 ## Prepare workspace
 
 All specifications and code of the services are on github.com but we are going to
-redo it again by following the steps in the tutorial. Let's first create a
+redo it again by following the steps in this tutorial. Let's first create a
 workspace. I have created a directory named networknt under user directory.
 
 Checkout related projects.
 
 ```
 cd ~/networknt
-git clone git@github.com:networknt/swagger-codegen.git
-git clone git@github.com:networknt/light-java-example.git
-git clone git@github.com:networknt/swagger.git
+git clone git@github.com:networknt/light-codegen.git
+git clone git@github.com:networknt/light-example-4j.git
+git clone git@github.com:networknt/model-config.git
 git clone git@github.com:networknt/light-oauth2.git
 git clone git@github.com:networknt/light-docker.git
-
 ```
 
 As we are going to regenerate API A, B, C and D, let's rename these folders from
-light-example-4j.
+light-example-4j. While you are working on the tutorial, you can compare what you
+are doing with the final result for each service in the .bak directory.
 
 ```
-cd ~/networknt/light-java-example
+cd ~/networknt/light-example-4j
 mv api_a api_a.bak
 mv api_b api_b.bak
 mv api_c api_c.bak
 mv api_d api_d.bak
 cd ..
-
 ```
 
 ## Specifications
 
-Light Java Microservices Framework encourages Design Driven API building and 
+Light-rest-4j microservices framework encourages Design Driven API building and 
 [OpenAPI Specification](https://github.com/OAI/OpenAPI-Specification) is the central
 piece to drive the runtime for security and validation. Also, the specification 
 can be used to scaffold a running server project the first time so that developers 
@@ -66,11 +69,14 @@ worrying about how each component wired together.
 
 During the service implementation phase, specification might be changed and you can
 regenerate the service codebase again without overwriting your handlers and test
-cases for handlers. 
+cases for handlers. If you have models, you can direct the light-codegen to not
+overwrite them as well. This is a feature that allow you to upgrade the framework
+to a new version without touching the user updated code. Of course, it is much safer
+to generate a new project in another folder and do a folder comparison. 
 
-To create swagger specification, the best tool is
+To create OpenAPI specification(swagger specification), the best tool is
 [swagger-editor](http://swagger.io/swagger-editor/) and I have an
-[article](https://networknt.github.io/light-4j/tools/swagger-editor/)
+[article](https://networknt.github.io/light-rest-4j/tools/swagger-editor/)
 in tools section to describe how to use it.
 
 By following the [instructions](https://networknt.github.io/light-4j/tools/swagger-editor/)
