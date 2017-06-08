@@ -46,11 +46,11 @@ git clone git@github.com:networknt/light-docker.git
 ```
 
 As we are going to regenerate API A, B, C and D, let's rename these folders from
-light-example-4j. While you are working on the tutorial, you can compare what you
+light-example-4j/rest. While you are working on the tutorial, you can compare what you
 are doing with the final result for each service in the .bak directory.
 
 ```
-cd ~/networknt/light-example-4j
+cd ~/networknt/light-example-4j/rest
 mv api_a api_a.bak
 mv api_b api_b.bak
 mv api_c api_c.bak
@@ -76,23 +76,23 @@ to generate a new project in another folder and do a folder comparison.
 
 To create OpenAPI specification(swagger specification), the best tool is
 [swagger-editor](http://swagger.io/swagger-editor/) and I have an
-[article](https://networknt.github.io/light-rest-4j/tools/swagger-editor/)
-in tools section to describe how to use it.
+[article](https://networknt.github.io/light-rest-4j/tool/swagger-editor/)
+in tool section to describe how to use it.
 
-By following the [instructions](https://networknt.github.io/light-4j/tools/swagger-editor/)
-on how to use the editor, let's create four API specifications in swagger repo.
+By following the [instructions](https://networknt.github.io/light-rest-4j/tool/swagger-editor/)
+on how to use the editor, let's create four API specifications in model-config repo.
 
 API A will call API B and API C to fulfill its request. API B will call API D
 to fulfill its request.
 
 ```
 API A -> API B -> API D
-      -> API C
+          -> API C
 ```
 
 Here is the API A swagger.yaml and others can be found at
-[https://github.com/networknt/swagger](https://github.com/networknt/swagger) or swagger
-folder in your workspace. 
+[https://github.com/networknt/model-config](https://github.com/networknt/model-config) or 
+model-config folder in your workspace. 
 
 ```
 swagger: '2.0'
@@ -129,6 +129,12 @@ paths:
             type: array
             items:
               type: string
+          examples: {
+            "application/json": [
+              "Message 1",
+              "Message 2"
+            ]
+          }
       security:
         - a_auth:
           - api_a.w
@@ -145,75 +151,83 @@ securityDefinitions:
 ```
 
 As defined in the specification, API A will return a list of stings and it requires
-scope api_a.r or scope api_a.w to access the endpoint /data.
+scope api_a.r or scope api_a.w to access the endpoint /v1/data. It also defines the
+application/json example for the response which will be used in the generated handler.
+
+OpenAPI specification has two different format: YAML for human and JSON for computer.
+
+Along with the swagger.yaml, I have exported the swagger.json as the input for the
+light-codegen model to drive the code generation and the same swagger.json will be
+used by the service at runtime. It is copied to main/resources/config folder in the
+generated project.
 
 
-## Swagger-Codegen
+## light-codegen
 
-Now we have four API swagger.yaml files available. Let's use swagger-codegen
-to start four projects in light-example-4j. In normal API build, you 
-should create a repo for each API.
+Now we have four API swagger.json files available. Let's use light-codegen to start 
+four projects in light-example-4j. In normal API build, you should create a repo for 
+each API. To reduce the number of the repos in networknt organization, I put them all
+in light-example-4j/rest folder. 
+
 
 #### Build Light Java Generator
-
-As [swagger-codegen](https://github.com/swagger-api/swagger-codegen) doesn't
-support Java 8, I have forked it [here](https://github.com/networknt/swagger-codegen).
 
 The project is cloned to the local already during the prepare stage. Let's build it.
 
 ```
-cd swagger-codegen
+cd light-codegen
 mvn clean install -DskipTests
+```
+
+#### Prepare Generator Config
+
+Each generator in light-codegen requires several parameters to control how the generator
+works. For more information on how to use generator, please refer [here](https://networknt.github.io/light-codegen/generator/)
+
+For API A, here is the config.json and a copy can be found in the folder 
+model-config/rest/api_a/1.0.0 with swagger.yaml and swagger.json. 
+
+```
+{
+  "rootPackage": "com.networknt.apia",
+  "handlerPackage":"com.networknt.apia.handler",
+  "modelPackage":"com.networknt.apia.model",
+  "artifactId": "apia",
+  "groupId": "com.networknt",
+  "name": "apia",
+  "version": "1.0.0",
+  "overwriteHandler": true,
+  "overwriteHandlerTest": true,
+  "overwriteModel": true
+}
 ```
 
 #### Generate first project
 
-Now you have your swagger-codegen built, let's generate a project. Assume that
-swagger, light-example-4j and swagger-codegen are in the same working
-directory ~/networknt and you are in ~/networknt/swagger-codegen now.
+Now you have your light-codegen built, let's generate a project. Assume that
+model-config, light-example-4j and light-codegen are in the same working
+directory ~/networknt and you are in ~/networknt/light-codegen now.
 
 ```
-java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i ../swagger/api_a/swagger.yaml -l light-java -o ../light-java-example/api_a
-
+java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/api_a -m ../model-config/rest/api_a/1.0.0/swagger.json -c ../model-config/rest/api_a/1.0.0/config.json
 ```
 Here is the generator output.
 
 ```
-steve@joy:~/networknt/swagger-codegen$ java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i ../swagger/api_a/swagger.yaml -l light-java -o ../light-java-example/api_a
-Picked up JAVA_TOOL_OPTIONS: -Dconfig.dir=/home/steve/config
-[main] INFO io.swagger.parser.Swagger20Parser - reading from ../swagger/api_a/swagger.yaml
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/src/main/java/io/swagger/handler/DataGetHandler.java
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/src/test/java/io/swagger/handler/DataGetHandlerTest.java
-swaggerio.swagger.models.Swagger@40249765
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/pom.xml
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/README.md
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/.gitignore
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/Dockerfile
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/src/main/resources/config/swagger.json
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/src/main/java/io/swagger/PathHandlerProvider.java
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/src/test/java/io/swagger/handler/TestServer.java
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/src/main/resources/META-INF/services/com.networknt.server.HandlerProvider
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/src/main/resources/META-INF/services/com.networknt.handler.MiddlewareHandler
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/src/main/resources/META-INF/services/com.networknt.handler.StartupHookProvider
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/src/main/resources/META-INF/services/com.networknt.handler.ShutdownHookProvider
-[main] INFO io.swagger.codegen.DefaultGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/src/main/resources/config/server.json
-[main] INFO io.swagger.codegen.DefaultGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/src/main/resources/config/security.json
-[main] INFO io.swagger.codegen.DefaultGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/src/main/resources/config/oauth/primary.crt
-[main] INFO io.swagger.codegen.DefaultGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/src/main/resources/config/oauth/secondary.crt
-[main] INFO io.swagger.codegen.DefaultGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/src/main/resources/logback.xml
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/.swagger-codegen-ignore
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /home/steve/networknt/swagger-codegen/../light-java-example/api_a/LICENSE
+steve@joy:~/networknt/light-codegen$ java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/api_a -m ../model-config/rest/api_a/1.0.0/swagger.json -c ../model-config/rest/api_a/1.0.0/config.json
+light-rest-4j ../model-config/rest/api_a/1.0.0/swagger.json ../model-config/rest/api_a/1.0.0/config.json ../light-example-4j/rest/api_a21:59:48.606 [main] INFO com.fizzed.rocker.runtime.RockerRuntime - Rocker version 0.16.0
+21:59:48.609 [main] INFO com.fizzed.rocker.runtime.RockerRuntime - Rocker template reloading not activated
 
 ```
 
 #### Build and run the mock API
 
-And now you have a new project created in light-example-4j. Let's build
+And now you have a new project created in light-example-4j/rest. Let's build
 it and run the test cases. If everything is OK, start the server.
 
 ```
 cd ..
-cd light-java-example/api_a
+cd light-example-4j/rest/api_a
 mvn clean install
 mvn exec:exec
 ```
@@ -223,23 +237,21 @@ Let's test the API A by issuing the following command
 curl localhost:8080/v1/data
 ```
 
-By default the generated response example will be returned. 
+By default the response example from swagger.json will be returned. 
 
 ```
-[ "aeiou" ]
+["Message 1","Message 2"]
 ```
 
 #### Generate other APIs
 
-Let's kill the API A by Ctrl+C and move to the swagger-codegen folder again. Follow 
-the above steps to generate other APIs. Make sure you are in swagger_codegen
-directory.
+Let's kill the API A by Ctrl+C and move to the light-codegen terminal again. Follow 
+the above steps to generate other APIs. Make sure you are in light_codegen directory.
 
 ```
-java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i ../swagger/api_b/swagger.yaml -l light-java -o ../light-java-example/api_b
-java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i ../swagger/api_c/swagger.yaml -l light-java -o ../light-java-example/api_c
-java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i ../swagger/api_d/swagger.yaml -l light-java -o ../light-java-example/api_d
-
+java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/api_b -m ../model-config/rest/api_b/1.0.0/swagger.json -c ../model-config/rest/api_b/1.0.0/config.json
+java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/api_c -m ../model-config/rest/api_c/1.0.0/swagger.json -c ../model-config/rest/api_c/1.0.0/config.json
+java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/api_d -m ../model-config/rest/api_d/1.0.0/swagger.json -c ../model-config/rest/api_d/1.0.0/config.json
 ```
 
 Now you have four APIs generated from four OpenAPI specifications. Let's check
@@ -247,7 +259,7 @@ them in. Note that you might not have write access to this repo, so you can igno
 this step. 
 
 ```
-cd ../light-java-example
+cd ../light-example-4j
 git add .
 git commit -m "checkin 4 apis"
 ```
@@ -260,10 +272,11 @@ and update it based on our business logic.
 
 #### API D
 Let's take a look at the generated PathHandlerProvider.java in
-api_d/src/main/java/io/swagger/
+api_d/src/main/com/networknt/apid
 
 ```
-package io.swagger;
+
+package com.networknt.apid;
 
 import com.networknt.config.Config;
 import com.networknt.server.HandlerProvider;
@@ -271,15 +284,22 @@ import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Methods;
-import io.swagger.handler.*;
+import com.networknt.info.ServerInfoGetHandler;
+import com.networknt.health.HealthGetHandler;
+import com.networknt.apid.handler.*;
 
 public class PathHandlerProvider implements HandlerProvider {
-
+    @Override
     public HttpHandler getHandler() {
-        HttpHandler handler = Handlers.routing()
+        return Handlers.routing()
+        
             .add(Methods.GET, "/v1/data", new DataGetHandler())
+        
+            .add(Methods.GET, "/v1/health", new HealthGetHandler())
+        
+            .add(Methods.GET, "/v1/server/info", new ServerInfoGetHandler())
+        
         ;
-        return handler;
     }
 }
 
@@ -288,42 +308,42 @@ public class PathHandlerProvider implements HandlerProvider {
 This is the only class that routes each endpoint defined in specification to a handler 
 instance. Because we only have one endpoint /v1/data@get there is only one route added
 to the handler chain. And there is a handler generated in the handler subfolder to
-handle request that has the url matched to this endpoint. 
+handle request that has the url matched to this endpoint.
+ 
+You might noticed that we have two additional endpoints that are not defined in the swagger.json
+but in the generated PathHandlerProvider.java. These two endpoints were injected by the light-codegen
+for health check and server info. 
 
-The generated handler is named "DataGetHandler" and it returns example response generated
-based on the swagger specification. Here is the generated handler code. 
+The generated handler is named "DataGetHandler" and it returns example response defined in the 
+swagger specification. Here is the generated handler DataGetHandler.java
  
 ```
-package io.swagger.handler;
+
+package com.networknt.apid.handler;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.commons.lang3.StringEscapeUtils;
 
 public class DataGetHandler implements HttpHandler {
-
+    @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        Map<String, Object> examples = new HashMap<String, Object>();
-        examples.put("application/json", StringEscapeUtils.unescapeHtml4("[ &quot;aeiou&quot; ]"));
-        if(examples.size() > 0) {
+        
             exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-            exchange.getResponseSender().send((String)examples.get("application/json"));
-        } else {
-            exchange.endExchange();
-        }
+             exchange.getResponseSender().send(" [\n                                \"Message 1\",\n                                \"Message 2\"\n                            ]");
+        
     }
 }
-
 ```
 
 Let's update it to an array of strings that indicates the response comes from API D. 
 
 
 ```
-package io.swagger.handler;
+
+package com.networknt.apid.handler;
 
 import com.networknt.config.Config;
 import io.undertow.server.HttpHandler;
@@ -334,10 +354,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.StringEscapeUtils;
 
 public class DataGetHandler implements HttpHandler {
-
+    @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
         List<String> messages = new ArrayList<String>();
         messages.add("API D: Message 1");
@@ -345,10 +364,11 @@ public class DataGetHandler implements HttpHandler {
         exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(messages));
     }
 }
+
 ```
 
 Now, let's build it and start the server. Make sure there is only one server
-started at any time as all servers are listening to the same port.
+started at any time as all servers are listening to the same port by default.
 
 ```
 cd api_d
@@ -365,11 +385,26 @@ And the result is
 ["API D: Message 1","API D: Message 2"]
 ```
 
+You can also try the health check and server info endpoint. 
+
+```
+curl localhost:8080/v1/health
+```
+
+Which will return 200 response code with body of "OK" to indicate server is healthy. 
+
+```
+curl localhost:8080/v1/server/info
+```
+
+Will return runtime info and configurations for each enabled module.
+
+
 #### API C
 Let's shutdown API D and update API C DataGetHandler to
 
 ```
-package io.swagger.handler;
+package com.networknt.apic.handler;
 
 import com.networknt.config.Config;
 import io.undertow.server.HttpHandler;
@@ -380,10 +415,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.StringEscapeUtils;
 
 public class DataGetHandler implements HttpHandler {
-
+    @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
         List<String> messages = new ArrayList<String>();
         messages.add("API C: Message 1");
@@ -414,12 +448,13 @@ And the result is
 #### API B
 
 Let's shutdown API C and complete API B. API B will call API D to fulfill its
-request so it needs to use Light Java Client module to call API D. 
+request so it needs to use light-4j Client module to call API D. 
 
 Now let's update the generated DataGetHandler.java to this.
 
 ```
-package io.swagger.handler;
+
+package com.networknt.apib.handler;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.networknt.client.Client;
@@ -428,24 +463,23 @@ import com.networknt.exception.ClientException;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
 
 public class DataGetHandler implements HttpHandler {
-
     static String CONFIG_NAME = "api_b";
-    static String apidUrl = (String)Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_d_endpoint");
+    static String apidUrl = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_d_endpoint");
 
+    @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         try {
             CloseableHttpClient client = Client.getInstance().getSyncClient();
             HttpGet httpGet = new HttpGet(apidUrl);
@@ -454,7 +488,7 @@ public class DataGetHandler implements HttpHandler {
             if(responseCode != 200){
                 throw new Exception("Failed to call API D: " + responseCode);
             }
-            List<String> apidList = (List<String>) Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
+            List<String> apidList = Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
                     new TypeReference<List<String>>(){});
             list.addAll(apidList);
         } catch (ClientException e) {
@@ -470,6 +504,15 @@ public class DataGetHandler implements HttpHandler {
 }
 ```
 
+As you can see API B need a config file to specify the url for API D. Here is the
+content of the config file api_d_endpoint.yml
+
+```
+api_d_endpoint: http://localhost:7004/v1/data
+```
+
+This file is located at src/main/resources/config.
+
 As API B only calls one API, here sync client is used. As API B will interact
 with API D and it requires configuration changes to make it work. Let's wait
 until the next step to test it.
@@ -480,7 +523,7 @@ API A will call API B and API C to fulfill its request. Now let's update the
 generated DataGetHandler.java code to
 
 ```
-package io.swagger.handler;
+package com.networknt.apia.handler;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.networknt.client.Client;
@@ -489,23 +532,24 @@ import com.networknt.exception.ClientException;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
-
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
-
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 
-public class DataGetHandler implements HttpHandler {
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Vector;
+import java.util.concurrent.CountDownLatch;
 
+public class DataGetHandler implements HttpHandler {
     static String CONFIG_NAME = "api_a";
     static String apibUrl = (String)Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_b_endpoint");
-    static String apicUrl = (String)Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_c_endpoint");
+    static String apicUrl = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_c_endpoint");
 
+    @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
         List<String> list = new Vector<String>();
         final HttpGet[] requests = new HttpGet[] {
@@ -516,12 +560,11 @@ public class DataGetHandler implements HttpHandler {
             CloseableHttpAsyncClient client = Client.getInstance().getAsyncClient();
             final CountDownLatch latch = new CountDownLatch(requests.length);
             for (final HttpGet request: requests) {
-                Client.getInstance().propagateHeaders(request, exchange);
                 client.execute(request, new FutureCallback<HttpResponse>() {
                     @Override
                     public void completed(final HttpResponse response) {
                         try {
-                            List<String> apiList = (List<String>) Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
+                            List<String> apiList = Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
                                     new TypeReference<List<String>>(){});
                             list.addAll(apiList);
                         } catch (IOException e) {
@@ -557,89 +600,59 @@ public class DataGetHandler implements HttpHandler {
 
 ```
 
+There is a config file api_a.yml to specify the url for API B and API C in the resources/config 
+folder. Here is the content.
+
+```
+"api_b_endpoint": "http://localhost:7002/v1/data",
+"api_c_endpoint": "http://localhost:7003/v1/data"
+
+```
+
 At this moment, we have all four APIs completed but they are not going to be
-started at the same time as generated server.json uses the same port 8080. The
-next step is to change the configuration and test it out.
+started at the same time as generated server.yml uses the same port 8080 for http
+and 8443 for https. The next step is to change the configuration and test it out.
 
 ## Configuration
 
-Light-4J has a module called Config and it is responsible to read config
+Light-4j has a module called Config and it is responsible for reading config
 files from environmental property specified directory, classpath, API
-resources/config folder and module resources/config folder in that sequence as
-default File System based configuration. It can be extended to other config like
+resources/config folder or module resources/config folder in that sequence as
+default file system based configuration. It can be extended to other config like
 config server, distributed cache and http server etc.
 
-To make things simpler, let's update the server.json in API A, B, C, D to bind to
-different port in order to start them on the same localhost. The server.json can
+To make things simpler, let's update the server.yml in API A, B, C, D to bind to
+different port in order to start them on the same localhost. The server.yml can
 be found in src/main/resources/config folder of each project.
 
 
-Find the server.json at api_a/src/main/resources/config and update the content
-to
+Find the server.yml at api_a/src/main/resources/config and update the ports to
 
 API A 
 ```
-{
-  "description": "server config",
-  "ip": "0.0.0.0",
-  "port": 7001
-}
+httpPort: 7001
+httpsPort: 7441
 ```
 
 
 API B
 
 ```
-{
-  "description": "server config",
-  "ip": "0.0.0.0",
-  "port": 7002
-}
-
+httpPort: 7002
+httpsPort: 7442
 ```
 
 API C
 
 ```
-{
-  "description": "server config",
-  "ip": "0.0.0.0",
-  "port": 7003
-}
-
+httpPort: 7003
+httpsPort: 7443
 ```
 API D
 
 ```
-{
-  "description": "server config",
-  "ip": "0.0.0.0",
-  "port": 7004
-}
-
-```
-
-As API A is calling API B and C, we need to create a config file for API B and C
-endpoints. Let's create a new file named api_a.json in api_a/src/main/resources/config
-
-```
-{
-  "description": "api_a config",
-  "api_b_endpoint": "http://localhost:7002/v1/data",
-  "api_c_endpoint": "http://localhost:7003/v1/data"
-}
-
-```
-
-As API B is calling API D, we need to create a config file for API D endpoint. Let's
-create a new file named api_b.json in api_b/src/main/resources/config
-
-```
-{
-  "description": "api_b config",
-  "api_d_endpoint": "http://localhost:7004/v1/data"
-}
-
+httpPort: 7004
+httpsPort: 7444
 ```
 
 
@@ -648,8 +661,7 @@ Now let's start all four servers on four terminals and test them out.
 API D
 ```
 cd api_d
-mvn clean install
-mvn exec:exec
+mvn clean install exec:exec
 ```
 API C
 
