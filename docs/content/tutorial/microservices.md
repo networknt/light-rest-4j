@@ -756,238 +756,226 @@ these servers are not protected by OAuth2 JWT tokens as it is turned off
 by default in the generated code.
 
 Before we turn on the security, we need to have [light-oauth2](https://github.com/networknt/light-oauth2)
-server up and running so that these servers can get JWT token in real
-time.
+server up and running so that these servers can get JWT token in real time.
 
-The easiest way to run light-oauth2 server is through docker but let's
-build it locally this time.
+The easiest way to run light-oauth2 server is through docker compose.
 
-Go to your working directory and go to the light-oauth2 folder cloned in the prepare stage. 
+Go to your working directory and go to the light-docker folder cloned in the prepare stage. Our
+OAuth2 services support Mysql, Postgresql and Oracle. Let's ues Mysql this time. 
 
 ```
-cd light-oauth2
-mvn clean package exec:exec
+cd light-docker
+docker-compose -f docker-compose-oauth2-mysql.yml up
 ```
 
 Now let's enable the jwt token verification and scope verification for all
 APIs except API A. For API A we want to enableVerifyJwt to true but
 enableVerifyScope to false so that we can use a long lived token to test from
-curl without getting new tokens each time.
+curl without getting a new token each time.
 
-Open src/main/resources/config/security.json in api_b/api_c/api_d folder and 
+Open src/main/resources/config/security.yml in api_b/api_c/api_d folder and 
 update enableVerifyJwt and enableVerifyScope to true. The following is what 
-looks like for API B, C and D.
+looks like for API A B, C and D.
 
 ```
-{
-  "description": "security configuration",
-  "enableVerifyJwt": true,
-  "enableVerifyScope": true,
-  "enableMockJwt": false,
-  "jwt": {
-    "certificate": {
-      "100": "oauth/primary.crt",
-      "101": "oauth/secondary.crt"
-    },
-    "clockSkewInSeconds": 60
-  },
-  "logJwtToken": true,
-  "logClientUserScope": false
-}
-```
-This is what looks like for API A src/main/resources/config/security.json
+# Security configuration in light framework.
+---
+# Enable JWT verification flag.
+enableVerifyJwt: true
 
-```
-{
-  "description": "security configuration",
-  "enableVerifyJwt": true,
-  "enableVerifyScope": false,
-  "enableMockJwt": false,
-  "jwt": {
-    "certificate": {
-      "100": "oauth/primary.crt",
-      "101": "oauth/secondary.crt"
-    },
-    "clockSkewInSeconds": 60
-  },
-  "logJwtToken": true,
-  "logClientUserScope": false
-}
+# Enable JWT scope verification. Only valid when enableVerifyJwt is true.
+enableVerifyScope: true
 
+# User for test only. should be always be false on official environment.
+enableMockJwt: false
+
+# JWT signature public certificates. kid and certificate path mappings.
+jwt:
+  certificate:
+    '100': oauth/primary.crt
+    '101': oauth/secondary.crt
+  clockSkewInSeconds: 60
+
+# Enable or disable JWT token logging
+logJwtToken: true
+
+# Enable or disable client_id, user_id and scope logging.
+logClientUserScope: false
 ```
 
-Now make sure that client.json in both API A and API B are configured correctly
+Now make sure that client.yml in both API A and API B are configured correctly
 to get the right token from light-oauth2 server with the correct scopes. The generated code doesn't
-have client.json so you need to create these files in src/main/resources/config folder in order to
-overwrite the default client.json from Client module.
+have client.yml so you need to create these files in src/main/resources/config folder in order to
+overwrite the default client.yml from Client module.
 
-The client_id and client_secret are set up in clients.json in light-oauth2
-already [here](https://github.com/networknt/light-oauth2/blob/master/src/main/resources/config/clients.json)
+The client_id and client_secret need to be set up on OAuth2 server and configured in clients.yml
 
-API A client
-```
-  "fe5dadd9-34ad-430f-a8f7-c75e81cc5d7b": {
-    "client_secret":"GXkHy-1aSPyo4pst8WBWbg",
-    "scope": "api_b.r api_b.w api_c.r api_c.w",
-    "redirect_uri": "http://localhost:8080/oauth"
-  },
-```
+Since only API A and API B are going to call other services, here we are going to register them to
+OAuth2 client service to get client_id and client_secret. 
 
-API B client
 
-```
-  "10a0a743-4674-4a9d-8867-db63ad4c8b4e": {
-    "client_secret":"tcahI1dvT1OsxXxg-IB_-w",
-    "scope": "api_d.r api_d.w",
-    "redirect_uri": "http://localhost:8080/oauth"
-  }
-```
+### Register clients
 
-Now let's create client.json on both API A and API B to reflect the above info.
-This is what looks like in API A src/main/resources/config/client.json
+Before we start integrate with OAuth2 services, we need to register clients for api_a,
+api_b, api_c and api_d. This step should be done from light-portal for official environment.
+After client registration, we need to remember the client_id and client_secret for each in
+order to update client.yml for each service.
+
+For more details on how to use the command line tool or script to access oauth2 services,
+please see this [tutorial](https://networknt.github.io/light-oauth2/tutorials/enterprise/)
+
+Normally, we need to register a client to call api_a but due to live JWT token expires very fast,
+we are going to use a special long lived JWT token to call api_a. 
+
+
+Register a client for api_a to call api_b and api_c
 
 ```
-{
-  "description": "client configuration, all timing is milli-second",
-  "sync": {
-    "maxConnectionTotal": 100,
-    "maxConnectionPerRoute": 10,
-    "routes": {
-      "api.google.com": 20,
-      "api.facebook.com": 10
-    },
-    "timeout": 10000,
-    "keepAlive": 15000
-  },
-  "async": {
-    "maxConnectionTotal": 100,
-    "maxConnectionPerRoute": 10,
-    "routes": {
-      "api.google.com": 20,
-      "api.facebook.com": 10
-    },
-    "reactor": {
-      "ioThreadCount": 1,
-      "connectTimeout": 10000,
-      "soTimeout": 10000
-    },
-    "timeout": 10000,
-    "keepAlive": 15000
-  },
-  "tls": {
-    "verifyHostname": false,
-    "loadTrustStore": false,
-    "trustStore": "trust.keystore",
-    "trustPass": "password",
-    "loadKeyStore": false,
-    "keyStore": "key.jks",
-    "keyPass": "password"
-  },
-  "oauth": {
-    "tokenRenewBeforeExpired": 600000,
-    "expiredRefreshRetryDelay": 5000,
-    "earlyRefreshRetryDelay": 30000,
-    "server_url": "http://localhost:8888",
-    "timeout": 5000,
-    "ignoreSSLErrors": false,
-    "authorization_code": {
-      "uri": "/oauth2/token",
-      "client_id": "fe5dadd9-34ad-430f-a8f7-c75e81cc5d7b",
-      "client_secret": "GXkHy-1aSPyo4pst8WBWbg",
-      "redirect_uri": "https://localhost:8080/authorization_code",
-      "scope": [
-        "api_b.r",
-        "api_b.w",
-        "api_c.r",
-        "api_c.w"
-      ]
-    },
-    "client_credentials": {
-      "uri": "/oauth2/token",
-      "client_id": "fe5dadd9-34ad-430f-a8f7-c75e81cc5d7b",
-      "client_secret": "GXkHy-1aSPyo4pst8WBWbg",
-      "scope": [
-        "api_b.r",
-        "api_b.w",
-        "api_c.r",
-        "api_c.w"
-      ]
-    }
-  }
-}
-```
-
-And this is what looks like in API B client.json
-
-```
-{
-  "description": "client configuration, all timing is milli-second",
-  "sync": {
-    "maxConnectionTotal": 100,
-    "maxConnectionPerRoute": 10,
-    "routes": {
-      "api.google.com": 20,
-      "api.facebook.com": 10
-    },
-    "timeout": 10000,
-    "keepAlive": 15000
-  },
-  "async": {
-    "maxConnectionTotal": 100,
-    "maxConnectionPerRoute": 10,
-    "routes": {
-      "api.google.com": 20,
-      "api.facebook.com": 10
-    },
-    "reactor": {
-      "ioThreadCount": 1,
-      "connectTimeout": 10000,
-      "soTimeout": 10000
-    },
-    "timeout": 10000,
-    "keepAlive": 15000
-  },
-  "tls": {
-    "verifyHostname": false,
-    "loadTrustStore": false,
-    "trustStore": "trust.keystore",
-    "trustPass": "password",
-    "loadKeyStore": false,
-    "keyStore": "key.jks",
-    "keyPass": "password"
-  },
-  "oauth": {
-    "tokenRenewBeforeExpired": 600000,
-    "expiredRefreshRetryDelay": 5000,
-    "earlyRefreshRetryDelay": 30000,
-    "server_url": "http://localhost:8888",
-    "timeout": 5000,
-    "ignoreSSLErrors": false,
-    "authorization_code": {
-      "uri": "/oauth2/token",
-      "client_id": "10a0a743-4674-4a9d-8867-db63ad4c8b4e",
-      "client_secret": "tcahI1dvT1OsxXxg-IB_-w",
-      "redirect_uri": "https://localhost:8080/authorization_code",
-      "scope": [
-        "api_d.r",
-        "api_d.w"
-      ]
-    },
-    "client_credentials": {
-      "uri": "/oauth2/token",
-      "client_id": "10a0a743-4674-4a9d-8867-db63ad4c8b4e",
-      "client_secret": "tcahI1dvT1OsxXxg-IB_-w",
-      "scope": [
-        "api_d.r",
-        "api_d.w"
-      ]
-    }
-  }
-}
+curl -H "Content-Type: application/json" -X POST -d '{"clientType":"public","clientProfile":"mobile","clientName":"api_a","clientDesc":"API A service","scope":"api_b.w api_c.w","redirectUri": "http://localhost:8080/authorization","ownerId":"admin"}' http://localhost:6884/oauth2/client
 
 ```
 
-With client.json updated in both API A and API B, we need to update the code
+The return value is
+```
+{"clientId":"f041a0c8-9d62-4c62-acbd-24662a86acbd","clientSecret":"pJn5aW8JQ9eyN0op1Pi8qg","clientType":"public","clientProfile":"mobile","clientName":"api_a","clientDesc":"API A service","ownerId":"admin","scope":"api_b.w api_c.w","redirectUri":"http://localhost:8080/authorization","createDt":"2017-06-09","updateDt":null}
+```
+
+Now we need to externalize client.yml and update it with this clientId and clientSecret for
+api_a. Let's create a client.yml for api_a in ~/networknt/light-example-4j/rest/api_a/src/main/resources/config
+
+
+Here is the content of client.yml file
+
+```
+sync:
+  maxConnectionTotal: 100
+  maxConnectionPerRoute: 10
+  routes:
+    api.google.com: 20
+    api.facebook.com: 10
+  timeout: 10000
+  keepAlive: 15000
+async:
+  maxConnectionTotal: 100
+  maxConnectionPerRoute: 10
+  routes:
+    api.google.com: 20
+    api.facebook.com: 10
+  reactor:
+    ioThreadCount: 1
+    connectTimeout: 10000
+    soTimeout: 10000
+  timeout: 10000
+  keepAlive: 15000
+tls:
+  verifyHostname: false
+  loadTrustStore: false
+  trustStore: trust.keystore
+  trustPass: password
+  loadKeyStore: false
+  keyStore: key.jks
+  keyPass: password
+oauth:
+  tokenRenewBeforeExpired: 600000
+  expiredRefreshRetryDelay: 5000
+  earlyRefreshRetryDelay: 30000
+  server_url: http://localhost:6882
+  authorization_code:
+    uri: "/oauth2/token"
+    client_id: f041a0c8-9d62-4c62-acbd-24662a86acbd
+    client_secret: pJn5aW8JQ9eyN0op1Pi8qg
+    redirect_uri: https://localhost:8080/authorization_code
+    scope:
+    - api_b.w
+    - api_c.w
+  client_credentials:
+    uri: "/oauth2/token"
+    client_id: f041a0c8-9d62-4c62-acbd-24662a86acbd
+    client_secret: pJn5aW8JQ9eyN0op1Pi8qg
+    scope:
+    - api_b.w
+    - api_c.w
+
+```
+
+As you can see the server_url is pointing to OAuth2 token service at 6882. And
+client_id and client_secret are updated according to the client register result.
+Also, scope has been updated to api_b.w and api_c.w in order to access API B and API C.
+
+
+Register a client for api_b to call api_d
+
+```
+curl -H "Content-Type: application/json" -X POST -d '{"clientType":"public","clientProfile":"service","clientName":"api_b","clientDesc":"API B service","scope":"api_d.w","redirectUri": "http://localhost:8080/authorization","ownerId":"admin"}' http://localhost:6884/oauth2/client
+
+```
+
+And the result is
+
+```
+{"clientId":"ed2386b9-9a64-45d0-a172-ffedfcbc7d1b","clientSecret":"gdz8tPCjRr2wPlyRGN52sw","clientType":"public","clientProfile":"service","clientName":"api_b","clientDesc":"API B service","ownerId":"admin","scope":"api_d.w","redirectUri":"http://localhost:8080/authorization","createDt":"2017-06-09","updateDt":null}
+```
+
+
+Now we need to externalize client.yml and update it with this clientId and clientSecret for
+api_b. Let's create a client.yml for api_b in ~/networknt/light-example-4j/rest/api_b/src/main/resources/config
+
+
+Here is the content of client.yml file
+
+```
+sync:
+  maxConnectionTotal: 100
+  maxConnectionPerRoute: 10
+  routes:
+    api.google.com: 20
+    api.facebook.com: 10
+  timeout: 10000
+  keepAlive: 15000
+async:
+  maxConnectionTotal: 100
+  maxConnectionPerRoute: 10
+  routes:
+    api.google.com: 20
+    api.facebook.com: 10
+  reactor:
+    ioThreadCount: 1
+    connectTimeout: 10000
+    soTimeout: 10000
+  timeout: 10000
+  keepAlive: 15000
+tls:
+  verifyHostname: false
+  loadTrustStore: false
+  trustStore: trust.keystore
+  trustPass: password
+  loadKeyStore: false
+  keyStore: key.jks
+  keyPass: password
+oauth:
+  tokenRenewBeforeExpired: 600000
+  expiredRefreshRetryDelay: 5000
+  earlyRefreshRetryDelay: 30000
+  server_url: http://localhost:6882
+  authorization_code:
+    uri: "/oauth2/token"
+    client_id: ed2386b9-9a64-45d0-a172-ffedfcbc7d1b
+    client_secret: gdz8tPCjRr2wPlyRGN52sw
+    redirect_uri: https://localhost:8080/authorization_code
+    scope:
+    - api_d.w
+  client_credentials:
+    uri: "/oauth2/token"
+    client_id: ed2386b9-9a64-45d0-a172-ffedfcbc7d1b
+    client_secret: gdz8tPCjRr2wPlyRGN52sw
+    scope:
+    - api_d.w
+
+```
+
+
+
+With client.yml created in both API A and API B, we need to update the code
 to assign scope token during runtime. 
 
 Open API A DataGetHandler and one line before client.execute(...).
@@ -999,7 +987,7 @@ Open API A DataGetHandler and one line before client.execute(...).
 Here is the updated file
 
 ```
-package io.swagger.handler;
+package com.networknt.apia.handler;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.networknt.client.Client;
@@ -1008,23 +996,24 @@ import com.networknt.exception.ClientException;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
-
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
-
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 
-public class DataGetHandler implements HttpHandler {
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Vector;
+import java.util.concurrent.CountDownLatch;
 
+public class DataGetHandler implements HttpHandler {
     static String CONFIG_NAME = "api_a";
     static String apibUrl = (String)Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_b_endpoint");
-    static String apicUrl = (String)Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_c_endpoint");
+    static String apicUrl = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_c_endpoint");
 
+    @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
         List<String> list = new Vector<String>();
         final HttpGet[] requests = new HttpGet[] {
@@ -1040,7 +1029,7 @@ public class DataGetHandler implements HttpHandler {
                     @Override
                     public void completed(final HttpResponse response) {
                         try {
-                            List<String> apiList = (List<String>) Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
+                            List<String> apiList = Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
                                     new TypeReference<List<String>>(){});
                             list.addAll(apiList);
                         } catch (IOException e) {
@@ -1079,7 +1068,7 @@ public class DataGetHandler implements HttpHandler {
 Open API B DataGetHandler and add one line and the end result is:
 
 ```
-package io.swagger.handler;
+package com.networknt.apib.handler;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.networknt.client.Client;
@@ -1088,24 +1077,23 @@ import com.networknt.exception.ClientException;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
 
 public class DataGetHandler implements HttpHandler {
-
     static String CONFIG_NAME = "api_b";
-    static String apidUrl = (String)Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_d_endpoint");
+    static String apidUrl = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_d_endpoint");
 
+    @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         try {
             CloseableHttpClient client = Client.getInstance().getSyncClient();
             HttpGet httpGet = new HttpGet(apidUrl);
@@ -1115,7 +1103,7 @@ public class DataGetHandler implements HttpHandler {
             if(responseCode != 200){
                 throw new Exception("Failed to call API D: " + responseCode);
             }
-            List<String> apidList = (List<String>) Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
+            List<String> apidList = Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
                     new TypeReference<List<String>>(){});
             list.addAll(apidList);
         } catch (ClientException e) {
@@ -1131,17 +1119,13 @@ public class DataGetHandler implements HttpHandler {
 }
 ```
 
-Let's start these servers and test it. Don't forget to start light-oauth2 server.
+Let's start these servers and test it. 
 
-```
-cd light-oauth2
-mvn package exec:exec
-```
 
 Run the following command.
 
 ```
-curl -H "Authorization: Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTc5NDgwMDYzOSwianRpIjoiWFhlQmpJYXUwUk5ZSTl3dVF0MWxtUSIsImlhdCI6MTQ3OTQ0MDYzOSwibmJmIjoxNDc5NDQwNTE5LCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6InN0ZXZlIiwidXNlcl90eXBlIjoiRU1QTE9ZRUUiLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzIiLCJzY29wZSI6WyJ3cml0ZTpwZXRzIiwicmVhZDpwZXRzIl19.f5XdkmhOoHT2lgTobqVGPp2aWUv_ItA0tqyLHC_CeMbmwzPvREqb5-oJ9T_m3VwRcJlPTh8xTdSjrLITXClaQFE4Y0bT8C-u6bb38uT-NQ5mjUjLrFQYHCF6GqwL7YkwQt_rshEqtrDFe1T4HoEL_9FHbOxf3MSJ39UKq0Ef_9mHXkn4Y-SHfdapeuUWc_4dDPdxzEdzbqmf1WSOOgTuM5O5F2fK4p_ix8LQl0H3AnMZIhIDyygQEnYPxEG-u35gwh503wfxio6buIf0b2Kku2PXPE36lethZwIVaPTncEcY5OPxfBxXuy-Wq-YQizd7NnpJTteHYbdQXupjK7NDvQ" localhost:7001/v1/data
+curl -H "Authorization: Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgxMjMyODg4MywianRpIjoiQkQyRF80X0FwSlpSRC1PRXJVSjJKdyIsImlhdCI6MTQ5Njk2ODg4MywibmJmIjoxNDk2OTY4NzYzLCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6IlN0ZXZlIiwidXNlcl90eXBlIjoiRU1QTE9ZRUUiLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzIiLCJzY29wZSI6WyJhcGlfYS53IiwiYXBpX2IudyIsImFwaV9jLnciLCJhcGlfZC53Iiwic2VydmVyLmluZm8uciJdfQ.Y7Qcazr3yl4M5667xsberiFUo95YAD8WT00rio1nV_04eemVoxlm5Gnt2xi7IrWIWmqZmdJrzG78lQ4xYY_kbvFDcaGeFdvVXS-wfddmdG2Vug0BNZR7rNKmN9WJfd2jpHNgvFznHyfGbEEUMN4eT5xNqx7qm5FGTv0tBItn1hjtMG_iEeNPDlu6ngglXwxbKFrUcbrqh_jIp3ELsopL_UHFDOE7cDiEe_QFsDvHKhr9Eu7BtlrmYrvn-rbNnGHPYz7xBEN4hBymNBXIrVVNI8HsFQ5fYkqjsUEJuULWBrJJvAJ79AmDfrjzPTZEWp2JBM22T8ps4FxpgyYA6W8KTQ" localhost:7001/v1/data
 ```
 
 And here is the result.
@@ -1152,8 +1136,8 @@ And here is the result.
 
 At this moment, all four APIs are protected by JWT token and API B, C, D are projected by scope additionally. 
 
-## Dockerization
 
+## Dockerization
 
 ## Integration
 
