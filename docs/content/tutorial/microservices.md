@@ -1136,6 +1136,124 @@ And here is the result.
 
 At this moment, all four APIs are protected by JWT token and API B, C, D are projected by scope additionally. 
 
+## Performance with security
+
+Now let's use the same wrk command to test the performance with JWT enabled.
+
+```
+wrk -t4 -c800 -d30s -H "Authorization: Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgxMjMyODg4MywianRpIjoiQkQyRF80X0FwSlpSRC1PRXJVSjJKdyIsImlhdCI6MTQ5Njk2ODg4MywibmJmIjoxNDk2OTY4NzYzLCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6IlN0ZXZlIiwidXNlcl90eXBlIjoiRU1QTE9ZRUUiLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzIiLCJzY29wZSI6WyJhcGlfYS53IiwiYXBpX2IudyIsImFwaV9jLnciLCJhcGlfZC53Iiwic2VydmVyLmluZm8uciJdfQ.Y7Qcazr3yl4M5667xsberiFUo95YAD8WT00rio1nV_04eemVoxlm5Gnt2xi7IrWIWmqZmdJrzG78lQ4xYY_kbvFDcaGeFdvVXS-wfddmdG2Vug0BNZR7rNKmN9WJfd2jpHNgvFznHyfGbEEUMN4eT5xNqx7qm5FGTv0tBItn1hjtMG_iEeNPDlu6ngglXwxbKFrUcbrqh_jIp3ELsopL_UHFDOE7cDiEe_QFsDvHKhr9Eu7BtlrmYrvn-rbNnGHPYz7xBEN4hBymNBXIrVVNI8HsFQ5fYkqjsUEJuULWBrJJvAJ79AmDfrjzPTZEWp2JBM22T8ps4FxpgyYA6W8KTQ" http://localhost:7001/v1/data
+```
+
+And the result is
+
+```
+Running 30s test @ http://localhost:7001/v1/data
+  4 threads and 800 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   609.32ms  319.81ms   2.00s    70.60%
+    Req/Sec   343.11    236.55     1.10k    62.25%
+  37812 requests in 30.05s, 8.69MB read
+  Socket errors: connect 0, read 0, write 0, timeout 495
+Requests/sec:   1258.26
+Transfer/sec:    296.13KB
+
+```
+
+With pipeline
+
+```
+wrk -t4 -c128 -d30s -H "Authorization: Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgxMjMyODg4MywianRpIjoiQkQyRF80X0FwSlpSRC1PRXJVSjJKdyIsImlhdCI6MTQ5Njk2ODg4MywibmJmIjoxNDk2OTY4NzYzLCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6IlN0ZXZlIiwidXNlcl90eXBlIjoiRU1QTE9ZRUUiLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzIiLCJzY29wZSI6WyJhcGlfYS53IiwiYXBpX2IudyIsImFwaV9jLnciLCJhcGlfZC53Iiwic2VydmVyLmluZm8uciJdfQ.Y7Qcazr3yl4M5667xsberiFUo95YAD8WT00rio1nV_04eemVoxlm5Gnt2xi7IrWIWmqZmdJrzG78lQ4xYY_kbvFDcaGeFdvVXS-wfddmdG2Vug0BNZR7rNKmN9WJfd2jpHNgvFznHyfGbEEUMN4eT5xNqx7qm5FGTv0tBItn1hjtMG_iEeNPDlu6ngglXwxbKFrUcbrqh_jIp3ELsopL_UHFDOE7cDiEe_QFsDvHKhr9Eu7BtlrmYrvn-rbNnGHPYz7xBEN4hBymNBXIrVVNI8HsFQ5fYkqjsUEJuULWBrJJvAJ79AmDfrjzPTZEWp2JBM22T8ps4FxpgyYA6W8KTQ" http://localhost:7001 -s pipeline.lua --latency -- /v1/data 16
+```
+
+And the result is
+
+```
+Running 30s test @ http://localhost:7001
+  4 threads and 128 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   157.33ms  264.93ms   1.37s     0.00%
+    Req/Sec     1.50k     1.60k    5.01k    76.05%
+  Latency Distribution
+     50%    0.00us
+     75%    0.00us
+     90%    0.00us
+     99%    0.00us
+  90112 requests in 30.03s, 20.71MB read
+Requests/sec:   3000.78
+Transfer/sec:    706.24KB
+
+```
+
+
+## Enable TLS
+
+Although above tests have security enabled, but the connection is still http. Let's disable http
+and change the connection to https for all API to API calls.
+
+First, change API B, C, D server.yml to disable http. Leave API A http enabled so that it can be
+called freely from wrk. 
+
+Here is an example of server.yml for API B.
+
+```
+
+# Server configuration
+---
+# This is the default binding address if the service is dockerized.
+ip: 0.0.0.0
+
+# Http port if enableHttp is true.
+httpPort: 7002
+
+# Enable HTTP should be false on official environment.
+enableHttp: false
+
+# Https port if enableHttps is true.
+httpsPort: 7442
+
+# Enable HTTPS should be true on official environment.
+enableHttps: true
+
+# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
+keystoreName: tls/server.keystore
+
+# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
+enableTwoWayTls: false
+
+# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
+truststoreName: tls/server.truststore
+
+# Unique service identifier. Used in service registration and discovery etc.
+serviceId: com.networknt.apib-1.0.0
+
+# Flag to enable service registration. Only be true if running as standalone Java jar.
+enableRegistry: false
+
+```
+
+Note that only enableHttp is changed to false. 
+
+Now we need to change API A and API B config to use https urls.
+
+Here is the api_a.yml
+
+```
+api_b_endpoint: https://localhost:7442/v1/data
+api_c_endpoint: https://localhost:7443/v1/data
+
+```
+
+Here is the api_b.yml
+
+```
+api_d_endpoint: https://localhost:7444/v1/data
+
+```
+
+Now let's restart the servers.
+
+
+
 
 ## Dockerization
 
