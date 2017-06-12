@@ -22,7 +22,7 @@ Another clear trend is standalone Gateway is phasing out in the cloud environmen
 with docker containers as most of the traditional gateway features are replaced 
 by container orchestration tool and docker container management tools. In addition, 
 some of the cross cutting concerns gateway provided are addressed in API frameworks
-like Light-4J.
+like light-4j.
 
 
 This tutorial shows you how to build 4 services chained together one by one. And it will
@@ -40,9 +40,9 @@ Checkout related projects.
 
 ```
 cd ~/networknt
-git clone git@github.com:networknt/swagger-codegen.git
-git clone git@github.com:networknt/light-java-example.git
-git clone git@github.com:networknt/swagger.git
+git clone git@github.com:networknt/light-codegen.git
+git clone git@github.com:networknt/light-example-4j.git
+git clone git@github.com:networknt/model-config.git
 git clone git@github.com:networknt/light-oauth2.git
 git clone git@github.com:networknt/light-docker.git
 
@@ -52,31 +52,32 @@ As we are going to regenerate API A, B, C and D, let's rename ms_chain folder fr
 light-example-4j.
 
 ```
-cd ~/networknt/light-java-example
+cd ~/networknt/light-example-4j/rest
 mv ms_chain ms_chain.bak
-cd ..
+cd ~/networknt
 ```
 
 ## Specifications
 
-Light Java Microservices Framework encourages Design Driven API building and 
+Light-4j Microservices Framework encourages Design Driven API building and 
 [OpenAPI Specification](https://github.com/OAI/OpenAPI-Specification) is the central
 piece to drive the runtime for security and validation. Also, the specification 
 can be used to scaffold a running server project the first time so that developers 
 can focus their efforts on the domain business logic implementation without 
-worrying about how each component wired together.
+worrying about how each component are wired together.
 
 During the service implementation phase, specification might be changed and you can
 regenerate the service codebase again without overwriting your handlers and test
-cases for handlers. 
+cases for handlers. The regeneration is also useful if you want to upgrade to the
+latest version of the frameworks for your project. 
 
-To create swagger specification, the best tool is
+To create OpenAPI(Swagger) specification, the best tool is
 [swagger-editor](http://swagger.io/swagger-editor/) and I have an
-[article](https://networknt.github.io/light-4j/tools/swagger-editor/)
+[article](https://networknt.github.io/light-rest-4j/tools/swagger-editor/)
 in tools section to describe how to use it.
 
-By following the [instructions](https://networknt.github.io/light-4j/tools/swagger-editor/)
-on how to use the editor, let's create four API specifications in swagger repo.
+By following the [instructions](https://networknt.github.io/light-rest-4j/tools/swagger-editor/)
+on how to use the editor, let's create four API specifications in model-config repository.
 
 API A will call API B, API B will call API C, API C will call API D
 
@@ -85,8 +86,8 @@ API A -> API B -> API C -> API D
 ```
 
 Here is the API A swagger.yaml and others can be found at
-[https://github.com/networknt/swagger](https://github.com/networknt/swagger) or swagger
-folder in your workspace. 
+[https://github.com/networknt/model-config](https://github.com/networknt/model-config/tree/master/rest) 
+or model-config/rest folder in your workspace. 
 
 ```
 swagger: '2.0'
@@ -123,6 +124,9 @@ paths:
             type: array
             items:
               type: string
+          examples: {
+            "application/json": ["Message 1","Message 2"]
+          }
       security:
         - a_auth:
           - api_a.w
@@ -142,81 +146,64 @@ As defined in the specification, API A will return a list of stings and it requi
 scope api_a.r or scope api_a.w to access the endpoint /data.
 
 
-## Swagger-Codegen
+## light-codegen
 
-Now we have four API swagger.yaml files available. Let's use swagger-codegen
-to start four projects in light-example-4j/ms_chain. In normal API build, you 
+Now we have four API swagger.yaml files available. Let's use light-codegen
+to start four projects in light-example-4j/rest/ms_chain. In normal API build, you 
 should create a repo for each API.
 
-#### Build Light Java Generator
-
-As [swagger-codegen](https://github.com/swagger-api/swagger-codegen) doesn't
-support Java 8, I have forked it [here](https://github.com/networknt/swagger-codegen).
+#### Build light-codege
 
 The project is cloned to the local already during the prepare stage. Let's build it.
 
 ```
-cd swagger-codegen
+cd light-codegen
 mvn clean install -DskipTests
 ```
 
+#### Prepare Generator Config
+
+Each generator in light-codegen requires several parameters to control how the generator
+works. For more information on how to use generator, please refer [here](https://networknt.github.io/light-codegen/generator/)
+
+For API A, here is the config.json and a copy can be found in the folder 
+model-config/rest/api_a/1.0.0 along with swagger.yaml and swagger.json. 
+
+```
+{
+  "rootPackage": "com.networknt.apia",
+  "handlerPackage":"com.networknt.apia.handler",
+  "modelPackage":"com.networknt.apia.model",
+  "artifactId": "apia",
+  "groupId": "com.networknt",
+  "name": "apia",
+  "version": "1.0.0",
+  "overwriteHandler": true,
+  "overwriteHandlerTest": true,
+  "overwriteModel": true
+}
+```
+
+
 #### Generate first project
 
-Now you have your swagger-codegen built, let's generate a project. Assume that
-swagger, light-example-4j and swagger-codegen are in the same working
-directory ~/networknt and you are in ~/networknt/swagger-codegen now.
+Now you have your light-codegen built, let's generate a project. Assume that
+model-config, light-example-4j and light-codegen are in the same working
+directory ~/networknt and you are in ~/networknt/light-codegen now.
 
 ```
-java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i ../swagger/api_a/swagger.yaml -l light-java -o ../light-java-example/ms_chain/api_a/generated
-
-```
-Here is the generator output.
-
-```
-[main] INFO io.swagger.parser.Swagger20Parser - reading from ../swagger/api_a/swagger.yaml
-[main] WARN io.swagger.codegen.DefaultCodegen - Empty operationId found for path: get /server/info. Renamed to auto-generated operationId: serverInfoGet
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/main/java/io/swagger/handler/DataGetHandler.java
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/test/java/io/swagger/handler/DataGetHandlerTest.java
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/main/java/io/swagger/handler/ServerInfoGetHandler.java
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/test/java/io/swagger/handler/ServerInfoGetHandlerTest.java
-swaggerio.swagger.models.Swagger@dc2e0c3c
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/pom.xml
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/README.md
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/.gitignore
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/Dockerfile
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/.classpath
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/.project
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/main/resources/config/swagger.json
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/main/java/io/swagger/PathHandlerProvider.java
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/test/java/io/swagger/handler/TestServer.java
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/main/resources/META-INF/services/com.networknt.server.HandlerProvider
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/main/resources/META-INF/services/com.networknt.handler.MiddlewareHandler
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/main/resources/META-INF/services/com.networknt.server.StartupHookProvider
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/main/resources/META-INF/services/com.networknt.server.ShutdownHookProvider
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/main/resources/config/server.yml
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/main/resources/config/security.yml
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/main/resources/config/secret.yml
-[main] INFO io.swagger.codegen.DefaultGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/main/resources/config/oauth/primary.crt
-[main] INFO io.swagger.codegen.DefaultGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/main/resources/config/oauth/secondary.crt
-[main] INFO io.swagger.codegen.DefaultGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/main/resources/config/tls/server.keystore
-[main] INFO io.swagger.codegen.DefaultGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/main/resources/config/tls/server.truststore
-[main] INFO io.swagger.codegen.DefaultGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/main/resources/logback.xml
-[main] INFO io.swagger.codegen.DefaultGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/src/test/resources/logback-test.xml
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/.swagger-codegen-ignore
-[main] INFO io.swagger.codegen.AbstractGenerator - writing file /Users/stevehu/networknt/swagger-codegen/../light-java-example/ms_chain/api_a/generated/LICENSE
-
+java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/ms_chain/api_a/generated -m ../model-config/rest/api_a/1.0.0/swagger.json -c ../model-config/rest/api_a/1.0.0/config.json
 ```
 
 #### Build and run the mock API
 
-And now you have a new project created in light-example-4j. Let's build
-it and run the test cases. If everything is OK, start the server.
+And now you have a new project created in light-example-4j/rest/ms_chain/api_a/generated. 
+Let's build it and run the test cases. If everything is OK, start the server.
 
 ```
 cd ..
-cd light-java-example/ms_chain/api_a/generated
-mvn clean install
-mvn exec:exec
+cd light-java-example/rest/ms_chain/api_a/generated
+mvn clean install exec:exec
 ```
 
 Let's test the API A by issuing the following command
@@ -227,20 +214,19 @@ curl localhost:8080/v1/data
 By default the generated response example will be returned. 
 
 ```
-[ "aeiou" ]
+ ["Message 1","Message 2"]
 ```
 
 #### Generate other APIs
 
-Let's kill the API A by Ctrl+C and move to the swagger-codegen folder again. Follow 
-the above steps to generate other APIs. Make sure you are in swagger_codegen
+Let's kill the API A by Ctrl+C and move to the light-codegen folder again. Follow 
+the above steps to generate other APIs. Make sure you are in light_codegen
 directory.
 
 ```
-java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i ../swagger/api_b/swagger.yaml -l light-java -o ../light-java-example/ms_chain/api_b/generated
-java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i ../swagger/api_c/swagger.yaml -l light-java -o ../light-java-example/ms_chain/api_c/generated
-java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i ../swagger/api_d/swagger.yaml -l light-java -o ../light-java-example/ms_chain/api_d/generated
-
+java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/ms_chain/api_b/generated -m ../model-config/rest/api_b/1.0.0/swagger.json -c ../model-config/rest/api_b/1.0.0/config.json
+java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/ms_chain/api_c/generated -m ../model-config/rest/api_c/1.0.0/swagger.json -c ../model-config/rest/api_c/1.0.0/config.json
+java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/ms_chain/api_d/generated -m ../model-config/rest/api_d/1.0.0/swagger.json -c ../model-config/rest/api_d/1.0.0/config.json
 ```
 
 Now you have four APIs generated from four OpenAPI specifications. Let's check
@@ -248,13 +234,13 @@ them in. Note that you might not have write access to this repo, so you can igno
 this step. 
 
 ```
-cd ../light-java-example
+cd ../light-example-4j
 git add .
 git commit -m "checkin 4 apis"
 git push origin master
 ```
 
-## ApiToApi
+## ApiToApi Http
 
 Now these APIs are working if you start them and they will output the mock responses
 generated based on the API specifications. But you have to start them one by one as they
@@ -265,33 +251,33 @@ APIs will be called in a chain.
 
 #### Prepare Environment
 
-Before starting this step, let's create a folder called apitoapi in each sub folder under
-ms_chain and copy everything from generated folder to the apitoapi. We are going to update
-apitoapi folder to have business logic to call another api and change the configuration
-to listen to different port. You can compare between generated and apitoapi to see what has
+Before starting this step, let's create a folder called httpchain in each sub folder under
+ms_chain and copy everything from generated folder to the httpchain. We are going to update
+httpchain folder to have business logic to call another api and change the configuration
+to listen to different port. You can compare between generated and httpchain to see what has
 been changed later on.
 
 ```
-cd ~/networknt/light-java-example/ms_chain/api_a
-cp -r generated apitoapi
-cd ~/networknt/light-java-example/ms_chain/api_b
-cp -r generated apitoapi
-cd ~/networknt/light-java-example/ms_chain/api_b
-cp -r generated apitoapi
-cd ~/networknt/light-java-example/ms_chain/api_d
-cp -r generated apitoapi
+cd ~/networknt/light-example-4j/rest/ms_chain/api_a
+cp -r generated httpchain
+cd ~/networknt/light-example-4j/rest/ms_chain/api_b
+cp -r generated httpchain
+cd ~/networknt/light-example-4j/rest/ms_chain/api_c
+cp -r generated httpchain
+cd ~/networknt/light-example-4j/rest/ms_chain/api_d
+cp -r generated httpchain
 
 ```
 
-Now we have apitoapi folder copied from generated and all updates in this step will be
-in apitoapi folder. 
+Now we have httpchain folder copied from generated and all updates in this step will be
+in httpchain folder. 
 
 #### API D
 Let's take a look at the PathHandlerProvider.java in
-ms_chain/api_d/apitoapi/src/main/java/io/swagger/
+ms_chain/api_d/httpchain/src/main/java/com/networknt/apid
 
 ```
-package io.swagger;
+package com.networknt.apid;
 
 import com.networknt.config.Config;
 import com.networknt.server.HandlerProvider;
@@ -300,14 +286,20 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Methods;
 import com.networknt.info.ServerInfoGetHandler;
-import io.swagger.handler.*;
+import com.networknt.health.HealthGetHandler;
+import com.networknt.apid.handler.*;
 
 public class PathHandlerProvider implements HandlerProvider {
     @Override
     public HttpHandler getHandler() {
         return Handlers.routing()
+        
             .add(Methods.GET, "/v1/data", new DataGetHandler())
+        
+            .add(Methods.GET, "/v1/health", new HealthGetHandler())
+        
             .add(Methods.GET, "/v1/server/info", new ServerInfoGetHandler())
+        
         ;
     }
 }
@@ -318,32 +310,30 @@ instance. Because we only have one endpoint /v1/data@get there is only one route
 to the handler chain. And there is a handler generated in the handler subfolder to
 handle request that has the url matched to this endpoint. The /server/info is injected 
 to output the server runtime information on all the components and configurations. It
-will be included in every API/service.
+will be included in every API/service. /health is another injected endpoint to output
+server health check info with 200 response code and "OK" as the body. It should be
+disabled in most of the case, but Kubernetes needs it. 
 
-The generated handler is named "DataGetHandler" and it returns example response generated
-based on the swagger specification. Here is the generated handler code. 
+The generated handler is named "DataGetHandler" and it returns example response defined
+in swagger specification. Here is the generated handler code. 
  
 ```
-package io.swagger.handler;
+
+package com.networknt.apid.handler;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.commons.lang3.StringEscapeUtils;
 
 public class DataGetHandler implements HttpHandler {
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        Map<String, Object> examples = new HashMap<>();
-        examples.put("application/json", StringEscapeUtils.unescapeHtml4("[ &quot;aeiou&quot; ]"));
-        if(examples.size() > 0) {
+        
             exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-            exchange.getResponseSender().send((String)examples.get("application/json"));
-        } else {
-            exchange.endExchange();
-        }
+             exchange.getResponseSender().send(" [\n                                \"Message 1\",\n                                \"Message 2\"\n                            ]");
+        
     }
 }
 ```
@@ -352,7 +342,7 @@ Let's update it to an array of strings that indicates the response comes from AP
 
 
 ```
-package io.swagger.handler;
+package com.networknt.apid.handler;
 
 import com.networknt.config.Config;
 import io.undertow.server.HttpHandler;
@@ -363,10 +353,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.StringEscapeUtils;
 
 public class DataGetHandler implements HttpHandler {
-
+    @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
         List<String> messages = new ArrayList<String>();
         messages.add("API D: Message 1");
@@ -380,7 +369,7 @@ In order to start all servers at the same time, let's update server.yml to user
 port 7004 instead of default 8080 for http and 7444 for https.
 
 The server.yml is located at
-~/networknt/light-example-4j/ms_chain/api_d/apitoapi/src/main/resources/config
+~/networknt/light-example-4j/rest/ms_chain/api_d/httpchain/src/main/resources/config
 
 ```
 # Server configuration
@@ -410,23 +399,22 @@ enableTwoWayTls: false
 truststoreName: tls/server.truststore
 
 # Unique service identifier. Used in service registration and discovery etc.
-serviceId: io.swagger.swagger-light-java-1.0.0
+serviceId: com.networknt.apid-1.0.0
 
 # Flag to enable service registration. Only be true if running as standalone Java jar.
 enableRegistry: false
-
 ```
 
 
 Now, let's build it and start the server. 
 ```
-cd ~/networknt/light-java-example/ms_chain/api_d/apitoapi
-mvn clean package exec:exec
+cd ~/networknt/light-example-4j/rest/ms_chain/api_d/httpchain
+mvn clean install exec:exec
 ```
 Test it with curl.
 
 ```
-curl localhost:8080/v1/data
+curl localhost:7004/v1/data
 ```
 And the result is
 
@@ -446,11 +434,12 @@ certificate and we don't want to verify the domain.
 
 #### API C
 Let's leave API D running and update API C DataGetHandler in 
-~/networknt/light-example-4j/ms_chain/api_c/apitoapi
+~/networknt/light-example-4j/rest/ms_chain/api_c/httpchain
 
 
 ```
-package io.swagger.handler;
+
+package com.networknt.apic.handler;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.networknt.client.Client;
@@ -458,19 +447,22 @@ import com.networknt.config.Config;
 import com.networknt.exception.ClientException;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import io.undertow.util.HttpString;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class DataGetHandler implements HttpHandler {
-
     static String CONFIG_NAME = "api_c";
-    static String apidUrl = (String)Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_d_endpoint");
+    static String apidUrl = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_d_endpoint");
 
+    @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
         List<String> list = new ArrayList<String>();
         try {
@@ -494,7 +486,6 @@ public class DataGetHandler implements HttpHandler {
         exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(list));
     }
 }
-
 ```
 
 Now let's change the server.yml to have http port 7003 and https port 7443
@@ -548,7 +539,7 @@ api_d_endpoint: "http://localhost:7004/v1/data"
 Start API C server and test the endpoint /v1/data
 
 ```
-cd ~/networknt/light-java-example/ms_chain/api_c/apitoapi
+cd ~/networknt/light-example-4j/rest/ms_chain/api_c/httpchain
 mvn clean install exec:exec
 ```
 From another terminal window run:
@@ -562,6 +553,13 @@ And the result is
 ["API D: Message 1","API D: Message 2","API C: Message 1","API C: Message 2"]
 ```
 
+Access https port should have the same result.
+
+```
+curl -k https://localhost:7443/v1/data
+
+```
+
 #### API B
 
 Let's keep API C and API D running. The next step is to complete API B. API B 
@@ -570,7 +568,8 @@ will call API C to fulfill its request.
 Now let's update the generated DataGetHandler.java to this.
 
 ```
-package io.swagger.handler;
+
+package com.networknt.apib.handler;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.networknt.client.Client;
@@ -578,18 +577,22 @@ import com.networknt.config.Config;
 import com.networknt.exception.ClientException;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import io.undertow.util.HttpString;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class DataGetHandler implements HttpHandler {
     static String CONFIG_NAME = "api_b";
-    static String apidUrl = (String)Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_c_endpoint");
+    static String apidUrl = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_c_endpoint");
 
+    @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
         List<String> list = new ArrayList<String>();
         try {
@@ -667,7 +670,7 @@ api_c_endpoint: "http://localhost:7003/v1/data"
 Start API B server and test the endpoint /v1/data
 
 ```
-cd ~/networknt/light-java-example/ms_chain/api_b/apitoapi
+cd ~/networknt/light-example-4j/rest/ms_chain/api_b/httpchain
 mvn clean install exec:exec
 ```
 From another terminal window run:
@@ -681,6 +684,13 @@ And the result is
 ["API D: Message 1","API D: Message 2","API C: Message 1","API C: Message 2","API B: Message 1","API B: Message 2"]
 ```
 
+Here is the https port and the result is the same.
+
+```
+curl -k https://localhost:7442/v1/data
+
+```
+
 
 #### API A
 
@@ -688,7 +698,7 @@ API A will call API B to fulfill its request. Now let's update the
 generated DataGetHandler.java code to
 
 ```
-package io.swagger.handler;
+package com.networknt.apia.handler;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.networknt.client.Client;
@@ -696,18 +706,22 @@ import com.networknt.config.Config;
 import com.networknt.exception.ClientException;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import io.undertow.util.HttpString;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class DataGetHandler implements HttpHandler {
     static String CONFIG_NAME = "api_a";
-    static String apidUrl = (String)Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_b_endpoint");
+    static String apidUrl = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_b_endpoint");
 
+    @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
         List<String> list = new ArrayList<String>();
         try {
@@ -732,7 +746,6 @@ public class DataGetHandler implements HttpHandler {
         exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(list));
     }
 }
-
 ```
 
 Now let's change the server.yml to have http port 7001 and https port 7441
@@ -786,7 +799,7 @@ api_b_endpoint: "http://localhost:7002/v1/data"
 Start API A server and test the endpoint /v1/data
 
 ```
-cd ~/networknt/light-java-example/ms_chain/api_a/apitoapi
+cd ~/networknt/light-example-4j/rest/ms_chain/api_a/httpchain
 mvn clean install exec:exec
 ```
 From another terminal window run:
@@ -800,11 +813,15 @@ And the result is
 ["API D: Message 1","API D: Message 2","API C: Message 1","API C: Message 2","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
 ```
 
+The https port and the result should be the same.
 
+```
+ curl -k https://localhost:7441/v1/data
+```
 At this moment, we have all four APIs completed and A is calling B, B is calling C and
-C is calling D. 
+C is calling D using Http connections.
 
-## Performance without security
+## Performance with Http
 
 Now let's see if these servers are performing with
 [wrk](https://github.com/wg/wrk). To learn how to use it, please see my
@@ -837,6 +854,340 @@ Transfer/sec:      2.18MB
 ```
 
 Before starting the next step, please kill all four instances by Ctrl+C.
+
+## ApiToApi Https
+
+Now these APIs are working as a chain with Http connection. In this step, we are going to
+change the connection to Https and see what is the performance difference. 
+
+#### Prepare Environment
+
+Before starting this step, let's create a folder called httpschain in each sub folder under
+ms_chain and copy everything from httpchain folder to the httpschain. We are going to update
+httpschain folder to have connections switched to Https by changing the urls.
+
+```
+cd ~/networknt/light-example-4j/rest/ms_chain/api_a
+cp -r httpchain httpschain
+cd ~/networknt/light-example-4j/rest/ms_chain/api_b
+cp -r httpchain httpschain
+cd ~/networknt/light-example-4j/rest/ms_chain/api_c
+cp -r httpchain httpschain
+cd ~/networknt/light-example-4j/rest/ms_chain/api_d
+cp -r httpchain httpschain
+
+```
+
+Now we have httpschain folder copied from httpchain and all updates in this step will be
+in httpschain folder. 
+
+#### API D
+
+Nothing needs to be changed in API D as it listens to both http and https ports. 
+Just start it.
+
+```
+cd ~/networknt/light-example-4j/rest/ms_chain/api_d/httpschain
+mvn clean install exec:exec
+```
+
+
+#### API C
+Let's leave API D running and update API C api_c.yml to use https url instead of
+http. 
+
+Locate api_c.yml in src/main/resources/config folder.
+
+```
+api_d_endpoint: "https://localhost:7444/v1/data"
+
+```
+
+
+Start API C server and test the endpoint /v1/data
+
+```
+cd ~/networknt/light-example-4j/rest/ms_chain/api_c/httpschain
+mvn clean install exec:exec
+```
+From another terminal window run:
+
+```
+curl localhost:7003/v1/data
+```
+And the result is
+
+```
+["API D: Message 1","API D: Message 2","API C: Message 1","API C: Message 2"]
+```
+
+Access https port should have the same result.
+
+```
+curl -k https://localhost:7443/v1/data
+
+```
+
+#### API B
+
+Let's keep API C and API D running. The next step is to complete API B. API B 
+will call API C to fulfill its request. 
+
+Now let's update the generated DataGetHandler.java to this.
+
+```
+
+package com.networknt.apib.handler;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.networknt.client.Client;
+import com.networknt.config.Config;
+import com.networknt.exception.ClientException;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.HttpString;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class DataGetHandler implements HttpHandler {
+    static String CONFIG_NAME = "api_b";
+    static String apidUrl = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_c_endpoint");
+
+    @Override
+    public void handleRequest(HttpServerExchange exchange) throws Exception {
+        List<String> list = new ArrayList<String>();
+        try {
+            CloseableHttpClient client = Client.getInstance().getSyncClient();
+            HttpGet httpGet = new HttpGet(apidUrl);
+            CloseableHttpResponse response = client.execute(httpGet);
+            int responseCode = response.getStatusLine().getStatusCode();
+            if(responseCode != 200){
+                throw new Exception("Failed to call API C: " + responseCode);
+            }
+            List<String> apicList = (List<String>) Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
+                    new TypeReference<List<String>>(){});
+            list.addAll(apicList);
+        } catch (ClientException e) {
+            throw new Exception("Client Exception: ", e);
+        } catch (IOException e) {
+            throw new Exception("IOException:", e);
+        }
+        // now add API B specific messages
+        list.add("API B: Message 1");
+        list.add("API B: Message 2");
+        exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(list));
+    }
+}
+```
+
+Now let's change the server.yml to have http port 7002 and https port 7442
+
+```
+# Server configuration
+---
+# This is the default binding address if the service is dockerized.
+ip: 0.0.0.0
+
+# Http port if enableHttp is true.
+httpPort: 7002
+
+# Enable HTTP should be false on official environment.
+enableHttp: true
+
+# Https port if enableHttps is true.
+httpsPort: 7442
+
+# Enable HTTPS should be true on official environment.
+enableHttps: true
+
+# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
+keystoreName: tls/server.keystore
+
+# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
+enableTwoWayTls: false
+
+# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
+truststoreName: tls/server.truststore
+
+# Unique service identifier. Used in service registration and discovery etc.
+serviceId: io.swagger.swagger-light-java-1.0.0
+
+# Flag to enable service registration. Only be true if running as standalone Java jar.
+enableRegistry: false
+
+```
+
+API B needs to have the url of API C in order to call it. Let's put it in a config file for
+now and move to service discovery later.
+
+Create api_b.yml in src/main/resources/config folder.
+
+```
+api_c_endpoint: "http://localhost:7003/v1/data"
+
+```
+
+
+Start API B server and test the endpoint /v1/data
+
+```
+cd ~/networknt/light-example-4j/rest/ms_chain/api_b/httpchain
+mvn clean install exec:exec
+```
+From another terminal window run:
+
+```
+curl localhost:7002/v1/data
+```
+And the result is
+
+```
+["API D: Message 1","API D: Message 2","API C: Message 1","API C: Message 2","API B: Message 1","API B: Message 2"]
+```
+
+Here is the https port and the result is the same.
+
+```
+curl -k https://localhost:7442/v1/data
+
+```
+
+
+#### API A
+
+API A will call API B to fulfill its request. Now let's update the 
+generated DataGetHandler.java code to
+
+```
+package com.networknt.apia.handler;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.networknt.client.Client;
+import com.networknt.config.Config;
+import com.networknt.exception.ClientException;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.HttpString;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class DataGetHandler implements HttpHandler {
+    static String CONFIG_NAME = "api_a";
+    static String apidUrl = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_b_endpoint");
+
+    @Override
+    public void handleRequest(HttpServerExchange exchange) throws Exception {
+        List<String> list = new ArrayList<String>();
+        try {
+            CloseableHttpClient client = Client.getInstance().getSyncClient();
+            HttpGet httpGet = new HttpGet(apidUrl);
+            CloseableHttpResponse response = client.execute(httpGet);
+            int responseCode = response.getStatusLine().getStatusCode();
+            if(responseCode != 200){
+                throw new Exception("Failed to call API B: " + responseCode);
+            }
+            List<String> apicList = (List<String>) Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
+                    new TypeReference<List<String>>(){});
+            list.addAll(apicList);
+        } catch (ClientException e) {
+            throw new Exception("Client Exception: ", e);
+        } catch (IOException e) {
+            throw new Exception("IOException:", e);
+        }
+        // now add API B specific messages
+        list.add("API A: Message 1");
+        list.add("API A: Message 2");
+        exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(list));
+    }
+}
+```
+
+Now let's change the server.yml to have http port 7001 and https port 7441
+
+```
+# Server configuration
+---
+# This is the default binding address if the service is dockerized.
+ip: 0.0.0.0
+
+# Http port if enableHttp is true.
+httpPort: 7001
+
+# Enable HTTP should be false on official environment.
+enableHttp: true
+
+# Https port if enableHttps is true.
+httpsPort: 7441
+
+# Enable HTTPS should be true on official environment.
+enableHttps: true
+
+# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
+keystoreName: tls/server.keystore
+
+# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
+enableTwoWayTls: false
+
+# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
+truststoreName: tls/server.truststore
+
+# Unique service identifier. Used in service registration and discovery etc.
+serviceId: io.swagger.swagger-light-java-1.0.0
+
+# Flag to enable service registration. Only be true if running as standalone Java jar.
+enableRegistry: false
+
+```
+
+API A needs to have the url of API in order to call it. Let's put it in a config file for
+now and move to service discovery later.
+
+Create api_a.yml in src/main/resources/config folder.
+
+```
+api_b_endpoint: "http://localhost:7002/v1/data"
+
+```
+
+
+Start API A server and test the endpoint /v1/data
+
+```
+cd ~/networknt/light-example-4j/rest/ms_chain/api_a/httpchain
+mvn clean install exec:exec
+```
+From another terminal window run:
+
+```
+curl localhost:7002/v1/data
+```
+And the result is
+
+```
+["API D: Message 1","API D: Message 2","API C: Message 1","API C: Message 2","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
+```
+
+The https port and the result should be the same.
+
+```
+ curl -k https://localhost:7441/v1/data
+```
+At this moment, we have all four APIs completed and A is calling B, B is calling C and
+C is calling D using Http connections.
 
 ## Docker Compose
 
