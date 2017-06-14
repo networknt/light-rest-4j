@@ -16,6 +16,7 @@
 
 package com.networknt.swagger;
 
+import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.status.Status;
@@ -32,6 +33,8 @@ import io.undertow.util.HttpString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -48,8 +51,6 @@ public class SwaggerHandler implements MiddlewareHandler {
 
     static final String STATUS_INVALID_REQUEST_PATH = "ERR10007";
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
-
-    public static AttachmentKey<SwaggerOperation> SWAGGER_OPERATION = AttachmentKey.create(SwaggerOperation.class);
 
     private volatile HttpHandler next;
 
@@ -83,11 +84,13 @@ public class SwaggerHandler implements MiddlewareHandler {
             return;
         }
 
+        // This handler can identify the swaggerOperation and endpoint only. Other info will be added by JwtVerifyHandler.
         final SwaggerOperation swaggerOperation = new SwaggerOperation(swaggerPathString, swaggerPath, httpMethod, operation);
         String endpoint = swaggerPathString.normalised() + "@" + httpMethod.toString().toLowerCase();
-        swaggerOperation.setEndpoint(endpoint);
-        exchange.getRequestHeaders().add(new HttpString(Constants.ENDPOINT), endpoint);
-        exchange.putAttachment(SWAGGER_OPERATION, swaggerOperation);
+        Map<String, Object> auditInfo = new HashMap<>();
+        auditInfo.put(Constants.ENDPOINT, endpoint);
+        auditInfo.put(Constants.SWAGGER_OPERATION, swaggerOperation);
+        exchange.putAttachment(AuditHandler.AUDIT_INFO, auditInfo);
 
         next.handleRequest(exchange);
     }

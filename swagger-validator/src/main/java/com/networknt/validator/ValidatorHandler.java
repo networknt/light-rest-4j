@@ -16,16 +16,20 @@
 
 package com.networknt.validator;
 
+import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.status.Status;
 import com.networknt.swagger.*;
+import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 
 /**
@@ -47,19 +51,20 @@ public class ValidatorHandler implements MiddlewareHandler {
     private volatile HttpHandler next;
 
     RequestValidator requestValidator;
-    ResponseValidator responseValidator;
 
     public ValidatorHandler() {
         final SchemaValidator schemaValidator = new SchemaValidator(SwaggerHelper.swagger);
         this.requestValidator = new RequestValidator(schemaValidator);
-        this.responseValidator = new ResponseValidator(schemaValidator);
     }
 
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
         final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI());
-
-        SwaggerOperation swaggerOperation = exchange.getAttachment(SwaggerHandler.SWAGGER_OPERATION);
+        SwaggerOperation swaggerOperation = null;
+        Map<String, Object> auditInfo = exchange.getAttachment(AuditHandler.AUDIT_INFO);
+        if(auditInfo != null) {
+            swaggerOperation = (SwaggerOperation)auditInfo.get(Constants.SWAGGER_OPERATION);
+        }
         if(swaggerOperation == null) {
             Status status = new Status(STATUS_MISSING_SWAGGER_OPERATION);
             exchange.setStatusCode(status.getStatusCode());
@@ -72,16 +77,6 @@ public class ValidatorHandler implements MiddlewareHandler {
             exchange.setStatusCode(status.getStatusCode());
             exchange.getResponseSender().send(status.toString());
             return;
-        }
-
-        if(config.enableResponseValidator) {
-            exchange.addExchangeCompleteListener((exchange1, nextListener) -> {
-                Status status1 = responseValidator.validateResponse(exchange1, swaggerOperation);
-                if(status1 != null) {
-                    logger.error("Response error", status1);
-                }
-                nextListener.proceed();
-            });
         }
 
         next.handleRequest(exchange);

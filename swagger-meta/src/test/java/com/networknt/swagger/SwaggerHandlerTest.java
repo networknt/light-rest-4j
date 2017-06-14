@@ -16,6 +16,7 @@
 
 package com.networknt.swagger;
 
+import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
 import com.networknt.status.Status;
 import io.undertow.Handlers;
@@ -36,6 +37,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 /**
  * Created by steve on 30/09/16.
@@ -78,11 +81,11 @@ public class SwaggerHandlerTest {
         return Handlers.routing()
                 .add(Methods.GET, "/get", exchange -> exchange.getResponseSender().send("get"))
                 .add(Methods.POST, "/v2/pet", exchange -> {
-                    SwaggerOperation swaggerOperation = exchange.getAttachment(SwaggerHandler.SWAGGER_OPERATION);
-                    if(swaggerOperation != null) {
-                        exchange.getResponseSender().send("withOperation");
+                    Map<String, Object> auditInfo = exchange.getAttachment(AuditHandler.AUDIT_INFO);
+                    if(auditInfo != null) {
+                        exchange.getResponseSender().send("withAuditInfo");
                     } else {
-                        exchange.getResponseSender().send("withoutOperation");
+                        exchange.getResponseSender().send("withoutAuditInfo");
                     }
                 })
                 .add(Methods.GET, "/v2/pet", exchange -> exchange.getResponseSender().send("get"));
@@ -142,7 +145,7 @@ public class SwaggerHandlerTest {
             if(statusCode == 200) {
                 String s = IOUtils.toString(response.getEntity().getContent(), "utf8");
                 Assert.assertNotNull(s);
-                Assert.assertEquals("withOperation", s);
+                Assert.assertEquals("withAuditInfo", s);
             }
         } catch (Exception e) {
             e.printStackTrace();

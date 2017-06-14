@@ -864,7 +864,7 @@ change the connection to Https and see what is the performance difference.
 
 Before starting this step, let's create a folder called httpschain in each sub folder under
 ms_chain and copy everything from httpchain folder to the httpschain. We are going to update
-httpschain folder to have connections switched to Https by changing the urls.
+httpschain folder to have connections switched to Https by changing the urls in config files.
 
 ```
 cd ~/networknt/light-example-4j/rest/ms_chain/api_a
@@ -883,8 +883,136 @@ in httpschain folder.
 
 #### API D
 
-Nothing needs to be changed in API D as it listens to both http and https ports. 
-Just start it.
+As we have update the the server.yml to enable both http and https so the server config for
+API D is ready. However, we only tried to access the API D https port through curl with
+security disabled. Java client access to API through https is not an easy task so we are
+going to complete the test cases to test API D TLS connection with client module first. 
+
+locate DataGetHandlerTest from src/test/com/networknt/apid/handler folder and change the
+content to. 
+
+```
+package com.networknt.apid.handler;
+
+import com.networknt.client.Client;
+import com.networknt.server.Server;
+import com.networknt.exception.ClientException;
+import com.networknt.exception.ApiException;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.methods.*;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.junit.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+
+
+public class DataGetHandlerTest {
+    @ClassRule
+    public static TestServer server = TestServer.getInstance();
+
+    static final Logger logger = LoggerFactory.getLogger(DataGetHandlerTest.class);
+
+    @Test
+    public void testDataGetHandlerHttp() throws ClientException, ApiException {
+        CloseableHttpClient client = Client.getInstance().getSyncClient();
+        HttpGet httpGet = new HttpGet ("http://localhost:7004/v1/data");
+        try {
+            CloseableHttpResponse response = client.execute(httpGet);
+            int statusCode = response.getStatusLine().getStatusCode();
+            String body = IOUtils.toString(response.getEntity().getContent(), "utf8");
+            Assert.assertEquals(200, statusCode);
+            Assert.assertNotNull(body);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testDataGetHandlerHttps() throws ClientException, ApiException {
+        CloseableHttpClient client = Client.getInstance().getSyncClient();
+        HttpGet httpGet = new HttpGet ("https://localhost:7444/v1/data");
+        try {
+            CloseableHttpResponse response = client.execute(httpGet);
+            int statusCode = response.getStatusLine().getStatusCode();
+            String body = IOUtils.toString(response.getEntity().getContent(), "utf8");
+            Assert.assertEquals(200, statusCode);
+            Assert.assertNotNull(body);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+}
+
+```
+
+As you have noticed, a new test case testDataGetHandlerHttps has been added and it access
+the https url. If this test case works, that means API C should connect to API D with TLS
+connection. 
+
+To make the test case works, you need to add client.yml in src/test/resources/config folder
+
+```
+description: client configuration, all timing is milli-second
+sync:
+  maxConnectionTotal: 100
+  maxConnectionPerRoute: 10
+  routes:
+    api.google.com: 20
+    api.facebook.com: 10
+  timeout: 10000
+  keepAlive: 15000
+async:
+  maxConnectionTotal: 100
+  maxConnectionPerRoute: 10
+  routes:
+    api.google.com: 20
+    api.facebook.com: 10
+  reactor:
+    ioThreadCount: 1
+    connectTimeout: 10000
+    soTimeout: 10000
+  timeout: 10000
+  keepAlive: 15000
+tls:
+  verifyHostname: false
+  loadTrustStore: true
+  trustStore: tls/client.truststore
+  trustPass: password
+  loadKeyStore: true
+  keyStore: tls/client.keystore
+  keyPass: password
+oauth:
+  tokenRenewBeforeExpired: 600000
+  expiredRefreshRetryDelay: 5000
+  earlyRefreshRetryDelay: 30000
+  server_url: http://localhost:8888
+  authorization_code:
+    uri: "/oauth2/token"
+    client_id: 3798d583-275c-47d7-bf46-a3c436846336
+    client_secret: CeHJjNRjRiS1dH1qqme2LQ
+    redirect_uri: https://localhost:8080/authorization_code
+    scope:
+    - customer.r
+    - customer.w
+  client_credentials:
+    uri: "/oauth2/token"
+    client_id: 6e9d1db3-2feb-4c1f-a5ad-9e93ae8ca59d
+    client_secret: sQesTWAnTwaw-Nn0oK35GA
+    scope:
+    - account.r
+    - account.w
+
+```
+
+In above client.yml file, it refers to client.truststore and client.keystore
+
+These files are part of the client module and they are not added automatically.  
 
 ```
 cd ~/networknt/light-example-4j/rest/ms_chain/api_d/httpschain

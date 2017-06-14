@@ -16,6 +16,7 @@
 
 package com.networknt.security;
 
+import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.status.Status;
@@ -36,6 +37,7 @@ import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -76,14 +78,12 @@ public class JwtVerifyHandler implements MiddlewareHandler {
         if(jwt != null) {
             try {
                 JwtClaims claims = JwtHelper.verifyJwt(jwt);
-                // put claims into request header so that scope can be verified per endpoint.
-                headerMap.add(new HttpString(Constants.CLIENT_ID), claims.getStringClaimValue(Constants.CLIENT_ID));
-                headerMap.add(new HttpString(Constants.USER_ID), claims.getStringClaimValue(Constants.USER_ID));
-                headerMap.add(new HttpString(Constants.SCOPE), claims.getStringListClaimValue(Constants.SCOPE).toString());
                 if(config != null && (Boolean)config.get(ENABLE_VERIFY_SCOPE) && SwaggerHelper.swagger != null) {
-                    Operation operation;
-                    SwaggerOperation swaggerOperation = exchange.getAttachment(SwaggerHandler.SWAGGER_OPERATION);
-                    if(swaggerOperation == null) {
+                    Operation operation = null;
+                    Map<String, Object> auditInfo = exchange.getAttachment(AuditHandler.AUDIT_INFO);
+                    // In normal case, the auditInfo shouldn't be null as it is created by SwaggerHandler with
+                    // endpoint and swaggerOperation available. This handler will enrich the auditInfo.
+                    if(auditInfo == null) {
                         final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI());
                         final Optional<NormalisedPath> maybeApiPath = SwaggerHelper.findMatchingApiPath(requestPath);
                         if (!maybeApiPath.isPresent()) {
@@ -105,13 +105,21 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                             exchange.getResponseSender().send(status.toString());
                             return;
                         }
-                        swaggerOperation = new SwaggerOperation(swaggerPathString, swaggerPath, httpMethod, operation);
-                        swaggerOperation.setEndpoint(swaggerPathString.normalised() + "@" + httpMethod);
-                        swaggerOperation.setClientId(claims.getStringClaimValue(Constants.CLIENT_ID));
-                        exchange.putAttachment(SwaggerHandler.SWAGGER_OPERATION, swaggerOperation);
+                        SwaggerOperation swaggerOperation = new SwaggerOperation(swaggerPathString, swaggerPath, httpMethod, operation);
+                        auditInfo = new HashMap<>();
+                        auditInfo.put(Constants.SWAGGER_OPERATION, swaggerOperation);
+                        auditInfo.put(Constants.ENDPOINT, swaggerPathString.normalised() + "@" + httpMethod);
+                        auditInfo.put(Constants.CLIENT_ID, claims.getStringClaimValue(Constants.CLIENT_ID));
+                        auditInfo.put(Constants.USER_ID, claims.getStringClaimValue(Constants.USER_ID));
+                        exchange.putAttachment(AuditHandler.AUDIT_INFO, auditInfo);
                     } else {
-                        operation = swaggerOperation.getOperation();
-                        swaggerOperation.setClientId(claims.getStringClaimValue(Constants.CLIENT_ID));
+                        SwaggerOperation swaggerOperation = (SwaggerOperation)auditInfo.get(Constants.SWAGGER_OPERATION);
+                        if(swaggerOperation != null) {
+                            operation = swaggerOperation.getOperation();
+                        }
+                        // enrich the auditInfo map with info from JWT.
+                        auditInfo.put(Constants.CLIENT_ID, claims.getStringClaimValue(Constants.CLIENT_ID));
+                        auditInfo.put(Constants.USER_ID, claims.getStringClaimValue(Constants.USER_ID));
                     }
 
                     // is there a scope token
@@ -122,7 +130,7 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                         try {
                             JwtClaims scopeClaims = JwtHelper.verifyJwt(scopeJwt);
                             secondaryScopes = scopeClaims.getStringListClaimValue("scope");
-                            headerMap.add(new HttpString(Constants.SCOPE_CLIENT_ID), scopeClaims.getStringClaimValue(Constants.CLIENT_ID));
+                            auditInfo.put(Constants.SCOPE_CLIENT_ID, scopeClaims.getStringClaimValue(Constants.CLIENT_ID));
                         } catch (InvalidJwtException | MalformedClaimException e) {
                             logger.error("InvalidJwtException", e);
                             Status status = new Status(STATUS_INVALID_SCOPE_TOKEN);
