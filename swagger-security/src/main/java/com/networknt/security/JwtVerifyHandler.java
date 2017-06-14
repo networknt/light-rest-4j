@@ -78,12 +78,19 @@ public class JwtVerifyHandler implements MiddlewareHandler {
         if(jwt != null) {
             try {
                 JwtClaims claims = JwtHelper.verifyJwt(jwt);
+                Map<String, Object> auditInfo = exchange.getAttachment(AuditHandler.AUDIT_INFO);
+                // In normal case, the auditInfo shouldn't be null as it is created by SwaggerHandler with
+                // endpoint and swaggerOperation available. This handler will enrich the auditInfo.
+                if(auditInfo == null) {
+                    auditInfo = new HashMap<>();
+                    auditInfo.put(Constants.CLIENT_ID, claims.getStringClaimValue(Constants.CLIENT_ID));
+                    auditInfo.put(Constants.USER_ID, claims.getStringClaimValue(Constants.USER_ID));
+                    exchange.putAttachment(AuditHandler.AUDIT_INFO, auditInfo);
+                }
                 if(config != null && (Boolean)config.get(ENABLE_VERIFY_SCOPE) && SwaggerHelper.swagger != null) {
                     Operation operation = null;
-                    Map<String, Object> auditInfo = exchange.getAttachment(AuditHandler.AUDIT_INFO);
-                    // In normal case, the auditInfo shouldn't be null as it is created by SwaggerHandler with
-                    // endpoint and swaggerOperation available. This handler will enrich the auditInfo.
-                    if(auditInfo == null) {
+                    SwaggerOperation swaggerOperation = (SwaggerOperation)auditInfo.get(Constants.SWAGGER_OPERATION);
+                    if(swaggerOperation == null) {
                         final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI());
                         final Optional<NormalisedPath> maybeApiPath = SwaggerHelper.findMatchingApiPath(requestPath);
                         if (!maybeApiPath.isPresent()) {
@@ -105,21 +112,11 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                             exchange.getResponseSender().send(status.toString());
                             return;
                         }
-                        SwaggerOperation swaggerOperation = new SwaggerOperation(swaggerPathString, swaggerPath, httpMethod, operation);
-                        auditInfo = new HashMap<>();
+                        swaggerOperation = new SwaggerOperation(swaggerPathString, swaggerPath, httpMethod, operation);
                         auditInfo.put(Constants.SWAGGER_OPERATION, swaggerOperation);
                         auditInfo.put(Constants.ENDPOINT, swaggerPathString.normalised() + "@" + httpMethod);
-                        auditInfo.put(Constants.CLIENT_ID, claims.getStringClaimValue(Constants.CLIENT_ID));
-                        auditInfo.put(Constants.USER_ID, claims.getStringClaimValue(Constants.USER_ID));
-                        exchange.putAttachment(AuditHandler.AUDIT_INFO, auditInfo);
                     } else {
-                        SwaggerOperation swaggerOperation = (SwaggerOperation)auditInfo.get(Constants.SWAGGER_OPERATION);
-                        if(swaggerOperation != null) {
-                            operation = swaggerOperation.getOperation();
-                        }
-                        // enrich the auditInfo map with info from JWT.
-                        auditInfo.put(Constants.CLIENT_ID, claims.getStringClaimValue(Constants.CLIENT_ID));
-                        auditInfo.put(Constants.USER_ID, claims.getStringClaimValue(Constants.USER_ID));
+                        operation = swaggerOperation.getOperation();
                     }
 
                     // is there a scope token
