@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+## 1.3.3 - 2017-06-14
+### Added
+
+### Changed
+- fixes #11 client_id and user_id are not populated when auditInfo is null
+- Upgrade to light-4j 1.3.3
+
 ## 1.3.2 - 2017-06-14
 ### Added
 
