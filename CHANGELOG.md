@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+## 1.3.2 - 2017-06-14
+### Added
+
+### Changed
+- Fixes #9 remove response validation from config and handler
+- Fixes #8 populate auditInfo from swagger-meta and swagger-security for metrics
+- Fixes #10 upgrade to json-schema-validator 0.1.7
+- Upgrade to light-4j 1.3.2
+
 ## 1.3.1 - 2017-06-03
 ### Added
 
