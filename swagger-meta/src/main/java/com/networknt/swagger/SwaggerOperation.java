@@ -35,8 +35,6 @@ public class SwaggerOperation {
     private final Path pathObject;
     private final HttpMethod method;
     private final Operation operation;
-    private String endpoint;
-    private String clientId;
 
     public SwaggerOperation(final NormalisedPath pathString, final Path pathObject,
                             final HttpMethod method, final Operation operation) {
@@ -75,19 +73,4 @@ public class SwaggerOperation {
         return operation;
     }
 
-    public String getEndpoint() {
-        return endpoint;
-    }
-
-    public void setEndpoint(String endpoint) {
-        this.endpoint = endpoint;
-    }
-
-    public String getClientId() {
-        return clientId;
-    }
-
-    public void setClientId(String clientId) {
-        this.clientId = clientId;
-    }
 }

@@ -83,10 +83,10 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                 // endpoint and swaggerOperation available. This handler will enrich the auditInfo.
                 if(auditInfo == null) {
                     auditInfo = new HashMap<>();
-                    auditInfo.put(Constants.CLIENT_ID, claims.getStringClaimValue(Constants.CLIENT_ID));
-                    auditInfo.put(Constants.USER_ID, claims.getStringClaimValue(Constants.USER_ID));
                     exchange.putAttachment(AuditHandler.AUDIT_INFO, auditInfo);
                 }
+                auditInfo.put(Constants.CLIENT_ID, claims.getStringClaimValue(Constants.CLIENT_ID));
+                auditInfo.put(Constants.USER_ID, claims.getStringClaimValue(Constants.USER_ID));
                 if(config != null && (Boolean)config.get(ENABLE_VERIFY_SCOPE) && SwaggerHelper.swagger != null) {
                     Operation operation = null;
                     SwaggerOperation swaggerOperation = (SwaggerOperation)auditInfo.get(Constants.SWAGGER_OPERATION);
