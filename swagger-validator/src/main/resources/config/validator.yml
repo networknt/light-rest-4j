@@ -1,4 +1,3 @@
 ---
-description: Validate request/response against swagger spec during runtime
+# Enable request validation. Response validation is not done on the server but client.
 enabled: true
-enableResponseValidator: false

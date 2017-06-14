@@ -25,10 +25,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class ValidatorConfig {
     boolean enabled;
-    boolean enableResponseValidator;
-
-    @JsonIgnore
-    String description;
 
     public ValidatorConfig() {
     }
@@ -39,21 +35,5 @@ public class ValidatorConfig {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-    }
-
-    public boolean isEnableResponseValidator() {
-        return enableResponseValidator;
-    }
-
-    public void setEnableResponseValidator(boolean enableResponseValidator) {
-        this.enableResponseValidator = enableResponseValidator;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 }
