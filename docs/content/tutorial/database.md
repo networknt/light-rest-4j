@@ -513,7 +513,7 @@ https://github.com/networknt/light-example-4j/tree/master/database/dbscript
 In order to do that we need to add several jars into the dependency in pom.xml
 
 ```
-        <version.hikaricp>2.5.1</version.hikaricp>
+        <version.hikaricp>2.6.2</version.hikaricp>
         <version.fastscanner>2.0.8</version.fastscanner>
         <version.h2>1.3.176</version.h2>
         <version.hazelcast>3.6.7</version.hazelcast>
