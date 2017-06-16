@@ -59,7 +59,7 @@ cd ~/networknt
 
 ## Specifications
 
-Light-4j Microservices Framework encourages Design Driven API building and 
+Light-rest-4j microservices framework encourages Design Driven API building and 
 [OpenAPI Specification](https://github.com/OAI/OpenAPI-Specification) is the central
 piece to drive the runtime for security and validation. Also, the specification 
 can be used to scaffold a running server project the first time so that developers 
@@ -150,7 +150,8 @@ scope api_a.r or scope api_a.w to access the endpoint /data.
 
 Now we have four API swagger.yaml files available. Let's use light-codegen
 to start four projects in light-example-4j/rest/ms_chain. In normal API build, you 
-should create a repo for each API.
+should create a repo for each API. For us, we have to user light-example-4j for all the
+examples and tutorial for easy management in networknt github organization.
 
 #### Build light-codege
 
@@ -171,18 +172,31 @@ model-config/rest/api_a/1.0.0 along with swagger.yaml and swagger.json.
 
 ```
 {
+  "name": "apia",
+  "version": "1.0.0",
+  "groupId": "com.networknt",
+  "artifactId": "apia",
   "rootPackage": "com.networknt.apia",
   "handlerPackage":"com.networknt.apia.handler",
   "modelPackage":"com.networknt.apia.model",
-  "artifactId": "apia",
-  "groupId": "com.networknt",
-  "name": "apia",
-  "version": "1.0.0",
   "overwriteHandler": true,
   "overwriteHandlerTest": true,
-  "overwriteModel": true
+  "overwriteModel": true,
+  "httpPort": 7001,
+  "enableHttp": true,
+  "httpsPort": 7441,
+  "enableHttps": true,
+  "enableRegistry": false,
+  "supportOracle": false,
+  "supportMysql": false,
+  "supportPostgresql": false,
+  "supportH2ForTest": false,
+  "supportClient": true
 }
 ```
+As you can see the generated project will use 7001 for http and 7441 for https and client
+module will be included as it will call API B with it. DB dependencies are not required for
+this tutorial.
 
 
 #### Generate first project
@@ -192,6 +206,7 @@ model-config, light-example-4j and light-codegen are in the same working
 directory ~/networknt and you are in ~/networknt/light-codegen now.
 
 ```
+cd ~/networknt/light-codegen
 java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/ms_chain/api_a/generated -m ../model-config/rest/api_a/1.0.0/swagger.json -c ../model-config/rest/api_a/1.0.0/config.json
 ```
 
@@ -202,13 +217,13 @@ Let's build it and run the test cases. If everything is OK, start the server.
 
 ```
 cd ..
-cd light-java-example/rest/ms_chain/api_a/generated
+cd light-example-4j/rest/ms_chain/api_a/generated
 mvn clean install exec:exec
 ```
 
 Let's test the API A by issuing the following command
 ```
-curl localhost:8080/v1/data
+curl localhost:7001/v1/data
 ```
 
 By default the generated response example will be returned. 
@@ -217,13 +232,20 @@ By default the generated response example will be returned.
  ["Message 1","Message 2"]
 ```
 
+As https port is enable, let's test https connection and the result should be the same.
+
+```
+curl -k https://localhost:7441/v1/data
+```
+
 #### Generate other APIs
 
-Let's kill the API A by Ctrl+C and move to the light-codegen folder again. Follow 
+Let's kill the API A by Ctrl+C and move to the light-codegen terminal again. Follow 
 the above steps to generate other APIs. Make sure you are in light_codegen
 directory.
 
 ```
+cd ~/networknt/light-codegen
 java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/ms_chain/api_b/generated -m ../model-config/rest/api_b/1.0.0/swagger.json -c ../model-config/rest/api_b/1.0.0/config.json
 java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/ms_chain/api_c/generated -m ../model-config/rest/api_c/1.0.0/swagger.json -c ../model-config/rest/api_c/1.0.0/config.json
 java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/ms_chain/api_d/generated -m ../model-config/rest/api_d/1.0.0/swagger.json -c ../model-config/rest/api_d/1.0.0/config.json
@@ -243,10 +265,8 @@ git push origin master
 ## ApiToApi Http
 
 Now these APIs are working if you start them and they will output the mock responses
-generated based on the API specifications. But you have to start them one by one as they
-are all binding to the same port at localhost. Let's take a look at the API handler itself
-and update it based on our business logic and update the configuration to start them at
-the same time. Once they are up and running, you can call API A and subsequently all other
+generated based on the API specifications. Let's take a look at the API handler itself
+and update it based on our business logic, you can call API A and subsequently all other
 APIs will be called in a chain.
 
 #### Prepare Environment
@@ -365,47 +385,6 @@ public class DataGetHandler implements HttpHandler {
 }
 ```
 
-In order to start all servers at the same time, let's update server.yml to user
-port 7004 instead of default 8080 for http and 7444 for https.
-
-The server.yml is located at
-~/networknt/light-example-4j/rest/ms_chain/api_d/httpchain/src/main/resources/config
-
-```
-# Server configuration
----
-# This is the default binding address if the service is dockerized.
-ip: 0.0.0.0
-
-# Http port if enableHttp is true.
-httpPort: 7004
-
-# Enable HTTP should be false on official environment.
-enableHttp: true
-
-# Https port if enableHttps is true.
-httpsPort: 7444
-
-# Enable HTTPS should be true on official environment.
-enableHttps: true
-
-# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
-keystoreName: tls/server.keystore
-
-# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
-enableTwoWayTls: false
-
-# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
-truststoreName: tls/server.truststore
-
-# Unique service identifier. Used in service registration and discovery etc.
-serviceId: com.networknt.apid-1.0.0
-
-# Flag to enable service registration. Only be true if running as standalone Java jar.
-enableRegistry: false
-```
-
-
 Now, let's build it and start the server. 
 ```
 cd ~/networknt/light-example-4j/rest/ms_chain/api_d/httpchain
@@ -488,43 +467,6 @@ public class DataGetHandler implements HttpHandler {
 }
 ```
 
-Now let's change the server.yml to have http port 7003 and https port 7443
-
-```
-# Server configuration
----
-# This is the default binding address if the service is dockerized.
-ip: 0.0.0.0
-
-# Http port if enableHttp is true.
-httpPort: 7003
-
-# Enable HTTP should be false on official environment.
-enableHttp: true
-
-# Https port if enableHttps is true.
-httpsPort: 7443
-
-# Enable HTTPS should be true on official environment.
-enableHttps: true
-
-# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
-keystoreName: tls/server.keystore
-
-# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
-enableTwoWayTls: false
-
-# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
-truststoreName: tls/server.truststore
-
-# Unique service identifier. Used in service registration and discovery etc.
-serviceId: io.swagger.swagger-light-java-1.0.0
-
-# Flag to enable service registration. Only be true if running as standalone Java jar.
-enableRegistry: false
-
-```
-
 API C needs to have the url of API D in order to call it. Let's put it in a config file for
 now and move to service discovery later.
 
@@ -568,7 +510,6 @@ will call API C to fulfill its request.
 Now let's update the generated DataGetHandler.java to this.
 
 ```
-
 package com.networknt.apib.handler;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -617,43 +558,6 @@ public class DataGetHandler implements HttpHandler {
         exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(list));
     }
 }
-```
-
-Now let's change the server.yml to have http port 7002 and https port 7442
-
-```
-# Server configuration
----
-# This is the default binding address if the service is dockerized.
-ip: 0.0.0.0
-
-# Http port if enableHttp is true.
-httpPort: 7002
-
-# Enable HTTP should be false on official environment.
-enableHttp: true
-
-# Https port if enableHttps is true.
-httpsPort: 7442
-
-# Enable HTTPS should be true on official environment.
-enableHttps: true
-
-# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
-keystoreName: tls/server.keystore
-
-# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
-enableTwoWayTls: false
-
-# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
-truststoreName: tls/server.truststore
-
-# Unique service identifier. Used in service registration and discovery etc.
-serviceId: io.swagger.swagger-light-java-1.0.0
-
-# Flag to enable service registration. Only be true if running as standalone Java jar.
-enableRegistry: false
-
 ```
 
 API B needs to have the url of API C in order to call it. Let's put it in a config file for
@@ -748,42 +652,6 @@ public class DataGetHandler implements HttpHandler {
 }
 ```
 
-Now let's change the server.yml to have http port 7001 and https port 7441
-
-```
-# Server configuration
----
-# This is the default binding address if the service is dockerized.
-ip: 0.0.0.0
-
-# Http port if enableHttp is true.
-httpPort: 7001
-
-# Enable HTTP should be false on official environment.
-enableHttp: true
-
-# Https port if enableHttps is true.
-httpsPort: 7441
-
-# Enable HTTPS should be true on official environment.
-enableHttps: true
-
-# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
-keystoreName: tls/server.keystore
-
-# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
-enableTwoWayTls: false
-
-# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
-truststoreName: tls/server.truststore
-
-# Unique service identifier. Used in service registration and discovery etc.
-serviceId: io.swagger.swagger-light-java-1.0.0
-
-# Flag to enable service registration. Only be true if running as standalone Java jar.
-enableRegistry: false
-
-```
 
 API A needs to have the url of API in order to call it. Let's put it in a config file for
 now and move to service discovery later.
@@ -805,7 +673,7 @@ mvn clean install exec:exec
 From another terminal window run:
 
 ```
-curl localhost:7002/v1/data
+curl localhost:7001/v1/data
 ```
 And the result is
 
@@ -833,27 +701,29 @@ Assume you have wrk installed, run the following command.
 wrk -t4 -c128 -d30s http://localhost:7001 -s pipeline.lua --latency -- /v1/data 1024
 
 ```
-And here is what I got on my laptop
+And here is what I got on my i5 desktop
 
 ```
 wrk -t4 -c128 -d30s http://localhost:7001 -s pipeline.lua --latency -- /v1/data 1024
 Running 30s test @ http://localhost:7001
   4 threads and 128 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency     0.00us    0.00us   0.00us     nan%
-    Req/Sec     2.54k     1.32k    9.52k    71.22%
+    Latency     0.00us    0.00us   0.00us    -nan%
+    Req/Sec     1.93k     1.00k    5.49k    65.65%
   Latency Distribution
      50%    0.00us
      75%    0.00us
      90%    0.00us
      99%    0.00us
-  286072 requests in 30.09s, 65.75MB read
-  Socket errors: connect 0, read 0, write 0, timeout 254
-Requests/sec:   9505.92
-Transfer/sec:      2.18MB
+  220696 requests in 30.06s, 50.72MB read
+  Socket errors: connect 0, read 0, write 0, timeout 128
+Requests/sec:   7342.71
+Transfer/sec:      1.69MB
 ```
 
-Before starting the next step, please kill all four instances by Ctrl+C.
+Before starting the next step, please kill all four instances by Ctrl+C. And check in
+the httpchain folder we just created and updated. 
+
 
 ## ApiToApi Https
 
@@ -883,10 +753,12 @@ in httpschain folder.
 
 #### API D
 
-As we have update the the server.yml to enable both http and https so the server config for
+As we have the server.yml to enable both http and https so the server config for
 API D is ready. However, we only tried to access the API D https port through curl with
 security disabled. Java client access to API through https is not an easy task so we are
-going to complete the test cases to test API D TLS connection with client module first. 
+going to complete the test cases to test API D TLS connection with client module first.
+
+This step also shows how to build end-to-end test case to test your API endpoints.
 
 locate DataGetHandlerTest from src/test/com/networknt/apid/handler folder and change the
 content to. 
@@ -955,70 +827,23 @@ As you have noticed, a new test case testDataGetHandlerHttps has been added and 
 the https url. If this test case works, that means API C should connect to API D with TLS
 connection. 
 
-To make the test case works, you need to add client.yml in src/test/resources/config folder
+As the server is started with self-signed key pair so we have to make sure client has a trust
+store with server certificate in order to pass the server certificate verification. These keys
+should be changed when you deploy to official environment.
 
-```
-description: client configuration, all timing is milli-second
-sync:
-  maxConnectionTotal: 100
-  maxConnectionPerRoute: 10
-  routes:
-    api.google.com: 20
-    api.facebook.com: 10
-  timeout: 10000
-  keepAlive: 15000
-async:
-  maxConnectionTotal: 100
-  maxConnectionPerRoute: 10
-  routes:
-    api.google.com: 20
-    api.facebook.com: 10
-  reactor:
-    ioThreadCount: 1
-    connectTimeout: 10000
-    soTimeout: 10000
-  timeout: 10000
-  keepAlive: 15000
-tls:
-  verifyHostname: false
-  loadTrustStore: true
-  trustStore: tls/client.truststore
-  trustPass: password
-  loadKeyStore: true
-  keyStore: tls/client.keystore
-  keyPass: password
-oauth:
-  tokenRenewBeforeExpired: 600000
-  expiredRefreshRetryDelay: 5000
-  earlyRefreshRetryDelay: 30000
-  server_url: http://localhost:8888
-  authorization_code:
-    uri: "/oauth2/token"
-    client_id: 3798d583-275c-47d7-bf46-a3c436846336
-    client_secret: CeHJjNRjRiS1dH1qqme2LQ
-    redirect_uri: https://localhost:8080/authorization_code
-    scope:
-    - customer.r
-    - customer.w
-  client_credentials:
-    uri: "/oauth2/token"
-    client_id: 6e9d1db3-2feb-4c1f-a5ad-9e93ae8ca59d
-    client_secret: sQesTWAnTwaw-Nn0oK35GA
-    scope:
-    - account.r
-    - account.w
+In our test case, we are using our own client module to access the server and a client.yml is
+already included as enableClient is true in config.json for the generator. client.yml file, 
+it refers to client.truststore and client.keystore
 
-```
-
-In above client.yml file, it refers to client.truststore and client.keystore
-
-These files are part of the client module and they are not added automatically.  
+These files are part of the client module and they are added automatically by light-codegen  
 
 ```
 cd ~/networknt/light-example-4j/rest/ms_chain/api_d/httpschain
 mvn clean install exec:exec
 ```
 
+If above mvn command starts the server successfully, that means the test case we put in is
+passed. 
 
 #### API C
 Let's leave API D running and update API C api_c.yml to use https url instead of
@@ -1058,107 +883,10 @@ curl -k https://localhost:7443/v1/data
 
 #### API B
 
-Let's keep API C and API D running. The next step is to complete API B. API B 
-will call API C to fulfill its request. 
-
-Now let's update the generated DataGetHandler.java to this.
+Let's keep API C and API D running and update api_b.yml in src/main/resources/config folder.
 
 ```
-
-package com.networknt.apib.handler;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.networknt.client.Client;
-import com.networknt.config.Config;
-import com.networknt.exception.ClientException;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HttpString;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-public class DataGetHandler implements HttpHandler {
-    static String CONFIG_NAME = "api_b";
-    static String apidUrl = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_c_endpoint");
-
-    @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
-        List<String> list = new ArrayList<String>();
-        try {
-            CloseableHttpClient client = Client.getInstance().getSyncClient();
-            HttpGet httpGet = new HttpGet(apidUrl);
-            CloseableHttpResponse response = client.execute(httpGet);
-            int responseCode = response.getStatusLine().getStatusCode();
-            if(responseCode != 200){
-                throw new Exception("Failed to call API C: " + responseCode);
-            }
-            List<String> apicList = (List<String>) Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
-                    new TypeReference<List<String>>(){});
-            list.addAll(apicList);
-        } catch (ClientException e) {
-            throw new Exception("Client Exception: ", e);
-        } catch (IOException e) {
-            throw new Exception("IOException:", e);
-        }
-        // now add API B specific messages
-        list.add("API B: Message 1");
-        list.add("API B: Message 2");
-        exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(list));
-    }
-}
-```
-
-Now let's change the server.yml to have http port 7002 and https port 7442
-
-```
-# Server configuration
----
-# This is the default binding address if the service is dockerized.
-ip: 0.0.0.0
-
-# Http port if enableHttp is true.
-httpPort: 7002
-
-# Enable HTTP should be false on official environment.
-enableHttp: true
-
-# Https port if enableHttps is true.
-httpsPort: 7442
-
-# Enable HTTPS should be true on official environment.
-enableHttps: true
-
-# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
-keystoreName: tls/server.keystore
-
-# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
-enableTwoWayTls: false
-
-# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
-truststoreName: tls/server.truststore
-
-# Unique service identifier. Used in service registration and discovery etc.
-serviceId: io.swagger.swagger-light-java-1.0.0
-
-# Flag to enable service registration. Only be true if running as standalone Java jar.
-enableRegistry: false
-
-```
-
-API B needs to have the url of API C in order to call it. Let's put it in a config file for
-now and move to service discovery later.
-
-Create api_b.yml in src/main/resources/config folder.
-
-```
-api_c_endpoint: "http://localhost:7003/v1/data"
+api_c_endpoint: "https://localhost:7443/v1/data"
 
 ```
 
@@ -1166,7 +894,7 @@ api_c_endpoint: "http://localhost:7003/v1/data"
 Start API B server and test the endpoint /v1/data
 
 ```
-cd ~/networknt/light-example-4j/rest/ms_chain/api_b/httpchain
+cd ~/networknt/light-example-4j/rest/ms_chain/api_b/httpschain
 mvn clean install exec:exec
 ```
 From another terminal window run:
@@ -1190,8 +918,115 @@ curl -k https://localhost:7442/v1/data
 
 #### API A
 
-API A will call API B to fulfill its request. Now let's update the 
-generated DataGetHandler.java code to
+API A will call API B to fulfill its request and we need to update api_a.yml in 
+src/main/resources/config folder.
+
+```
+api_b_endpoint: "https://localhost:7442/v1/data"
+
+```
+
+Start API A server and test the endpoint /v1/data
+
+```
+cd ~/networknt/light-example-4j/rest/ms_chain/api_a/httpschain
+mvn clean install exec:exec
+```
+From another terminal window run:
+
+```
+curl localhost:7001/v1/data
+```
+And the result is
+
+```
+["API D: Message 1","API D: Message 2","API C: Message 1","API C: Message 2","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
+```
+
+The https port and the result should be the same.
+
+```
+ curl -k https://localhost:7441/v1/data
+```
+At this moment, we have all four APIs completed and A is calling B, B is calling C and
+C is calling D using Https connections.
+
+
+## Performance with Https
+
+Now let's see if these servers are performing with
+[wrk](https://github.com/wg/wrk). To learn how to use it, please see my
+article in tools [here](https://networknt.github.io/light-4j/tools/wrk-perf/)
+
+Assume you have wrk installed, run the following command.
+
+```
+wrk -t4 -c128 -d30s http://localhost:7001 -s pipeline.lua --latency -- /v1/data 1024
+
+```
+And here is what I got on my i5 desktop
+
+```
+ wrk -t4 -c128 -d30s http://localhost:7001 -s pipeline.lua --latency -- /v1/data 1024
+Running 30s test @ http://localhost:7001
+  4 threads and 128 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     0.00us    0.00us   0.00us    -nan%
+    Req/Sec     1.06k   716.62     5.49k    73.45%
+  Latency Distribution
+     50%    0.00us
+     75%    0.00us
+     90%    0.00us
+     99%    0.00us
+  100572 requests in 30.06s, 23.12MB read
+Requests/sec:   3345.62
+Transfer/sec:    787.40KB
+```
+
+As you can see https connections are slower than http connections which is expected.
+
+Before starting the next step, please kill all four instances by Ctrl+C. And check in
+the httpschain folder we just created and updated. 
+
+
+## Enable OAuth2 Security
+
+So far, we've started four servers and tested them successfully with both Http and Https
+connections; however, these servers are not protected by OAuth2 JWT tokens as it is turned off
+by default in the generated code. Now let's turn on the security and check the performance with
+JWT verification is on.
+
+Before we turn on the security, we need to have [light-oauth2](https://github.com/networknt/light-oauth2)
+server up and running so that these servers can get JWT token in real time.
+
+When we enable security, the source code needs to be updated in order to leverage 
+client module to get JWT token automatically. Let's prepare the environment. 
+
+#### Update  APIs
+
+Since we are going to change the code, let's copy each service into a new folder
+called security from httpschain. 
+
+```
+cd ~/networknt/light-example-4j/rest/ms_chain/api_a
+cp -r httpschain security
+cd ~/networknt/light-example-4j/rest/ms_chain/api_b
+cp -r httpschain security
+cd ~/networknt/light-example-4j/rest/ms_chain/api_c
+cp -r httpschain security
+cd ~/networknt/light-example-4j/rest/ms_chain/api_d
+cp -r httpschain security
+
+```
+Now for api_a, api_b and api_c we need to update DataGetHandler.java to add
+a line before client.execute.
+
+```
+            Client.getInstance().propagateHeaders(httpGet, exchange);
+
+```
+
+Here is the updated file for api_a
 
 ```
 package com.networknt.apia.handler;
@@ -1223,6 +1058,7 @@ public class DataGetHandler implements HttpHandler {
         try {
             CloseableHttpClient client = Client.getInstance().getSyncClient();
             HttpGet httpGet = new HttpGet(apidUrl);
+            Client.getInstance().propagateHeaders(httpGet, exchange);
             CloseableHttpResponse response = client.execute(httpGet);
             int responseCode = response.getStatusLine().getStatusCode();
             if(responseCode != 200){
@@ -1244,78 +1080,774 @@ public class DataGetHandler implements HttpHandler {
 }
 ```
 
-Now let's change the server.yml to have http port 7001 and https port 7441
+Follow api_a, update api_b and api_c.
+
+
+#### Update Config
+
+Now let's update security.yml to enable JWT verification and scope verification
+for each service. This file is located at src/main/resources/config folder.
+
+API A
+
+old file
 
 ```
-# Server configuration
+# Security configuration in light framework.
 ---
-# This is the default binding address if the service is dockerized.
-ip: 0.0.0.0
+# Enable JWT verification flag.
+enableVerifyJwt: false
 
-# Http port if enableHttp is true.
-httpPort: 7001
+# Enable JWT scope verification. Only valid when enableVerifyJwt is true.
+enableVerifyScope: true
 
-# Enable HTTP should be false on official environment.
-enableHttp: true
+# User for test only. should be always be false on official environment.
+enableMockJwt: false
 
-# Https port if enableHttps is true.
-httpsPort: 7441
+# JWT signature public certificates. kid and certificate path mappings.
+jwt:
+  certificate:
+    '100': oauth/primary.crt
+    '101': oauth/secondary.crt
+  clockSkewInSeconds: 60
 
-# Enable HTTPS should be true on official environment.
-enableHttps: true
+# Enable or disable JWT token logging
+logJwtToken: true
 
-# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
-keystoreName: tls/server.keystore
+# Enable or disable client_id, user_id and scope logging.
+logClientUserScope: false
+```
 
-# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
-enableTwoWayTls: false
+Update to 
 
-# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
-truststoreName: tls/server.truststore
+```
+# Security configuration in light framework.
+---
+# Enable JWT verification flag.
+enableVerifyJwt: true
 
-# Unique service identifier. Used in service registration and discovery etc.
-serviceId: io.swagger.swagger-light-java-1.0.0
+# Enable JWT scope verification. Only valid when enableVerifyJwt is true.
+enableVerifyScope: true
 
-# Flag to enable service registration. Only be true if running as standalone Java jar.
-enableRegistry: false
+# User for test only. should be always be false on official environment.
+enableMockJwt: false
+
+# JWT signature public certificates. kid and certificate path mappings.
+jwt:
+  certificate:
+    '100': oauth/primary.crt
+    '101': oauth/secondary.crt
+  clockSkewInSeconds: 60
+
+# Enable or disable JWT token logging
+logJwtToken: true
+
+# Enable or disable client_id, user_id and scope logging.
+logClientUserScope: false
+```
+
+Update the security.yml for api_b, api_c and api_d in security folder.
+
+
+#### Start OAuth2 Services
+
+The easiest way to run light-oauth2 services is through docker-compose. In the preparation
+step, we have cloned light-docker repo. 
+
+Let's start the light-oauth2 services from a docker compose.
+
+```
+cd ~/networknt/light-docker
+docker-compose -f docker-compose-oauth2-mysql.yml up
+```
+Now the OAuth2 services are up and running. 
+
+#### Register Client
+
+Before we start integrate with OAuth2 services, we need to register clients for api_a,
+api_b, api_c and api_d. This step should be done from light-portal for official environment.
+After client registration, we need to remember the client_id and client_secret for each in
+order to update client.yml for each service. Please note, API A, B and C are service and client
+at the same time.
+
+For more details on how to use the command line tool or script to access oauth2 services,
+please see this [tutorial](https://networknt.github.io/light-oauth2/tutorials/enterprise/)
+
+Register a client that calls api_a.
+
+```
+curl -H "Content-Type: application/json" -X POST -d '{"clientType":"public","clientProfile":"mobile","clientName":"Consumer","clientDesc":"A client that calls API A","scope":"api_a.r api_a.w","redirectUri": "http://localhost:8080/authorization","ownerId":"admin"}' http://localhost:6884/oauth2/client
 
 ```
 
-API A needs to have the url of API in order to call it. Let's put it in a config file for
-now and move to service discovery later.
-
-Create api_a.yml in src/main/resources/config folder.
-
+The return value is something like this. You returned object should be different and you need to write down the clientId and clientSecret. 
 ```
-api_b_endpoint: "http://localhost:7002/v1/data"
-
+{"clientId":"f0439841-fbe7-43a4-843e-ae0c51971a5e","clientSecret":"pu9aCVwmQjK2PET0_vOl9A","clientType":"public","clientProfile":"mobile","clientName":"Consumer","clientDesc":"A client that calls API A","ownerId":"admin","scope":"api_a.r api_a.w","redirectUri":"http://localhost:8080/authorization","createDt":"2017-03-30","updateDt":null}
 ```
 
+To make it convenient, I have created a long lived token that can access api_a with api_a scopes. Here is token and you can verify that in jwt.io
+ 
+```
+eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgxMzAwNTAzNiwianRpIjoiN2daaHY2TS14UXpvVDhuNVMxODNodyIsImlhdCI6MTQ5NzY0NTAzNiwibmJmIjoxNDk3NjQ0OTE2LCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6IlN0ZXZlIiwidXNlcl90eXBlIjoiRU1QTE9ZRUUiLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzIiLCJzY29wZSI6WyJhcGlfYS53IiwiYXBpX2IudyIsImFwaV9jLnciLCJhcGlfZC53Iiwic2VydmVyLmluZm8uciJdfQ.FkFbPTRXZf045_7fBlEPQTn7rNoib54TYQeFzSjLmMkUjrfDsJZD6EnrsAquDpHt8GKQNqGbyPzgiNWAIYHgwPZvM-lHw_dv0KUKii3D0woaFBkqu4vYxqyImROBii0B38evxPAZVONWqUncL21592bFPHsxGCz5oHL2unLv-oIQklWxcILpMrSL_tf7nhXHSu1RkRhshxAiAHSSpBZnluu4-jqZdEFtc5U_YApToUrKkmI_An1op5-6rS_I-fMbSnSctUoDgg3RT4Zvw1HC-ZLJlXWRF5-FD4uQOAOgy_T7PI75pNiuh4wgOGgdIf48X-7-fDkEbla-cVLiuj3z4g
+```
 
-Start API A server and test the endpoint /v1/data
+
+Register a client for api_a to call api_b
 
 ```
-cd ~/networknt/light-example-4j/rest/ms_chain/api_a/httpchain
-mvn clean install exec:exec
-```
-From another terminal window run:
+curl -H "Content-Type: application/json" -X POST -d '{"clientType":"public","clientProfile":"service","clientName":"api_a","clientDesc":"API A service","scope":"api_b.r api_b.w","redirectUri": "http://localhost:8080/authorization","ownerId":"admin"}' http://localhost:6884/oauth2/client
 
 ```
-curl localhost:7002/v1/data
+
+And the result is something like this.
+
 ```
+{"clientId":"9380563c-1598-4499-a01c-4abb013d3a49","clientSecret":"Cz0mNzDmQYuKIJNiUBh9nQ","clientType":"public","clientProfile":"service","clientName":"api_a","clientDesc":"API A service","ownerId":"admin","scope":"api_b.r api_b.w","redirectUri":"http://localhost:8080/authorization","createDt":"2017-06-16","updateDt":null}
+```
+
+Now we need to update client.yml and secret.yml with this clientId and clientSecret for
+api_a. These config files are located in src/main/resources/config folder. 
+
+
+Here is the client.yml for api_a. You can see that client_id and scope are updated based
+on the result of the client registration. 
+
+
+```
+sync:
+  maxConnectionTotal: 100
+  maxConnectionPerRoute: 10
+  routes:
+    api.google.com: 20
+    api.facebook.com: 10
+  timeout: 10000
+  keepAlive: 15000
+async:
+  maxConnectionTotal: 100
+  maxConnectionPerRoute: 10
+  routes:
+    api.google.com: 20
+    api.facebook.com: 10
+  reactor:
+    ioThreadCount: 1
+    connectTimeout: 10000
+    soTimeout: 10000
+  timeout: 10000
+  keepAlive: 15000
+tls:
+  # if the server is using self-signed certificate, this need to be false. If true, you have to use CA signed certificate
+  # or load truststore that contains the self-signed cretificate.
+  verifyHostname: true
+  # trust store contains certifictes that server needs. Enable if tls is used.
+  loadTrustStore: true
+  # trust store location can be specified here or system properties javax.net.ssl.trustStore and password javax.net.ssl.trustStorePassword
+  trustStore: tls/client.truststore
+  # key store contains client key and it should be loaded if two-way ssl is uesed.
+  loadKeyStore: false
+  # key store location
+  keyStore: tls/client.keystore
+oauth:
+  tokenRenewBeforeExpired: 600000
+  expiredRefreshRetryDelay: 5000
+  earlyRefreshRetryDelay: 30000
+  # token server url. The default port number for token service is 6882.
+  server_url: http://localhost:6882
+  authorization_code:
+    # token endpoint for authorization code grant
+    uri: "/oauth2/token"
+    # client_id for authorization code grant flow. client_secret is in secret.yml
+    client_id: 9380563c-1598-4499-a01c-4abb013d3a49
+    redirect_uri: https://localhost:8080/authorization_code
+    scope:
+    - api_b.r
+    - api_b.w
+  client_credentials:
+    # token endpoint for client credentials grant
+    uri: "/oauth2/token"
+    # client_id for client credentials grant flow. client_secret is in secret.yml
+    client_id: 9380563c-1598-4499-a01c-4abb013d3a49
+    scope:
+    - api_b.r
+    - api_b.w
+```
+
+And here is the secret.yml for api_a and you can see that authorizationCodeClientSecret
+and clientCredentialsClientSecret are updated.
+
+```
+# This file contains all the secrets for the server and client in order to manage and
+# secure all of them in the same place. In Kubernetes, this file will be mapped to
+# Secrets and all other config files will be mapped to mapConfig
+
+---
+
+# Sever section
+
+# Key store password, the path of keystore is defined in server.yml
+serverKeystorePass: password
+
+# Key password, the key is in keystore
+serverKeyPass: password
+
+# Trust store password, the path of truststore is defined in server.yml
+serverTruststorePass: password
+
+
+# Client section
+
+# Key store password, the path of keystore is defined in server.yml
+clientKeystorePass: password
+
+# Key password, the key is in keystore
+clientKeyPass: password
+
+# Trust store password, the path of truststore is defined in server.yml
+clientTruststorePass: password
+
+# Authorization code client secret for OAuth2 server
+authorizationCodeClientSecret: Cz0mNzDmQYuKIJNiUBh9nQ
+
+# Client credentials client secret for OAuth2 server
+clientCredentialsClientSecret: Cz0mNzDmQYuKIJNiUBh9nQ
+
+
+```
+
+
+Register a client for api_b to call api_c
+
+```
+curl -H "Content-Type: application/json" -X POST -d '{"clientType":"public","clientProfile":"service","clientName":"api_b","clientDesc":"API B service","scope":"api_c.r api_c.w","redirectUri": "http://localhost:8080/authorization","ownerId":"admin"}' http://localhost:6884/oauth2/client
+
+```
+
 And the result is
 
 ```
-["API D: Message 1","API D: Message 2","API C: Message 1","API C: Message 2","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
+{"clientId":"75e196ab-21c2-467b-9f2c-7d2f9720c1df","clientSecret":"zzO34AhITwWcuvAkPxW4HA","clientType":"public","clientProfile":"service","clientName":"api_b","clientDesc":"API B service","ownerId":"admin","scope":"api_c.r api_c.w","redirectUri":"http://localhost:8080/authorization","createDt":"2017-06-16","updateDt":null}
 ```
 
-The https port and the result should be the same.
+Now let's update client.yml for the client_id and scope like api_a and update secrets for
+secret.yml
+
+client.yml
 
 ```
- curl -k https://localhost:7441/v1/data
+sync:
+  maxConnectionTotal: 100
+  maxConnectionPerRoute: 10
+  routes:
+    api.google.com: 20
+    api.facebook.com: 10
+  timeout: 10000
+  keepAlive: 15000
+async:
+  maxConnectionTotal: 100
+  maxConnectionPerRoute: 10
+  routes:
+    api.google.com: 20
+    api.facebook.com: 10
+  reactor:
+    ioThreadCount: 1
+    connectTimeout: 10000
+    soTimeout: 10000
+  timeout: 10000
+  keepAlive: 15000
+tls:
+  # if the server is using self-signed certificate, this need to be false. If true, you have to use CA signed certificate
+  # or load truststore that contains the self-signed cretificate.
+  verifyHostname: true
+  # trust store contains certifictes that server needs. Enable if tls is used.
+  loadTrustStore: true
+  # trust store location can be specified here or system properties javax.net.ssl.trustStore and password javax.net.ssl.trustStorePassword
+  trustStore: tls/client.truststore
+  # key store contains client key and it should be loaded if two-way ssl is uesed.
+  loadKeyStore: false
+  # key store location
+  keyStore: tls/client.keystore
+oauth:
+  tokenRenewBeforeExpired: 600000
+  expiredRefreshRetryDelay: 5000
+  earlyRefreshRetryDelay: 30000
+  # token server url. The default port number for token service is 6882.
+  server_url: http://localhost:6882
+  authorization_code:
+    # token endpoint for authorization code grant
+    uri: "/oauth2/token"
+    # client_id for authorization code grant flow. client_secret is in secret.yml
+    client_id: 75e196ab-21c2-467b-9f2c-7d2f9720c1df
+    redirect_uri: https://localhost:8080/authorization_code
+    scope:
+    - api_c.r
+    - api_c.w
+  client_credentials:
+    # token endpoint for client credentials grant
+    uri: "/oauth2/token"
+    # client_id for client credentials grant flow. client_secret is in secret.yml
+    client_id: 75e196ab-21c2-467b-9f2c-7d2f9720c1df
+    scope:
+    - api_c.r
+    - api_c.w
 ```
-At this moment, we have all four APIs completed and A is calling B, B is calling C and
-C is calling D using Http connections.
+
+secret.yml
+
+```
+# This file contains all the secrets for the server and client in order to manage and
+# secure all of them in the same place. In Kubernetes, this file will be mapped to
+# Secrets and all other config files will be mapped to mapConfig
+
+---
+
+# Sever section
+
+# Key store password, the path of keystore is defined in server.yml
+serverKeystorePass: password
+
+# Key password, the key is in keystore
+serverKeyPass: password
+
+# Trust store password, the path of truststore is defined in server.yml
+serverTruststorePass: password
+
+
+# Client section
+
+# Key store password, the path of keystore is defined in server.yml
+clientKeystorePass: password
+
+# Key password, the key is in keystore
+clientKeyPass: password
+
+# Trust store password, the path of truststore is defined in server.yml
+clientTruststorePass: password
+
+# Authorization code client secret for OAuth2 server
+authorizationCodeClientSecret: zzO34AhITwWcuvAkPxW4HA
+
+# Client credentials client secret for OAuth2 server
+clientCredentialsClientSecret: zzO34AhITwWcuvAkPxW4HA
+
+```
+
+Register a client for api_c to call api_d
+
+```
+curl -H "Content-Type: application/json" -X POST -d '{"clientType":"public","clientProfile":"service","clientName":"api_c","clientDesc":"API C service","scope":"api_d.r api_d.w","redirectUri": "http://localhost:8080/authorization","ownerId":"admin"}' http://localhost:6884/oauth2/client
+
+```
+
+And the result is
+
+```
+{"clientId":"a366d5c1-d5c1-4ade-8b45-7db5e29859fb","clientSecret":"R16idrozRduTyLh6cysYKQ","clientType":"public","clientProfile":"service","clientName":"api_c","clientDesc":"API C service","ownerId":"admin","scope":"api_d.r api_d.w","redirectUri":"http://localhost:8080/authorization","createDt":"2017-06-16","updateDt":null}
+```
+
+We need to update client.yml and secret.yml according to the result of the registration
+
+client.yml
+
+```
+sync:
+  maxConnectionTotal: 100
+  maxConnectionPerRoute: 10
+  routes:
+    api.google.com: 20
+    api.facebook.com: 10
+  timeout: 10000
+  keepAlive: 15000
+async:
+  maxConnectionTotal: 100
+  maxConnectionPerRoute: 10
+  routes:
+    api.google.com: 20
+    api.facebook.com: 10
+  reactor:
+    ioThreadCount: 1
+    connectTimeout: 10000
+    soTimeout: 10000
+  timeout: 10000
+  keepAlive: 15000
+tls:
+  # if the server is using self-signed certificate, this need to be false. If true, you have to use CA signed certificate
+  # or load truststore that contains the self-signed cretificate.
+  verifyHostname: true
+  # trust store contains certifictes that server needs. Enable if tls is used.
+  loadTrustStore: true
+  # trust store location can be specified here or system properties javax.net.ssl.trustStore and password javax.net.ssl.trustStorePassword
+  trustStore: tls/client.truststore
+  # key store contains client key and it should be loaded if two-way ssl is uesed.
+  loadKeyStore: false
+  # key store location
+  keyStore: tls/client.keystore
+oauth:
+  tokenRenewBeforeExpired: 600000
+  expiredRefreshRetryDelay: 5000
+  earlyRefreshRetryDelay: 30000
+  # token server url. The default port number for token service is 6882.
+  server_url: http://localhost:6882
+  authorization_code:
+    # token endpoint for authorization code grant
+    uri: "/oauth2/token"
+    # client_id for authorization code grant flow. client_secret is in secret.yml
+    client_id: a366d5c1-d5c1-4ade-8b45-7db5e29859fb
+    redirect_uri: https://localhost:8080/authorization_code
+    scope:
+    - api_d.r
+    - api_d.w
+  client_credentials:
+    # token endpoint for client credentials grant
+    uri: "/oauth2/token"
+    # client_id for client credentials grant flow. client_secret is in secret.yml
+    client_id: a366d5c1-d5c1-4ade-8b45-7db5e29859fb
+    scope:
+    - api_d.r
+    - api_d.w
+
+```
+
+secret.yml
+
+```
+# This file contains all the secrets for the server and client in order to manage and
+# secure all of them in the same place. In Kubernetes, this file will be mapped to
+# Secrets and all other config files will be mapped to mapConfig
+
+---
+
+# Sever section
+
+# Key store password, the path of keystore is defined in server.yml
+serverKeystorePass: password
+
+# Key password, the key is in keystore
+serverKeyPass: password
+
+# Trust store password, the path of truststore is defined in server.yml
+serverTruststorePass: password
+
+
+# Client section
+
+# Key store password, the path of keystore is defined in server.yml
+clientKeystorePass: password
+
+# Key password, the key is in keystore
+clientKeyPass: password
+
+# Trust store password, the path of truststore is defined in server.yml
+clientTruststorePass: password
+
+# Authorization code client secret for OAuth2 server
+authorizationCodeClientSecret: R16idrozRduTyLh6cysYKQ
+
+# Client credentials client secret for OAuth2 server
+clientCredentialsClientSecret: R16idrozRduTyLh6cysYKQ
+
+```
+
+API D is not calling any other API so it is not a client and doesn't need to be registered. However,
+in the previous step httpschain, we have updated the test cases for api_d to and here we have enabled
+the security and these two tests will fail as there is no security token in the test request. Let's
+update the test case to put long lived token in it. 
+
+Here is the updated test class. 
+
+```
+package com.networknt.apid.handler;
+
+import com.networknt.client.Client;
+import com.networknt.server.Server;
+import com.networknt.exception.ClientException;
+import com.networknt.exception.ApiException;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.methods.*;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.junit.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+
+
+public class DataGetHandlerTest {
+    @ClassRule
+    public static TestServer server = TestServer.getInstance();
+
+    static final Logger logger = LoggerFactory.getLogger(DataGetHandlerTest.class);
+
+    @Test
+    public void testDataGetHandlerHttp() throws ClientException, ApiException {
+        CloseableHttpClient client = Client.getInstance().getSyncClient();
+        HttpGet httpGet = new HttpGet ("http://localhost:7004/v1/data");
+        httpGet.setHeader("Authorization", "Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgxMzAwNTAzNiwianRpIjoiN2daaHY2TS14UXpvVDhuNVMxODNodyIsImlhdCI6MTQ5NzY0NTAzNiwibmJmIjoxNDk3NjQ0OTE2LCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6IlN0ZXZlIiwidXNlcl90eXBlIjoiRU1QTE9ZRUUiLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzIiLCJzY29wZSI6WyJhcGlfYS53IiwiYXBpX2IudyIsImFwaV9jLnciLCJhcGlfZC53Iiwic2VydmVyLmluZm8uciJdfQ.FkFbPTRXZf045_7fBlEPQTn7rNoib54TYQeFzSjLmMkUjrfDsJZD6EnrsAquDpHt8GKQNqGbyPzgiNWAIYHgwPZvM-lHw_dv0KUKii3D0woaFBkqu4vYxqyImROBii0B38evxPAZVONWqUncL21592bFPHsxGCz5oHL2unLv-oIQklWxcILpMrSL_tf7nhXHSu1RkRhshxAiAHSSpBZnluu4-jqZdEFtc5U_YApToUrKkmI_An1op5-6rS_I-fMbSnSctUoDgg3RT4Zvw1HC-ZLJlXWRF5-FD4uQOAOgy_T7PI75pNiuh4wgOGgdIf48X-7-fDkEbla-cVLiuj3z4g");
+        try {
+            CloseableHttpResponse response = client.execute(httpGet);
+            int statusCode = response.getStatusLine().getStatusCode();
+            String body = IOUtils.toString(response.getEntity().getContent(), "utf8");
+            Assert.assertEquals(200, statusCode);
+            Assert.assertNotNull(body);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testDataGetHandlerHttps() throws ClientException, ApiException {
+        CloseableHttpClient client = Client.getInstance().getSyncClient();
+        HttpGet httpGet = new HttpGet ("https://localhost:7444/v1/data");
+        httpGet.setHeader("Authorization", "Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgxMzAwNTAzNiwianRpIjoiN2daaHY2TS14UXpvVDhuNVMxODNodyIsImlhdCI6MTQ5NzY0NTAzNiwibmJmIjoxNDk3NjQ0OTE2LCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6IlN0ZXZlIiwidXNlcl90eXBlIjoiRU1QTE9ZRUUiLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzIiLCJzY29wZSI6WyJhcGlfYS53IiwiYXBpX2IudyIsImFwaV9jLnciLCJhcGlfZC53Iiwic2VydmVyLmluZm8uciJdfQ.FkFbPTRXZf045_7fBlEPQTn7rNoib54TYQeFzSjLmMkUjrfDsJZD6EnrsAquDpHt8GKQNqGbyPzgiNWAIYHgwPZvM-lHw_dv0KUKii3D0woaFBkqu4vYxqyImROBii0B38evxPAZVONWqUncL21592bFPHsxGCz5oHL2unLv-oIQklWxcILpMrSL_tf7nhXHSu1RkRhshxAiAHSSpBZnluu4-jqZdEFtc5U_YApToUrKkmI_An1op5-6rS_I-fMbSnSctUoDgg3RT4Zvw1HC-ZLJlXWRF5-FD4uQOAOgy_T7PI75pNiuh4wgOGgdIf48X-7-fDkEbla-cVLiuj3z4g");
+        try {
+            CloseableHttpResponse response = client.execute(httpGet);
+            int statusCode = response.getStatusLine().getStatusCode();
+            String body = IOUtils.toString(response.getEntity().getContent(), "utf8");
+            Assert.assertEquals(200, statusCode);
+            Assert.assertNotNull(body);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+}
+
+```
+
+
+Now we need to rebuild and restart API A, B, C and D in four terminals. 
+
+```
+cd ~/networknt/light-example-4j/rest/ms_chain/api_a/security
+mvn clean install exec:exec
+```
+
+```
+cd ~/networknt/light-example-4j/rest/ms_chain/api_b/security
+mvn clean install exec:exec
+```
+
+```
+cd ~/networknt/light-example-4j/rest/ms_chain/api_c/security
+mvn clean install exec:exec
+```
+
+```
+cd ~/networknt/light-example-4j/rest/ms_chain/api_d/security
+mvn clean install exec:exec
+
+```
+
+
+Now let's test it with a JWT token for the https port on api_a. For this moment on, 
+we are going to use https all the time as it is required if OAuth2 is enabled.
+
+```
+curl -k -H "Authorization: Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgxMzAwNTAzNiwianRpIjoiN2daaHY2TS14UXpvVDhuNVMxODNodyIsImlhdCI6MTQ5NzY0NTAzNiwibmJmIjoxNDk3NjQ0OTE2LCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6IlN0ZXZlIiwidXNlcl90eXBlIjoiRU1QTE9ZRUUiLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzIiLCJzY29wZSI6WyJhcGlfYS53IiwiYXBpX2IudyIsImFwaV9jLnciLCJhcGlfZC53Iiwic2VydmVyLmluZm8uciJdfQ.FkFbPTRXZf045_7fBlEPQTn7rNoib54TYQeFzSjLmMkUjrfDsJZD6EnrsAquDpHt8GKQNqGbyPzgiNWAIYHgwPZvM-lHw_dv0KUKii3D0woaFBkqu4vYxqyImROBii0B38evxPAZVONWqUncL21592bFPHsxGCz5oHL2unLv-oIQklWxcILpMrSL_tf7nhXHSu1RkRhshxAiAHSSpBZnluu4-jqZdEFtc5U_YApToUrKkmI_An1op5-6rS_I-fMbSnSctUoDgg3RT4Zvw1HC-ZLJlXWRF5-FD4uQOAOgy_T7PI75pNiuh4wgOGgdIf48X-7-fDkEbla-cVLiuj3z4g" https://localhost:7441/v1/data
+```
+
+And you should have the normal result. 
+
+
+## Performance with Security
+
+Since we have both https and OAuth2 involved, we are going to test the performance again. 
+
+```
+wrk -t4 -c128 -d30s -H "Authorization: Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgxMzAwNTAzNiwianRpIjoiN2daaHY2TS14UXpvVDhuNVMxODNodyIsImlhdCI6MTQ5NzY0NTAzNiwibmJmIjoxNDk3NjQ0OTE2LCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6IlN0ZXZlIiwidXNlcl90eXBlIjoiRU1QTE9ZRUUiLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzIiLCJzY29wZSI6WyJhcGlfYS53IiwiYXBpX2IudyIsImFwaV9jLnciLCJhcGlfZC53Iiwic2VydmVyLmluZm8uciJdfQ.FkFbPTRXZf045_7fBlEPQTn7rNoib54TYQeFzSjLmMkUjrfDsJZD6EnrsAquDpHt8GKQNqGbyPzgiNWAIYHgwPZvM-lHw_dv0KUKii3D0woaFBkqu4vYxqyImROBii0B38evxPAZVONWqUncL21592bFPHsxGCz5oHL2unLv-oIQklWxcILpMrSL_tf7nhXHSu1RkRhshxAiAHSSpBZnluu4-jqZdEFtc5U_YApToUrKkmI_An1op5-6rS_I-fMbSnSctUoDgg3RT4Zvw1HC-ZLJlXWRF5-FD4uQOAOgy_T7PI75pNiuh4wgOGgdIf48X-7-fDkEbla-cVLiuj3z4g" https://localhost:7441 -s pipeline.lua --latency -- /v1/data 1024
+```
+
+And result
+
+```
+Running 30s test @ https://localhost:7441
+  4 threads and 128 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     0.00us    0.00us   0.00us    -nan%
+    Req/Sec   484.87    476.28     3.43k    88.89%
+  Latency Distribution
+     50%    0.00us
+     75%    0.00us
+     90%    0.00us
+     99%    0.00us
+  22576 requests in 30.10s, 5.19MB read
+Requests/sec:    750.14
+Transfer/sec:    176.55KB
+
+```
+
+As you can see the performance dropped a lot due to JWT verification. We will explore some
+optimization later on with JWT verification. But is it out of scope for this tutorial.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Enable Metrics
+
+By default, all services will try to report metrics info to Influxdb and subsequently viewed 
+from Grafana dashboard. 
+
+If InfluxDB is not available the report will be a noop.
+
+In order to output to the right Influxdb instance, we need to update metrics.yml
+
+Let's create a new folder metrics under compose and config.
+
+```
+cd ~/networknt/light-java-example/ms_chain/config/api_a
+mkdir metrics
+cp security/* metrics
+cd ~/networknt/light-java-example/ms_chain/config/api_b
+mkdir metrics
+cp security/* metrics
+cd ~/networknt/light-java-example/ms_chain/config/api_c
+mkdir metrics
+cp security/* metrics
+cd ~/networknt/light-java-example/ms_chain/config/api_d
+mkdir metrics
+
+```
+
+Now we need to add the following metrics.yml to each metrics folder under config.
+
+```
+description: Metrics handler configuration
+enabled: true
+influxdbProtocol: http
+influxdbHost: influxdb
+influxdbPort: 8086
+influxdbName: metrics
+influxdbUser: admin
+influxdbPass: admin
+reportInMinutes: 1
+
+```
+
+
+Now let's start Influxdb and Grafana from docker-compose-metrics.yml in light-docker.
+The light-docker repo should have been checked out at preparation step.
+
+```
+cd ~/networknt/light-docker
+docker-compose -f docker-compose-metrics.yml up
+```
+
+Let's update ms_chain/compose to create a new compose under metrics
+
+```
+cd ~/networknt/light-java-example/ms_chain/compose
+mkdir metrics
+
+```
+Now create a new compose file under metrics folder
+
+```
+#
+# docker-compose-app.yml
+#
+
+version: '2'
+
+#
+# Services
+#
+services:
+
+
+    #
+    # Microservice: API A
+    #
+    apia:
+        build: ~/networknt/light-java-example/ms_chain/api_a/security/
+        ports:
+            - "7001:7001"
+        networks:
+            - localnet
+        volumes:
+            - ~/networknt/light-java-example/ms_chain/config/api_a/metrics:/config
+
+    #
+    # Microservice: API B
+    #
+    apib:
+        build: ~/networknt/light-java-example/ms_chain/api_b/security/
+        ports:
+            - "7002:7002"
+        networks:
+            - localnet
+        volumes:
+            - ~/networknt/light-java-example/ms_chain/config/api_b/metrics:/config
+
+    #
+    # Microservice: API C
+    #
+    apic:
+        build: ~/networknt/light-java-example/ms_chain/api_c/security/
+        ports:
+            - "7003:7003"
+        networks:
+            - localnet
+        volumes:
+            - ~/networknt/light-java-example/ms_chain/config/api_c/metrics:/config
+
+    #
+    # Microservice: API D
+    #
+    apid:
+        build: ~/networknt/light-java-example/ms_chain/api_d/security/
+        ports:
+            - "7004:7004"
+        networks:
+            - localnet
+        volumes:
+            - ~/networknt/light-java-example/ms_chain/config/api_d/metrics:/config
+
+#
+# Networks
+#
+networks:
+    localnet:
+        external: true
+
+```
+
+Now shutdown the APP compose by CTRL+C and restart it.
+
+```
+cd ~/networknt/light-java-example/ms_chain/compose/metrics
+docker-compose -f docker-compose-app.yml up
+```
+
+Let's use curl to access API A, this time I am using a long lived token I generated 
+from a utility.
+
+```
+eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgwNjIwMDY2MSwianRpIjoibmQtb2ZZbWRIY0JZTUlEYU50MUFudyIsImlhdCI6MTQ5MDg0MDY2MSwibmJmIjoxNDkwODQwNTQxLCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6IlN0ZXZlIiwidXNlcl90eXBlIjoiRU1QTE9ZRUUiLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzIiLCJzY29wZSI6WyJhcGlfYS53IiwiYXBpX2IudyIsImFwaV9jLnciLCJhcGlfZC53Iiwic2VydmVyLmluZm8uciJdfQ.SPHICXRY4SuUvWf0NYtwUrQ2-N-NeYT3b4CvxbzNl7D7GL5CF91G3siECrRBVexe0smBHHeiP3bq65rnCVFtwlYYqH6ZS5P7-AFiNcLBzSI9-OhV8JSf5sv381nk2f41IE4av2YUlgY0_mcIDo24ItnuPCxj0l49CAaLb7b1SHZJBQJANJTeQj-wgFsEqwafA-2wH2gehtH8CmOuuYfWO5t5IehP-zJNVT66E4UTRfvvZaJIvNTEQBWPpaZeeK6e56SyBqaLOR7duqJZ8a2UQZRWsDdIVt2Y5jGXQu1gyenIvCQbYLS6iglg6Xaco9emnYFopd2i3psathuX367fvw
+
+```
+
+
+
+```
+curl -H "Authorization: Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgwNjIwMDY2MSwianRpIjoibmQtb2ZZbWRIY0JZTUlEYU50MUFudyIsImlhdCI6MTQ5MDg0MDY2MSwibmJmIjoxNDkwODQwNTQxLCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6IlN0ZXZlIiwidXNlcl90eXBlIjoiRU1QTE9ZRUUiLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzIiLCJzY29wZSI6WyJhcGlfYS53IiwiYXBpX2IudyIsImFwaV9jLnciLCJhcGlfZC53Iiwic2VydmVyLmluZm8uciJdfQ.SPHICXRY4SuUvWf0NYtwUrQ2-N-NeYT3b4CvxbzNl7D7GL5CF91G3siECrRBVexe0smBHHeiP3bq65rnCVFtwlYYqH6ZS5P7-AFiNcLBzSI9-OhV8JSf5sv381nk2f41IE4av2YUlgY0_mcIDo24ItnuPCxj0l49CAaLb7b1SHZJBQJANJTeQj-wgFsEqwafA-2wH2gehtH8CmOuuYfWO5t5IehP-zJNVT66E4UTRfvvZaJIvNTEQBWPpaZeeK6e56SyBqaLOR7duqJZ8a2UQZRWsDdIVt2Y5jGXQu1gyenIvCQbYLS6iglg6Xaco9emnYFopd2i3psathuX367fvw" localhost:7001/v1/data
+```
+
+
+
+
 
 ## Docker Compose
 
