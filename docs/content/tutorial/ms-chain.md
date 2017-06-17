@@ -1682,60 +1682,55 @@ optimization later on with JWT verification. But is it out of scope for this tut
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 ## Enable Metrics
 
-By default, all services will try to report metrics info to Influxdb and subsequently viewed 
-from Grafana dashboard. 
+All services can be configed to enable metrics collection and report metrics info to Influxdb 
+and subsequently viewed from Grafana dashboard. 
 
 If InfluxDB is not available the report will be a noop.
 
-In order to output to the right Influxdb instance, we need to update metrics.yml
+In order to output to the right Influxdb instance, we need to create metrics.yml in
+src/main/resources/config folder to overwrite the default configuration. 
 
-Let's create a new folder metrics under compose and config.
 
-```
-cd ~/networknt/light-java-example/ms_chain/config/api_a
-mkdir metrics
-cp security/* metrics
-cd ~/networknt/light-java-example/ms_chain/config/api_b
-mkdir metrics
-cp security/* metrics
-cd ~/networknt/light-java-example/ms_chain/config/api_c
-mkdir metrics
-cp security/* metrics
-cd ~/networknt/light-java-example/ms_chain/config/api_d
-mkdir metrics
+Let's create a new folder metrics by copying the security folder.
 
 ```
-
-Now we need to add the following metrics.yml to each metrics folder under config.
+cd ~/networknt/light-example-4j/rest/ms_chain/api_a
+cp -r security metrics
+cd ~/networknt/light-example-4j/rest/ms_chain/api_b
+cp -r security metrics
+cd ~/networknt/light-example-4j/rest/ms_chain/api_c
+cp -r security metrics
+cd ~/networknt/light-example-4j/rest/ms_chain/api_d
+cp -r security metrics
 
 ```
-description: Metrics handler configuration
+
+Now we need to add the following metrics.yml to each api resources/config.
+
+```
+# Metrics handler configuration
+
+# If metrics handler is enabled or not
 enabled: true
+
+# influxdb protocal can be http, https
 influxdbProtocol: http
-influxdbHost: influxdb
+# influxdb hostname
+influxdbHost: localhost
+# influxdb port number
 influxdbPort: 8086
+# influxdb database name
 influxdbName: metrics
-influxdbUser: admin
-influxdbPass: admin
+# influxdb user
+influxdbUser: root
+# influx db password
+influxdbPass: root
+# report and reset metrics in minutes.
 reportInMinutes: 1
 
 ```
-
 
 Now let's start Influxdb and Grafana from docker-compose-metrics.yml in light-docker.
 The light-docker repo should have been checked out at preparation step.
@@ -1745,91 +1740,29 @@ cd ~/networknt/light-docker
 docker-compose -f docker-compose-metrics.yml up
 ```
 
-Let's update ms_chain/compose to create a new compose under metrics
+Now let's start four APIs from four terminals. 
 
 ```
-cd ~/networknt/light-java-example/ms_chain/compose
-mkdir metrics
+cd ~/networknt/light-example-4j/rest/ms_chain/api_a/metrics
+mvn clean install exec:exec
+```
 
 ```
-Now create a new compose file under metrics folder
+cd ~/networknt/light-example-4j/rest/ms_chain/api_b/metrics
+mvn clean install exec:exec
+```
 
 ```
-#
-# docker-compose-app.yml
-#
+cd ~/networknt/light-example-4j/rest/ms_chain/api_c/metrics
+mvn clean install exec:exec
+```
 
-version: '2'
-
-#
-# Services
-#
-services:
-
-
-    #
-    # Microservice: API A
-    #
-    apia:
-        build: ~/networknt/light-java-example/ms_chain/api_a/security/
-        ports:
-            - "7001:7001"
-        networks:
-            - localnet
-        volumes:
-            - ~/networknt/light-java-example/ms_chain/config/api_a/metrics:/config
-
-    #
-    # Microservice: API B
-    #
-    apib:
-        build: ~/networknt/light-java-example/ms_chain/api_b/security/
-        ports:
-            - "7002:7002"
-        networks:
-            - localnet
-        volumes:
-            - ~/networknt/light-java-example/ms_chain/config/api_b/metrics:/config
-
-    #
-    # Microservice: API C
-    #
-    apic:
-        build: ~/networknt/light-java-example/ms_chain/api_c/security/
-        ports:
-            - "7003:7003"
-        networks:
-            - localnet
-        volumes:
-            - ~/networknt/light-java-example/ms_chain/config/api_c/metrics:/config
-
-    #
-    # Microservice: API D
-    #
-    apid:
-        build: ~/networknt/light-java-example/ms_chain/api_d/security/
-        ports:
-            - "7004:7004"
-        networks:
-            - localnet
-        volumes:
-            - ~/networknt/light-java-example/ms_chain/config/api_d/metrics:/config
-
-#
-# Networks
-#
-networks:
-    localnet:
-        external: true
+```
+cd ~/networknt/light-example-4j/rest/ms_chain/api_d/metrics
+mvn clean install exec:exec
 
 ```
 
-Now shutdown the APP compose by CTRL+C and restart it.
-
-```
-cd ~/networknt/light-java-example/ms_chain/compose/metrics
-docker-compose -f docker-compose-app.yml up
-```
 
 Let's use curl to access API A, this time I am using a long lived token I generated 
 from a utility.
@@ -1839,14 +1772,34 @@ eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI
 
 ```
 
-
-
 ```
-curl -H "Authorization: Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgwNjIwMDY2MSwianRpIjoibmQtb2ZZbWRIY0JZTUlEYU50MUFudyIsImlhdCI6MTQ5MDg0MDY2MSwibmJmIjoxNDkwODQwNTQxLCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6IlN0ZXZlIiwidXNlcl90eXBlIjoiRU1QTE9ZRUUiLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzIiLCJzY29wZSI6WyJhcGlfYS53IiwiYXBpX2IudyIsImFwaV9jLnciLCJhcGlfZC53Iiwic2VydmVyLmluZm8uciJdfQ.SPHICXRY4SuUvWf0NYtwUrQ2-N-NeYT3b4CvxbzNl7D7GL5CF91G3siECrRBVexe0smBHHeiP3bq65rnCVFtwlYYqH6ZS5P7-AFiNcLBzSI9-OhV8JSf5sv381nk2f41IE4av2YUlgY0_mcIDo24ItnuPCxj0l49CAaLb7b1SHZJBQJANJTeQj-wgFsEqwafA-2wH2gehtH8CmOuuYfWO5t5IehP-zJNVT66E4UTRfvvZaJIvNTEQBWPpaZeeK6e56SyBqaLOR7duqJZ8a2UQZRWsDdIVt2Y5jGXQu1gyenIvCQbYLS6iglg6Xaco9emnYFopd2i3psathuX367fvw" localhost:7001/v1/data
+curl -k -H "Authorization: Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgwNjIwMDY2MSwianRpIjoibmQtb2ZZbWRIY0JZTUlEYU50MUFudyIsImlhdCI6MTQ5MDg0MDY2MSwibmJmIjoxNDkwODQwNTQxLCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6IlN0ZXZlIiwidXNlcl90eXBlIjoiRU1QTE9ZRUUiLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzIiLCJzY29wZSI6WyJhcGlfYS53IiwiYXBpX2IudyIsImFwaV9jLnciLCJhcGlfZC53Iiwic2VydmVyLmluZm8uciJdfQ.SPHICXRY4SuUvWf0NYtwUrQ2-N-NeYT3b4CvxbzNl7D7GL5CF91G3siECrRBVexe0smBHHeiP3bq65rnCVFtwlYYqH6ZS5P7-AFiNcLBzSI9-OhV8JSf5sv381nk2f41IE4av2YUlgY0_mcIDo24ItnuPCxj0l49CAaLb7b1SHZJBQJANJTeQj-wgFsEqwafA-2wH2gehtH8CmOuuYfWO5t5IehP-zJNVT66E4UTRfvvZaJIvNTEQBWPpaZeeK6e56SyBqaLOR7duqJZ8a2UQZRWsDdIVt2Y5jGXQu1gyenIvCQbYLS6iglg6Xaco9emnYFopd2i3psathuX367fvw" https://localhost:7441/v1/data
 ```
 
+Send several request from curl and let's take a look at influxdb console at
+http://localhost:8083
+
+On the console, select the database to metrics and select from Query templates with 
+"SHOW MEASUREMENTS" and you can see something like the following picture.
+
+![influx_console](/images/influx_console.png)
+
+Pick one of the measurement and create a query and you can see the content of the table.
+
+```
+select * from "com.networknt.apia-1.0.0.request.count"
+```
+
+![api_a_metrics](/images/api_a_metrics.png)
 
 
+If you want to take a look at metrics from one of client's perspective, issue the following query
+
+```
+select * from "f7d42348-c647-4efb-a52d-4c5787421e72.request.count"
+```
+
+![client_metrics](/images/client_metrics.png)
 
 
 ## Docker Compose
@@ -2607,169 +2560,11 @@ Here is the insert statements.
 ```
 
 ```
+## Performance with Docker Compose
 
+## Kubernetes
 
-## Enable Metrics
-
-When you start a service, you might realized that every few minutes, "InfluxDbReporter 
-report is called" will be shown up on the console. By default, all services will try
-to report metrics info to Influxdb and subsequently viewed from Grafana dashboard.
-
-If InfluxDB is not available this report will be a noop.
-
-In order to output to the right Influxdb instance, we need to externalize metrics.yml
-
-Let's create a new folder metrics under compose and config.
-
-```
-cd ~/networknt/light-java-example/ms_chain/config/api_a
-mkdir metrics
-cp security/* metrics
-cd ~/networknt/light-java-example/ms_chain/config/api_b
-mkdir metrics
-cp security/* metrics
-cd ~/networknt/light-java-example/ms_chain/config/api_c
-mkdir metrics
-cp security/* metrics
-cd ~/networknt/light-java-example/ms_chain/config/api_d
-mkdir metrics
-
-```
-
-Now we need to add the following metrics.yml to each metrics folder under config.
-
-```
-description: Metrics handler configuration
-enabled: true
-influxdbProtocol: http
-influxdbHost: influxdb
-influxdbPort: 8086
-influxdbName: metrics
-influxdbUser: admin
-influxdbPass: admin
-reportInMinutes: 1
-
-```
-
-
-Now let's start Influxdb and Grafana from docker-compose-metrics.yml in light-docker.
-The light-docker repo should have been checked out at preparation step.
-
-```
-cd ~/networknt/light-docker
-docker-compose -f docker-compose-metrics.yml up
-```
-
-Let's update ms_chain/compose to create a new compose under metrics
-
-```
-cd ~/networknt/light-java-example/ms_chain/compose
-mkdir metrics
-
-```
-Now create a new compose file under metrics folder
-
-```
-#
-# docker-compose-app.yml
-#
-
-version: '2'
-
-#
-# Services
-#
-services:
-
-
-    #
-    # Microservice: API A
-    #
-    apia:
-        build: ~/networknt/light-java-example/ms_chain/api_a/security/
-        ports:
-            - "7001:7001"
-        networks:
-            - localnet
-        volumes:
-            - ~/networknt/light-java-example/ms_chain/config/api_a/metrics:/config
-
-    #
-    # Microservice: API B
-    #
-    apib:
-        build: ~/networknt/light-java-example/ms_chain/api_b/security/
-        ports:
-            - "7002:7002"
-        networks:
-            - localnet
-        volumes:
-            - ~/networknt/light-java-example/ms_chain/config/api_b/metrics:/config
-
-    #
-    # Microservice: API C
-    #
-    apic:
-        build: ~/networknt/light-java-example/ms_chain/api_c/security/
-        ports:
-            - "7003:7003"
-        networks:
-            - localnet
-        volumes:
-            - ~/networknt/light-java-example/ms_chain/config/api_c/metrics:/config
-
-    #
-    # Microservice: API D
-    #
-    apid:
-        build: ~/networknt/light-java-example/ms_chain/api_d/security/
-        ports:
-            - "7004:7004"
-        networks:
-            - localnet
-        volumes:
-            - ~/networknt/light-java-example/ms_chain/config/api_d/metrics:/config
-
-#
-# Networks
-#
-networks:
-    localnet:
-        external: true
-
-```
-
-Now shutdown the APP compose by CTRL+C and restart it.
-
-```
-cd ~/networknt/light-java-example/ms_chain/compose/metrics
-docker-compose -f docker-compose-app.yml up
-```
-
-Let's use curl to access API A, this time I am using a long lived token I generated 
-from a utility.
-
-```
-eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgwNjIwMDY2MSwianRpIjoibmQtb2ZZbWRIY0JZTUlEYU50MUFudyIsImlhdCI6MTQ5MDg0MDY2MSwibmJmIjoxNDkwODQwNTQxLCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6IlN0ZXZlIiwidXNlcl90eXBlIjoiRU1QTE9ZRUUiLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzIiLCJzY29wZSI6WyJhcGlfYS53IiwiYXBpX2IudyIsImFwaV9jLnciLCJhcGlfZC53Iiwic2VydmVyLmluZm8uciJdfQ.SPHICXRY4SuUvWf0NYtwUrQ2-N-NeYT3b4CvxbzNl7D7GL5CF91G3siECrRBVexe0smBHHeiP3bq65rnCVFtwlYYqH6ZS5P7-AFiNcLBzSI9-OhV8JSf5sv381nk2f41IE4av2YUlgY0_mcIDo24ItnuPCxj0l49CAaLb7b1SHZJBQJANJTeQj-wgFsEqwafA-2wH2gehtH8CmOuuYfWO5t5IehP-zJNVT66E4UTRfvvZaJIvNTEQBWPpaZeeK6e56SyBqaLOR7duqJZ8a2UQZRWsDdIVt2Y5jGXQu1gyenIvCQbYLS6iglg6Xaco9emnYFopd2i3psathuX367fvw
-
-```
-
-
-
-```
-curl -H "Authorization: Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgwNjIwMDY2MSwianRpIjoibmQtb2ZZbWRIY0JZTUlEYU50MUFudyIsImlhdCI6MTQ5MDg0MDY2MSwibmJmIjoxNDkwODQwNTQxLCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6IlN0ZXZlIiwidXNlcl90eXBlIjoiRU1QTE9ZRUUiLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzIiLCJzY29wZSI6WyJhcGlfYS53IiwiYXBpX2IudyIsImFwaV9jLnciLCJhcGlfZC53Iiwic2VydmVyLmluZm8uciJdfQ.SPHICXRY4SuUvWf0NYtwUrQ2-N-NeYT3b4CvxbzNl7D7GL5CF91G3siECrRBVexe0smBHHeiP3bq65rnCVFtwlYYqH6ZS5P7-AFiNcLBzSI9-OhV8JSf5sv381nk2f41IE4av2YUlgY0_mcIDo24ItnuPCxj0l49CAaLb7b1SHZJBQJANJTeQj-wgFsEqwafA-2wH2gehtH8CmOuuYfWO5t5IehP-zJNVT66E4UTRfvvZaJIvNTEQBWPpaZeeK6e56SyBqaLOR7duqJZ8a2UQZRWsDdIVt2Y5jGXQu1gyenIvCQbYLS6iglg6Xaco9emnYFopd2i3psathuX367fvw" localhost:7001/v1/data
-```
-
-
-## Enable Logging
-
-
-
-## Integration
-
-## Performance
-
-## Production
+## Performance with Kubernetes
 
 ## Conclusion
 
