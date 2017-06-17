@@ -5,8 +5,6 @@ title: Tutorials
 
 The following tutorials are leveraging light-rest-4j framework and they will help users to get started.
 
-* [How to build, test and deploy microserivces](https://networknt.github.io/light-rest-4j/tutorial/microservices/)
-
 * [How to access database in microservices](https://networknt.github.io/light-rest-4j/tutorial/database/)
 
 * [How to register and discover services](https://networknt.github.io/light-rest-4j/tutorial/discovery/)
