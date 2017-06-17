@@ -12,3 +12,5 @@ The following tutorials are leveraging light-rest-4j framework and they will hel
 * [How to register and discover services](https://networknt.github.io/light-rest-4j/tutorial/discovery/)
 
 * [How to implement Chain Pattern of microservices](https://networknt.github.io/light-rest-4j/tutorial/ms-chain/)
+
+* [How to implement Aggregate Pattern of microservices](https://networknt.github.io/light-rest-4j/tutorial/ms-aggregate/)
