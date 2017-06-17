@@ -1812,36 +1812,33 @@ Before doing that, let's create two folders under ms_chain for different version
 compose files and externalized config files.
 
 ```
-cd ~/networknt/light-java-example/ms_chain
+cd ~/networknt/light-example-4j/rest/ms_chain
 mkdir compose
-mkdir config
-cd compose
-mkdir apionly
+mkdir etc
 ```
 
-Now in the config folder, we need to create sub folders for each api and inside, we need
-to create apionly folder.
+Now in the etc folder, we need to create sub folders for each api and config sub folder
+
 
 ```
-cd ~/networknt/light-java-example/ms_chain/config
+cd ~/networknt/light-example-4j/rest/ms_chain/etc
 mkdir api_a
 mkdir api_b
 mkdir api_c
 mkdir api_d
 
 cd api_a
-mkdir apionly
+mkdir config
 cd ../api_b
-mkdir apionly
+mkdir config
 cd ../api_c
-mkdir apionly
+mkdir config
 cd ../api_d
-mkdir apionly
-
+mkdir config
 ```
 
 
-Let's create a ms_chain/compose/apionly/docker-compose-app.yml.
+Let's create a rest/ms_chain/compose/docker-compose-app.yml.
 
 ```
 #
@@ -1860,49 +1857,49 @@ services:
     # Microservice: API A
     #
     apia:
-        build: ~/networknt/light-java-example/ms_chain/api_a/apitoapi/
+        build: ~/networknt/light-example-4j/rest/ms_chain/api_a/metrics/
         ports:
-            - "7001:7001"
+            - "7441:7441"
         networks:
             - localnet
         volumes:
-            - ~/networknt/light-java-example/ms_chain/config/api_a/apionly:/config
+            - ~/networknt/light-example-4j/rest/ms_chain/etc/api_a/config:/config
 
     #
     # Microservice: API B
     #
     apib:
-        build: ~/networknt/light-java-example/ms_chain/api_b/apitoapi/
+        build: ~/networknt/light-example-4j/rest/ms_chain/api_b/metrics/
         ports:
             - "7002:7002"
         networks:
             - localnet
         volumes:
-            - ~/networknt/light-java-example/ms_chain/config/api_b/apionly:/config
+            - ~/networknt/light-example-4j/rest/ms_chain/etc/api_b/config:/config
 
     #
     # Microservice: API C
     #
     apic:
-        build: ~/networknt/light-java-example/ms_chain/api_c/apitoapi/
+        build: ~/networknt/light-example-4j/rest/ms_chain/api_c/metrics/
         ports:
             - "7003:7003"
         networks:
             - localnet
         volumes:
-            - ~/networknt/light-java-example/ms_chain/config/api_c/apionly:/config
+            - ~/networknt/light-example-4j/rest/ms_chain/etc/api_c/config:/config
 
     #
     # Microservice: API D
     #
     apid:
-        build: ~/networknt/light-java-example/ms_chain/api_d/apitoapi/
+        build: ~/networknt/light-example-4j/rest/ms_chain/api_d/metrics/
         ports:
             - "7004:7004"
         networks:
             - localnet
         volumes:
-            - ~/networknt/light-java-example/ms_chain/config/api_d/apionly:/config
+            - ~/networknt/light-example-4j/rest/ms_chain/etc/api_d/config:/config
 
 #
 # Networks
@@ -1910,35 +1907,147 @@ services:
 networks:
     localnet:
         external: true
+        
 ```
 
 
 From above docker compose file you can see we have a volume for each api with externalized
-configuration folder under ms_chain/config/api_x/apionly. Since we are using docker compose
+configuration folder under ms_chain/etc/api_x/config. Since we are using docker compose
 we cannot use localhost:port to call services and we have to use service name in 
 docker-compose-app.yml for the hostname. To resolve the issue without rebuilding the services
 we are going to externalize api_a.yml, api_b.yml and api_c.yml to their externalized config
 folder.
 
-Let's create api_a.yml in ms_chain/config/api_a/apionly folder
+Let's create api_a.yml in ms_chain/etc/api_a/config folder. 
 
 ```
-api_b_endpoint: "http://apib:7002/v1/data"
+api_b_endpoint: "https://apib:7442/v1/data"
 
 ```
 Please note that apib is the name of the service in docker-compose-app.yml
 
-Create api_b.yml in ms_chain/config/api_b/apionly folder
+Create api_b.yml in ms_chain/etc/api_b/config folder
 
 ```
-api_c_endpoint: "http://apic:7003/v1/data"
+api_c_endpoint: "https://apic:7443/v1/data"
 
 ```
 
-Create api_c.yml in ms_chain/config/api_c/apionly folder
+Create api_c.yml in ms_chain/etc/api_c/config folder
 
 ```
-api_d_endpoint: "http://apid:7004/v1/data"
+api_d_endpoint: "https://apid:7444/v1/data"
+
+```
+
+As each API needs to access OAuth2 server to get access token, so we need to update
+client.yml to point to the service name in docker-compose instead of localhost. 
+
+Now, let's copy the client.yml from metrics folder for each API into ms_chain/etc/api_x/config
+folder and update the url for OAuth2 server. 
+
+```
+cp ~/networknt/light-example-4j/rest/ms_chain/api_a/metrics/src/main/resources/config/client.yml ~/networknt/light-example-4j/rest/ms_chain/etc/api_a/config
+cp ~/networknt/light-example-4j/rest/ms_chain/api_b/metrics/src/main/resources/config/client.yml ~/networknt/light-example-4j/rest/ms_chain/etc/api_b/config
+cp ~/networknt/light-example-4j/rest/ms_chain/api_c/metrics/src/main/resources/config/client.yml ~/networknt/light-example-4j/rest/ms_chain/etc/api_c/config
+```
+
+The api_a client.yml in ms_chain/etc/api_a/config folder looks like this after modification. 
+
+```
+sync:
+  maxConnectionTotal: 100
+  maxConnectionPerRoute: 10
+  routes:
+    api.google.com: 20
+    api.facebook.com: 10
+  timeout: 10000
+  keepAlive: 15000
+async:
+  maxConnectionTotal: 100
+  maxConnectionPerRoute: 10
+  routes:
+    api.google.com: 20
+    api.facebook.com: 10
+  reactor:
+    ioThreadCount: 1
+    connectTimeout: 10000
+    soTimeout: 10000
+  timeout: 10000
+  keepAlive: 15000
+tls:
+  # if the server is using self-signed certificate, this need to be false. If true, you have to use CA signed certificate
+  # or load truststore that contains the self-signed cretificate.
+  verifyHostname: false
+  # trust store contains certifictes that server needs. Enable if tls is used.
+  loadTrustStore: true
+  # trust store location can be specified here or system properties javax.net.ssl.trustStore and password javax.net.ssl.trustStorePassword
+  trustStore: tls/client.truststore
+  # key store contains client key and it should be loaded if two-way ssl is uesed.
+  loadKeyStore: false
+  # key store location
+  keyStore: tls/client.keystore
+oauth:
+  tokenRenewBeforeExpired: 600000
+  expiredRefreshRetryDelay: 5000
+  earlyRefreshRetryDelay: 30000
+  # token server url. The default port number for token service is 6882.
+  server_url: http://oauth2-token:6882
+  authorization_code:
+    # token endpoint for authorization code grant
+    uri: "/oauth2/token"
+    # client_id for authorization code grant flow. client_secret is in secret.yml
+    client_id: 9380563c-1598-4499-a01c-4abb013d3a49
+    redirect_uri: https://localhost:8080/authorization_code
+    scope:
+    - api_b.r
+    - api_b.w
+  client_credentials:
+    # token endpoint for client credentials grant
+    uri: "/oauth2/token"
+    # client_id for client credentials grant flow. client_secret is in secret.yml
+    client_id: 9380563c-1598-4499-a01c-4abb013d3a49
+    scope:
+    - api_b.r
+    - api_b.w
+
+```
+As you can see the server_url has been change to "http://oauth2-token:6882" and
+tls/verifyHostname is changed to false as we are using self-signed certificate and hostname
+has been changed to something other than localhost.
+
+Now in order to make the metrics works, we need to copy the metrics.yml to the config folder
+and modify it for the influxdb hostname.
+
+```
+cp ~/networknt/light-example-4j/rest/ms_chain/api_a/metrics/src/main/resources/config/metrics.yml ~/networknt/light-example-4j/rest/ms_chain/etc/api_a/config
+cp ~/networknt/light-example-4j/rest/ms_chain/api_b/metrics/src/main/resources/config/metrics.yml ~/networknt/light-example-4j/rest/ms_chain/etc/api_b/config
+cp ~/networknt/light-example-4j/rest/ms_chain/api_c/metrics/src/main/resources/config/metrics.yml ~/networknt/light-example-4j/rest/ms_chain/etc/api_c/config
+cp ~/networknt/light-example-4j/rest/ms_chain/api_d/metrics/src/main/resources/config/metrics.yml ~/networknt/light-example-4j/rest/ms_chain/etc/api_d/config
+```
+
+The api_a metrics.yml in ms_chain/etc/api_a/config folder looks like this after modification. 
+
+```
+# Metrics handler configuration
+
+# If metrics handler is enabled or not
+enabled: true
+
+# influxdb protocal can be http, https
+influxdbProtocol: http
+# influxdb hostname
+influxdbHost: influxdb
+# influxdb port number
+influxdbPort: 8086
+# influxdb database name
+influxdbName: metrics
+# influxdb user
+influxdbUser: root
+# influx db password
+influxdbPass: root
+# report and reset metrics in minutes.
+reportInMinutes: 1
 
 ```
 
@@ -1946,14 +2055,15 @@ api_d_endpoint: "http://apid:7004/v1/data"
 Now let's start the docker compose. 
 
 ```
-cd ~/networknt/light-java-example/ms_chain/compose/apionly
+cd ~/networknt/light-example-4j/rest/ms_chain/compose
 docker-compose -f docker-compose-app.yml up
 ```
 
 Let's test if the servers are working.
 
 ```
-curl localhost:7001/v1/data
+curl -k -H "Authorization: Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgwNjIwMDY2MSwianRpIjoibmQtb2ZZbWRIY0JZTUlEYU50MUFudyIsImlhdCI6MTQ5MDg0MDY2MSwibmJmIjoxNDkwODQwNTQxLCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6IlN0ZXZlIiwidXNlcl90eXBlIjoiRU1QTE9ZRUUiLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzIiLCJzY29wZSI6WyJhcGlfYS53IiwiYXBpX2IudyIsImFwaV9jLnciLCJhcGlfZC53Iiwic2VydmVyLmluZm8uciJdfQ.SPHICXRY4SuUvWf0NYtwUrQ2-N-NeYT3b4CvxbzNl7D7GL5CF91G3siECrRBVexe0smBHHeiP3bq65rnCVFtwlYYqH6ZS5P7-AFiNcLBzSI9-OhV8JSf5sv381nk2f41IE4av2YUlgY0_mcIDo24ItnuPCxj0l49CAaLb7b1SHZJBQJANJTeQj-wgFsEqwafA-2wH2gehtH8CmOuuYfWO5t5IehP-zJNVT66E4UTRfvvZaJIvNTEQBWPpaZeeK6e56SyBqaLOR7duqJZ8a2UQZRWsDdIVt2Y5jGXQu1gyenIvCQbYLS6iglg6Xaco9emnYFopd2i3psathuX367fvw" https://localhost:7441/v1/data
+
 ```
 
 And we will have the result.
@@ -1962,605 +2072,32 @@ And we will have the result.
 ["API D: Message 1","API D: Message 2","API C: Message 1","API C: Message 2","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
 ```
 
+
+## Performance with Docker Compose
+
 Let's run a load test now.
 
 ```
-wrk -t4 -c128 -d30s http://localhost:7001 -s pipeline.lua --latency -- /v1/data 1024
-Running 30s test @ http://localhost:7001
+wrk -t4 -c128 -d30s -H "Authorization: Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgxMzAwNTAzNiwianRpIjoiN2daaHY2TS14UXpvVDhuNVMxODNodyIsImlhdCI6MTQ5NzY0NTAzNiwibmJmIjoxNDk3NjQ0OTE2LCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6IlN0ZXZlIiwidXNlcl90eXBlIjoiRU1QTE9ZRUUiLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzIiLCJzY29wZSI6WyJhcGlfYS53IiwiYXBpX2IudyIsImFwaV9jLnciLCJhcGlfZC53Iiwic2VydmVyLmluZm8uciJdfQ.FkFbPTRXZf045_7fBlEPQTn7rNoib54TYQeFzSjLmMkUjrfDsJZD6EnrsAquDpHt8GKQNqGbyPzgiNWAIYHgwPZvM-lHw_dv0KUKii3D0woaFBkqu4vYxqyImROBii0B38evxPAZVONWqUncL21592bFPHsxGCz5oHL2unLv-oIQklWxcILpMrSL_tf7nhXHSu1RkRhshxAiAHSSpBZnluu4-jqZdEFtc5U_YApToUrKkmI_An1op5-6rS_I-fMbSnSctUoDgg3RT4Zvw1HC-ZLJlXWRF5-FD4uQOAOgy_T7PI75pNiuh4wgOGgdIf48X-7-fDkEbla-cVLiuj3z4g" https://localhost:7441 -s pipeline.lua --latency -- /v1/data 1024
+```
+
+And the result.
+
+```
+Running 30s test @ https://localhost:7441
   4 threads and 128 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency     0.00us    0.00us   0.00us     nan%
-    Req/Sec   592.29    423.59     2.72k    70.98%
+    Latency     0.00us    0.00us   0.00us    -nan%
+    Req/Sec   482.32    418.96     3.40k    83.98%
   Latency Distribution
      50%    0.00us
      75%    0.00us
      90%    0.00us
      99%    0.00us
-  39712 requests in 30.10s, 9.13MB read
-  Socket errors: connect 0, read 4, write 5, timeout 0
-Requests/sec:   1319.39
-Transfer/sec:    310.52KB
+  21556 requests in 30.05s, 4.95MB read
+Requests/sec:    717.22
+Transfer/sec:    168.80KB
 ```
-
-
-## Enable OAuth2 Security
-
-So far, we've started four servers and tested them successfully; however,
-these servers are not protected by OAuth2 JWT tokens as it is turned off
-by default in the generated code.
-
-Before we turn on the security, we need to have [light-oauth2](https://github.com/networknt/light-oauth2)
-server up and running so that these servers can get JWT token in real time.
-
-When we enable security, the source code needs to be updated in order to
-leverage client module to get JWT token automatically. Let's prepare the
-environment. 
-
-#### Update  APIs
-
-Since we are going to change the code, let's copy each service into a new folder
-called security from apitoapi. 
-
-```
-cd ~/networknt/light-java-example/ms_chain/api_a
-cp -r apitoapi security
-cd ~/networknt/light-java-example/ms_chain/api_b
-cp -r apitoapi security
-cd ~/networknt/light-java-example/ms_chain/api_c
-cp -r apitoapi security
-cd ~/networknt/light-java-example/ms_chain/api_d
-cp -r apitoapi security
-
-```
-Now for api_a, api_b and api_c we need to update DataGetHandler.java to add
-a line before client.execute.
-
-```
-            Client.getInstance().propagateHeaders(httpGet, exchange);
-
-```
-
-Here is the updated file for api_a
-
-```
-package io.swagger.handler;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.networknt.client.Client;
-import com.networknt.config.Config;
-import com.networknt.exception.ClientException;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-
-public class DataGetHandler implements HttpHandler {
-    static String CONFIG_NAME = "api_a";
-    static String apibUrl = (String)Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_b_endpoint");
-
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
-        List<String> list = new ArrayList<String>();
-        try {
-            CloseableHttpClient client = Client.getInstance().getSyncClient();
-            HttpGet httpGet = new HttpGet(apibUrl);
-            Client.getInstance().propagateHeaders(httpGet, exchange);
-            CloseableHttpResponse response = client.execute(httpGet);
-            int responseCode = response.getStatusLine().getStatusCode();
-            if(responseCode != 200){
-                throw new Exception("Failed to call API B: " + responseCode);
-            }
-            List<String> apicList = (List<String>) Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
-                    new TypeReference<List<String>>(){});
-            list.addAll(apicList);
-        } catch (ClientException e) {
-            throw new Exception("Client Exception: ", e);
-        } catch (IOException e) {
-            throw new Exception("IOException:", e);
-        }
-        // now add API B specific messages
-        list.add("API A: Message 1");
-        list.add("API A: Message 2");
-        exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(list));
-    }
-}
-
-```
-
-Follow api_a, update api_b and api_c.
-
-
-
-#### Update Config
-
-Now let's update security.yml to enable JWT verification and scope verification
-for each service. This file is located at src/main/resources/config folder.
-
-API A
-
-old file
-
-```
-# Security configuration in light framework.
----
-# Enable JWT verification flag.
-enableVerifyJwt: false
-
-# Enable JWT scope verification. Only valid when enableVerifyJwt is true.
-enableVerifyScope: true
-
-# User for test only. should be always be false on official environment.
-enableMockJwt: false
-
-# JWT signature public certificates. kid and certificate path mappings.
-jwt:
-  certificate:
-    '100': oauth/primary.crt
-    '101': oauth/secondary.crt
-  clockSkewInSeconds: 60
-
-# Enable or disable JWT token logging
-logJwtToken: true
-
-# Enable or disable client_id, user_id and scope logging.
-logClientUserScope: false
-
-```
-
-Update to 
-
-```
-# Security configuration in light framework.
----
-# Enable JWT verification flag.
-enableVerifyJwt: true
-
-# Enable JWT scope verification. Only valid when enableVerifyJwt is true.
-enableVerifyScope: true
-
-# User for test only. should be always be false on official environment.
-enableMockJwt: false
-
-# JWT signature public certificates. kid and certificate path mappings.
-jwt:
-  certificate:
-    '100': oauth/primary.crt
-    '101': oauth/secondary.crt
-  clockSkewInSeconds: 60
-
-# Enable or disable JWT token logging
-logJwtToken: true
-
-# Enable or disable client_id, user_id and scope logging.
-logClientUserScope: false
-```
-
-Update the security.yml for api_b, api_c and api_d in security folder.
-
-
-#### Start OAuth2 Services
-
-
-The easiest way to run light-oauth2 services is through docker-compose. In the preparation
-step, we have cloned light-docker repo. 
-
-Let's start the light-oauth2 services from a docker compose.
-
-```
-cd ~/networknt/light-docker
-docker-compose -f docker-compose-oauth2-mysql.yml up
-```
-Now the OAuth2 services are up and running. 
-
-#### Register Client
-
-Before we start integrate with OAuth2 services, we need to register clients for api_a,
-api_b, api_c and api_d. This step should be done from light-portal for official environment.
-After client registration, we need to remember the client_id and client_secret for each in
-order to update client.yml for each service.
-
-For more details on how to use the command line tool or script to access oauth2 services,
-please see this [tutorial](https://networknt.github.io/light-oauth2/tutorials/enterprise/)
-
-Register a client that calls api_a.
-
-```
-curl -H "Content-Type: application/json" -X POST -d '{"clientType":"public","clientProfile":"mobile","clientName":"Consumer","clientDesc":"A client that calls API A","scope":"api_a.r api_a.w","redirectUri": "http://localhost:8080/authorization","ownerId":"admin"}' http://localhost:6884/oauth2/client
-
-```
-
-The return value is
-```
-{"clientId":"f0439841-fbe7-43a4-843e-ae0c51971a5e","clientSecret":"pu9aCVwmQjK2PET0_vOl9A","clientType":"public","clientProfile":"mobile","clientName":"Consumer","clientDesc":"A client that calls API A","ownerId":"admin","scope":"api_a.r api_a.w","redirectUri":"http://localhost:8080/authorization","createDt":"2017-03-30","updateDt":null}
-```
-
-We will need to use this clientId and clientSecret to generate an access token later on.
-
-Register a client for api_a to call api_b
-
-```
-curl -H "Content-Type: application/json" -X POST -d '{"clientType":"public","clientProfile":"service","clientName":"api_a","clientDesc":"API A service","scope":"api_b.r api_b.w","redirectUri": "http://localhost:8080/authorization","ownerId":"admin"}' http://localhost:6884/oauth2/client
-
-```
-
-And the result is
-
-```
-{"clientId":"d5a0fa30-408b-4068-884c-e1f36c9e20e7","clientSecret":"DexYT2-OSHKQtNGsH0YYKQ","clientType":"public","clientProfile":"service","clientName":"api_a","clientDesc":"API A service","ownerId":"admin","scope":"api_b.r api_b.w","redirectUri":"http://localhost:8080/authorization","createDt":"2017-03-30","updateDt":null}
-```
-
-Now we need to externalize client.yml and update it with this clientId and clientSecret for
-api_a. Let's create a config folder for api_a.
-
-```
-cd ~/networknt/light-java-example/ms_chain/config/api_a
-mkdir security
-cp apionly/api_a.yml security
-```
-
-Let's create client.yml file in the newly created security folder.
-
-```
-description: client configuration, all timing is milli-second
-sync:
-  maxConnectionTotal: 100
-  maxConnectionPerRoute: 10
-  routes:
-    api.google.com: 20
-    api.facebook.com: 10
-  timeout: 10000
-  keepAlive: 15000
-async:
-  maxConnectionTotal: 100
-  maxConnectionPerRoute: 10
-  routes:
-    api.google.com: 20
-    api.facebook.com: 10
-  reactor:
-    ioThreadCount: 1
-    connectTimeout: 10000
-    soTimeout: 10000
-  timeout: 10000
-  keepAlive: 15000
-tls:
-  verifyHostname: false
-  loadTrustStore: false
-  trustStore: trust.keystore
-  trustPass: password
-  loadKeyStore: false
-  keyStore: key.jks
-  keyPass: password
-oauth:
-  tokenRenewBeforeExpired: 600000
-  expiredRefreshRetryDelay: 5000
-  earlyRefreshRetryDelay: 30000
-  server_url: http://oauth2-token:6882
-  authorization_code:
-    uri: "/oauth2/token"
-    client_id: d5a0fa30-408b-4068-884c-e1f36c9e20e7
-    client_secret: DexYT2-OSHKQtNGsH0YYKQ
-    redirect_uri: https://localhost:8080/authorization_code
-    scope:
-    - api_b.r
-    - api_b.w
-  client_credentials:
-    uri: "/oauth2/token"
-    client_id: d5a0fa30-408b-4068-884c-e1f36c9e20e7
-    client_secret: DexYT2-OSHKQtNGsH0YYKQ
-    scope:
-    - api_b.r
-    - api_b.w
-
-```
-
-As you can see the server_url is pointing to OAuth2 token service at 6882. And
-client_id and client_secret are updated according to the client register result.
-Also, scope has been updated to api_b.r and api_b.w in roder to access API B.
-
-Register a client for api_b to call api_c
-
-```
-curl -H "Content-Type: application/json" -X POST -d '{"clientType":"public","clientProfile":"service","clientName":"api_b","clientDesc":"API B service","scope":"api_c.r api_c.w","redirectUri": "http://localhost:8080/authorization","ownerId":"admin"}' http://localhost:6884/oauth2/client
-
-```
-
-And the result is
-
-```
-{"clientId":"2970c16d-d39b-4ccc-96b0-d6dc4325340f","clientSecret":"H4FpRXo_RLiNatcxce2d8g","clientType":"public","clientProfile":"service","clientName":"api_b","clientDesc":"API B service","ownerId":"admin","scope":"api_c.r api_c.w","redirectUri":"http://localhost:8080/authorization","createDt":"2017-03-30","updateDt":null}
-```
-
-Now we need to externalize client.yml and update it with this clientId and clientSecret for
-api_b. Let's create a config folder for api_b.
-
-```
-cd ~/networknt/light-java-example/ms_chain/config/api_b
-mkdir security
-cp apionly/api_b.yml security
-```
-
-Let's create client.yml file in the newly created security folder.
-
-```
-description: client configuration, all timing is milli-second
-sync:
-  maxConnectionTotal: 100
-  maxConnectionPerRoute: 10
-  routes:
-    api.google.com: 20
-    api.facebook.com: 10
-  timeout: 10000
-  keepAlive: 15000
-async:
-  maxConnectionTotal: 100
-  maxConnectionPerRoute: 10
-  routes:
-    api.google.com: 20
-    api.facebook.com: 10
-  reactor:
-    ioThreadCount: 1
-    connectTimeout: 10000
-    soTimeout: 10000
-  timeout: 10000
-  keepAlive: 15000
-tls:
-  verifyHostname: false
-  loadTrustStore: false
-  trustStore: trust.keystore
-  trustPass: password
-  loadKeyStore: false
-  keyStore: key.jks
-  keyPass: password
-oauth:
-  tokenRenewBeforeExpired: 600000
-  expiredRefreshRetryDelay: 5000
-  earlyRefreshRetryDelay: 30000
-  server_url: http://oauth2-token:6882
-  authorization_code:
-    uri: "/oauth2/token"
-    client_id: 2970c16d-d39b-4ccc-96b0-d6dc4325340f
-    client_secret: H4FpRXo_RLiNatcxce2d8g
-    redirect_uri: https://localhost:8080/authorization_code
-    scope:
-    - api_c.r
-    - api_c.w
-  client_credentials:
-    uri: "/oauth2/token"
-    client_id: 2970c16d-d39b-4ccc-96b0-d6dc4325340f
-    client_secret: H4FpRXo_RLiNatcxce2d8g
-    scope:
-    - api_c.r
-    - api_c.w
-
-```
-
-Register a client for api_c to call api_d
-
-```
-curl -H "Content-Type: application/json" -X POST -d '{"clientType":"public","clientProfile":"service","clientName":"api_c","clientDesc":"API C service","scope":"api_d.r api_d.w","redirectUri": "http://localhost:8080/authorization","ownerId":"admin"}' http://localhost:6884/oauth2/client
-
-```
-
-And the result is
-
-```
-{"clientId":"50c92172-d223-4902-9779-df9ef501724f","clientSecret":"ZOz5tiF8TqmichIkVO9EPg","clientType":"public","clientProfile":"service","clientName":"api_c","clientDesc":"API C service","ownerId":"admin","scope":"api_d.r api_d.w","redirectUri":"http://localhost:8080/authorization","createDt":"2017-03-30","updateDt":null}
-```
-
-Now we need to externalize client.yml and update it with this clientId and clientSecret for
-api_c. Let's create a config folder for api_c.
-
-```
-cd ~/networknt/light-java-example/ms_chain/config/api_c
-mkdir security
-cp apionly/api_c.yml security
-```
-
-Let's create client.yml file in the newly created security folder.
-
-```
-description: client configuration, all timing is milli-second
-sync:
-  maxConnectionTotal: 100
-  maxConnectionPerRoute: 10
-  routes:
-    api.google.com: 20
-    api.facebook.com: 10
-  timeout: 10000
-  keepAlive: 15000
-async:
-  maxConnectionTotal: 100
-  maxConnectionPerRoute: 10
-  routes:
-    api.google.com: 20
-    api.facebook.com: 10
-  reactor:
-    ioThreadCount: 1
-    connectTimeout: 10000
-    soTimeout: 10000
-  timeout: 10000
-  keepAlive: 15000
-tls:
-  verifyHostname: false
-  loadTrustStore: false
-  trustStore: trust.keystore
-  trustPass: password
-  loadKeyStore: false
-  keyStore: key.jks
-  keyPass: password
-oauth:
-  tokenRenewBeforeExpired: 600000
-  expiredRefreshRetryDelay: 5000
-  earlyRefreshRetryDelay: 30000
-  server_url: http://oauth2-token:6882
-  authorization_code:
-    uri: "/oauth2/token"
-    client_id: 50c92172-d223-4902-9779-df9ef501724f
-    client_secret: ZOz5tiF8TqmichIkVO9EPg
-    redirect_uri: https://localhost:8080/authorization_code
-    scope:
-    - api_d.r
-    - api_d.w
-  client_credentials:
-    uri: "/oauth2/token"
-    client_id: 50c92172-d223-4902-9779-df9ef501724f
-    client_secret: ZOz5tiF8TqmichIkVO9EPg
-    scope:
-    - api_d.r
-    - api_d.w
-
-```
-
-API D is not calling any other API so it is not a client and doesn't need to be registered.
-
-Now we need to rebuild and restart API A, B, C and D. 
-
-```
-cd ~/networknt/light-java-example/ms_chain/api_a/security
-mvn clean install
-cd ~/networknt/light-java-example/ms_chain/api_b/security
-mvn clean install
-cd ~/networknt/light-java-example/ms_chain/api_c/security
-mvn clean install
-cd ~/networknt/light-java-example/ms_chain/api_d/security
-mvn clean install
-
-```
-
-Now let's update docker-compose-app.yml in ms_chain/compose/security to point to the
-config files from security folder under config.
-
-```
-#
-# docker-compose-app.yml
-#
-
-version: '2'
-
-#
-# Services
-#
-services:
-
-
-    #
-    # Microservice: API A
-    #
-    apia:
-        build: ~/networknt/light-java-example/ms_chain/api_a/security/
-        ports:
-            - "7001:7001"
-        networks:
-            - localnet
-        volumes:
-            - ~/networknt/light-java-example/ms_chain/config/api_a/security:/config
-
-    #
-    # Microservice: API B
-    #
-    apib:
-        build: ~/networknt/light-java-example/ms_chain/api_b/security/
-        ports:
-            - "7002:7002"
-        networks:
-            - localnet
-        volumes:
-            - ~/networknt/light-java-example/ms_chain/config/api_b/security:/config
-
-    #
-    # Microservice: API C
-    #
-    apic:
-        build: ~/networknt/light-java-example/ms_chain/api_c/security/
-        ports:
-            - "7003:7003"
-        networks:
-            - localnet
-        volumes:
-            - ~/networknt/light-java-example/ms_chain/config/api_c/security:/config
-
-    #
-    # Microservice: API D
-    #
-    apid:
-        build: ~/networknt/light-java-example/ms_chain/api_d/security/
-        ports:
-            - "7004:7004"
-        networks:
-            - localnet
-        volumes:
-            - ~/networknt/light-java-example/ms_chain/config/api_d/security:/config
-
-#
-# Networks
-#
-networks:
-    localnet:
-        external: true
-```
-
-Now let's start these services.
-
-```
-cd ~/networknt/light-java-example/ms_chain/compose/security
-docker-compose -f docker-compose-app.yml up
-```
-
-Now we have both APIs and OAuth2 services running.
-
-Let's create a token that can access API A. Remember we have created a consumer client?
-we need that client id and client secret to create an access token.
-
-```
-curl -H "Authorization: Basic f0439841-fbe7-43a4-843e-ae0c51971a5e:pu9aCVwmQjK2PET0_vOl9A" -H "Content-Type: application/x-www-form-urlencoded" -X POST -d "grant_type=client_credentials" http://localhost:6882/oauth2/token
-```
-
-And here is the response
-
-```
-{"access_token":"eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTQ5MDgzNzQxNiwianRpIjoiam1vNTFuYTZ1VkUzX3YwaTNxeE5GUSIsImlhdCI6MTQ5MDgzNjgxNiwibmJmIjoxNDkwODM2Njk2LCJ2ZXJzaW9uIjoiMS4wIiwiY2xpZW50X2lkIjoiZjA0Mzk4NDEtZmJlNy00M2E0LTg0M2UtYWUwYzUxOTcxYTVlIiwic2NvcGUiOlsiYXBpX2EuciIsImFwaV9hLnciXX0.mmh-CDll2wH__STv2QgPk9v7p8f5TEBh8XeZyV6q6LUpuQEAhetjVGampz91b1ncn8kmuZQ-WP0q6UAgXq2CavNz3wDa1uvPFmOd0LY7p-Q7vlMdSj3UG6y-4CaP2Keqj7znq0YJUwGNzerQd9HkC6NmPrdUYCXWiIWNENDYqua9xT3d4Sc1lbVWczPsjCovNrXcCo8HTFBO_d5sPi5-0pFcLJ-KszHCzWaSMt7lGfvJX5psVzFf8vO5yurjfriGyBJ4Cdq6aWwMsxoN7PXJB8izFMlDq8UuW6IXNvYRct2sIknlP__UKdqKEP5R7v8dMKlWitcyxqFD-hWRCSbU0w","token_type":"bearer","expires_in":600}
-```
-
-Run the following command to call api_a with the token generated above.
-
-```
-curl -H "Authorization: Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTQ5MDgzNzQxNiwianRpIjoiam1vNTFuYTZ1VkUzX3YwaTNxeE5GUSIsImlhdCI6MTQ5MDgzNjgxNiwibmJmIjoxNDkwODM2Njk2LCJ2ZXJzaW9uIjoiMS4wIiwiY2xpZW50X2lkIjoiZjA0Mzk4NDEtZmJlNy00M2E0LTg0M2UtYWUwYzUxOTcxYTVlIiwic2NvcGUiOlsiYXBpX2EuciIsImFwaV9hLnciXX0.mmh-CDll2wH__STv2QgPk9v7p8f5TEBh8XeZyV6q6LUpuQEAhetjVGampz91b1ncn8kmuZQ-WP0q6UAgXq2CavNz3wDa1uvPFmOd0LY7p-Q7vlMdSj3UG6y-4CaP2Keqj7znq0YJUwGNzerQd9HkC6NmPrdUYCXWiIWNENDYqua9xT3d4Sc1lbVWczPsjCovNrXcCo8HTFBO_d5sPi5-0pFcLJ-KszHCzWaSMt7lGfvJX5psVzFf8vO5yurjfriGyBJ4Cdq6aWwMsxoN7PXJB8izFMlDq8UuW6IXNvYRct2sIknlP__UKdqKEP5R7v8dMKlWitcyxqFD-hWRCSbU0w" localhost:7001/v1/data
-```
-
-And here is the result.
-
-```
-["API C: Message 1","API C: Message 2","API D: Message 1","API D: Message 2","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
-```
-
-At this moment, all four APIs are protected by JWT token and API B, C, D are projected by scope additionally. 
-
-We have went though the process to register clients and update client.yml with clientId
-and clientSecret for each services except API D. It is a good learning experience but the
-process is very slow and error prone. You can follow this on your own to learn interactions
-with OAuth2 services but for people who don't want to do it manually, I will put the these
-client registraion info into our database script so that it should work once the OAuth2
-services are up and running. 
-
-Above we've recorded all the output for each service registrations and I am going to add
-insert statements into light-docker/light-oauth2/mysql/create_mysql.sql
-
-Our OAuth2 servers support Oracle and Postgres as well and we are going to change these
-scripts in their corresponding folders.
-
-The other benefit to get these clients into the startup scirpt is to avoid redo it every
-time the server is restarted. 
-
-Here is the insert statements.
-
-```
-
-```
-## Performance with Docker Compose
 
 ## Kubernetes
 
