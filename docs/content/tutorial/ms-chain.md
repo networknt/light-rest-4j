@@ -73,10 +73,10 @@ latest version of the frameworks for your project.
 
 To create OpenAPI(Swagger) specification, the best tool is
 [swagger-editor](http://swagger.io/swagger-editor/) and I have an
-[article](https://networknt.github.io/light-rest-4j/tools/swagger-editor/)
-in tools section to describe how to use it.
+[article](https://networknt.github.io/light-rest-4j/tool/swagger-editor/)
+in tool section to describe how to use it.
 
-By following the [instructions](https://networknt.github.io/light-rest-4j/tools/swagger-editor/)
+By following the [instructions](https://networknt.github.io/light-rest-4j/tool/swagger-editor/)
 on how to use the editor, let's create four API specifications in model-config repository.
 
 API A will call API B, API B will call API C, API C will call API D
