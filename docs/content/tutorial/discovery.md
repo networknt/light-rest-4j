@@ -6,12 +6,16 @@ title: Registry and Discovery
 # Introduction
 
 This is a tutorial to show you how to use service registry and discovery
-for microservices. We are going to use api_a, api_b, api_c and api_d as
-our examples. To simply the tutorial, I am going to disable the security
-all the time.
+for microservices. The example services are implemented in RESTful style but
+they can be implmented in graphql or hybrid as well. We are going to use 
+api_a, api_b, api_c and api_d as our examples. To simply the tutorial, I am 
+going to disable the security all the time. There are some details that might
+not be shown in this tutorial, for example, walking through light-codegen config
+files etc. It is recommended to go through [ms-chain](ms-chain/) before this
+tutorial. 
 
 The specifications for above APIs can be found at 
-https://github.com/networknt/swagger
+https://github.com/networknt/model-config rest folder.
 
 # Preparation
 
@@ -32,17 +36,17 @@ mkdir networknt
 
 # Clone the specifications
 
-In order to generate the initial projects, we need to call swagger-codegen
+In order to generate the initial projects, we need to call light-codegen
 and we need the specifications for these services.
 
 ```
 cd ~/networknt
-git clone git@github.com:networknt/swagger.git
+git clone git@github.com:networknt/model-config.git
 ```
 
 In this repo, you have a generate.sh in the root folder to use docker
-container of swagger-codegen to generate the code and there are api_a,
-api_b, api_c and api_d folder for swagger.yaml files and config.json
+container of light-codegen to generate the code and there are api_a,
+api_b, api_c and api_d in rest folder for swagger.json files and config.json
 files for each API.
 
 # Code generation
@@ -52,7 +56,7 @@ clone this repo into our working directory.
 
 ```
 cd ~/networknt
-git clone git@github.com:networknt/light-java-example.git
+git clone git@github.com:networknt/light-example-4j.git
 ```
 
 In the above repo, there is a folder discovery contains all the projects
@@ -61,18 +65,27 @@ folder to discovery.bak as a backup so that you can compare if your code is
 not working in each step.
 
 ```
-cd ~/networknt/light-java-example
+cd ~/networknt/light-example-4j
 mv discovery discovery.bak
+```
+
+In order to generate the four projects, let's clone and build the light-codegen 
+into the workspace. 
+
+```
+cd ~/networknt
+git clone git@github.com:networknt/light-codegen.git
+mvn clean install
 ```
 
 Now let's generate the four APIs.
 
 ```
-cd ~/networknt/swagger
-./generate.sh ~/networknt/swagger/api_a ~/networknt/light-java-example/discovery/api_a
-./generate.sh ~/networknt/swagger/api_b ~/networknt/light-java-example/discovery/api_b
-./generate.sh ~/networknt/swagger/api_c ~/networknt/light-java-example/discovery/api_c
-./generate.sh ~/networknt/swagger/api_d ~/networknt/light-java-example/discovery/api_d
+cd ~/networknt/light-codegen
+java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/discovery/api_a/generated -m ../model-config/rest/api_a/1.0.0/swagger.json -c ../model-config/rest/api_a/1.0.0/config.json
+java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/discovery/api_b/generated -m ../model-config/rest/api_b/1.0.0/swagger.json -c ../model-config/rest/api_b/1.0.0/config.json
+java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/discovery/api_c/generated -m ../model-config/rest/api_c/1.0.0/swagger.json -c ../model-config/rest/api_c/1.0.0/config.json
+java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/discovery/api_d/generated -m ../model-config/rest/api_d/1.0.0/swagger.json -c ../model-config/rest/api_d/1.0.0/config.json
 
 ```
 
@@ -85,20 +98,21 @@ Now you can test the generated projects to make sure they are working with mock
 data. We will pick up one project to test it but you can test them all.
 
 ```
-cd ~/networknt/light-java-example/discovery/api_a/generated
-mvn exec:exec
+cd ~/networknt/light-example-4j/discovery/api_a/generated
+mvn clean install exec:exec
 ```
 
 From another terminal, access the server with curl command and check the result.
 
 ```
-curl http://localhost:8080/v1/data
-[ "aeiou" ]
+curl http://localhost:7001/v1/data
+["Message 1","Message 2"]
 ```
 
-At this time, all projects are listening the same port 8080, so you have to shutdown
-one server in order to start another one to test them all. The return result should
-be the same as they are generated from the similar specifications.
+Based on the config files for each project, the generated service will listen to
+7001, 7002, 7003 and 7004 for http connections. You can start other services to test
+them on their corresponding port.
+
 
 # Static
 
@@ -118,13 +132,13 @@ Before we change the code, let's copy the generated projects to new folders so
 that we can compare the changes later on.
 
 ```
-cd ~/networknt/light-java-example/discovery/api_a
+cd ~/networknt/light-example-4j/discovery/api_a
 cp -r generated static
-cd ~/networknt/light-java-example/discovery/api_b
+cd ~/networknt/light-example-4j/discovery/api_b
 cp -r generated static
-cd ~/networknt/light-java-example/discovery/api_c
+cd ~/networknt/light-example-4j/discovery/api_c
 cp -r generated static
-cd ~/networknt/light-java-example/discovery/api_d
+cd ~/networknt/light-example-4j/discovery/api_d
 cp -r generated static
 ```
 
@@ -155,6 +169,10 @@ import com.networknt.exception.ClientException;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.concurrent.FutureCallback;
+import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -162,12 +180,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.CountDownLatch;
-
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.concurrent.FutureCallback;
-import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 
 public class DataGetHandler implements HttpHandler {
     static String CONFIG_NAME = "api_a";
@@ -177,385 +189,6 @@ public class DataGetHandler implements HttpHandler {
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
         List<String> list = new Vector<String>();
-        final HttpGet[] requests = new HttpGet[] {
-                new HttpGet(apibUrl),
-                new HttpGet(apicUrl),
-        };
-        try {
-            CloseableHttpAsyncClient client = Client.getInstance().getAsyncClient();
-            final CountDownLatch latch = new CountDownLatch(requests.length);
-            for (final HttpGet request: requests) {
-                //Client.getInstance().propagateHeaders(request, exchange);
-                client.execute(request, new FutureCallback<HttpResponse>() {
-                    @Override
-                    public void completed(final HttpResponse response) {
-                        try {
-                            List<String> apiList = (List<String>) Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
-                                    new TypeReference<List<String>>(){});
-                            list.addAll(apiList);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        latch.countDown();
-                    }
-
-                    @Override
-                    public void failed(final Exception ex) {
-                        ex.printStackTrace();
-                        latch.countDown();
-                    }
-
-                    @Override
-                    public void cancelled() {
-                        System.out.println("cancelled");
-                        latch.countDown();
-                    }
-                });
-            }
-            latch.await();
-        } catch (ClientException e) {
-            e.printStackTrace();
-            throw new Exception("ClientException:", e);
-        }
-        // now add API A specific messages
-        list.add("API A: Message 1");
-        list.add("API A: Message 2");
-        exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(list));
-    }
-}
-
-```
-
-The following is the config file that define the url for API B and API C. This is hard
-coded and can only be changed in this config file and restart the server. For now, I
-am just changing the file in src/main/resources/config folder, but it should be externalized
-on official environment.
-
-api_a.json
-
-```
-{
-  "description": "api_a config",
-  "api_b_endpoint": "http://localhost:7002/v1/data",
-  "api_c_endpoint": "http://localhost:7003/v1/data"
-}
-
-```
-
-As default port for generated server is 8080, we need to change API A to 7001 so that
-we can start all servers on the same host.
-
-server.json
-
-```
-{
-  "description": "server config",
-  "ip": "0.0.0.0",
-  "port": 7001,
-  "serviceId": "com.networknt.apia-1.0.0"
-}
-
-```
-
-
-### API B
-
-Change the handler to call API D and load configuration for API D url.
-
-DataGetHandler.java
-
-```
-package com.networknt.apib.handler;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.networknt.client.Client;
-import com.networknt.config.Config;
-import com.networknt.exception.ClientException;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HttpString;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-
-public class DataGetHandler implements HttpHandler {
-    static String CONFIG_NAME = "api_b";
-    static String apidUrl = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_d_endpoint");
-
-
-    @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
-        List<String> list = new ArrayList<String>();
-        try {
-            CloseableHttpClient client = Client.getInstance().getSyncClient();
-            HttpGet httpGet = new HttpGet(apidUrl);
-            //Client.getInstance().propagateHeaders(httpGet, exchange);
-            CloseableHttpResponse response = client.execute(httpGet);
-            int responseCode = response.getStatusLine().getStatusCode();
-            if(responseCode != 200){
-                throw new Exception("Failed to call API D: " + responseCode);
-            }
-            List<String> apidList = (List<String>) Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
-                    new TypeReference<List<String>>(){});
-            list.addAll(apidList);
-        } catch (ClientException e) {
-            throw new Exception("Client Exception: ", e);
-        } catch (IOException e) {
-            throw new Exception("IOException:", e);
-        }
-        // now add API B specific messages
-        list.add("API B: Message 1");
-        list.add("API B: Message 2");
-        exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(list));
-    }
-}
-
-```
-
-Configuration file for API D url.
-
-api_b.json
-
-```
-{
-  "description": "api_b config",
-  "api_d_endpoint": "http://localhost:7004/v1/data"
-}
-
-```
-
-Change port number for API B to 7002 from 8080.
-server.json
-
-```
-{
-  "description": "server config",
-  "ip": "0.0.0.0",
-  "port": 7002,
-  "serviceId": "com.networknt.apib-1.0.0"
-}
-
-```
-
-### API C
-
-
-Update API C handler to return information that associates with API C.
-
-DataGetHandler.java
-
-```
-package com.networknt.apic.handler;
-
-import com.networknt.config.Config;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HttpString;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.commons.lang3.StringEscapeUtils;
-
-public class DataGetHandler implements HttpHandler {
-    @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
-        List<String> messages = new ArrayList<String>();
-        messages.add("API C: Message 1");
-        messages.add("API C: Message 2");
-        exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(messages));
-    }
-}
-
-```
-
-Update port number for API C to 7003 from 8080.
-
-server.json
-
-```
-{
-  "description": "server config",
-  "ip": "0.0.0.0",
-  "port": 7003,
-  "serviceId": "com.networknt.apic-1.0.0"
-}
-
-```
-
-
-### API D
-
-Update Handler for API D to return messages related to API D.
-
-DataGetHandler.java
-
-```
-package com.networknt.apid.handler;
-
-import com.networknt.config.Config;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HttpString;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.commons.lang3.StringEscapeUtils;
-
-public class DataGetHandler implements HttpHandler {
-    @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
-        List<String> messages = new ArrayList<String>();
-        messages.add("API D: Message 1");
-        messages.add("API D: Message 2");
-        exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(messages));
-    }
-}
-
-```
-
-
-Update port to 7004 from 8080
-
-server.json
-
-```
-{
-  "description": "server config",
-  "ip": "0.0.0.0",
-  "port": 7004,
-  "serviceId": "com.networknt.apid-1.0.0"
-}
-
-```
-
-### Start Servers
-
-Now let's start all four servers from four terminals.
-
-API A
-
-```
-cd ~/networknt/light-java-example/discovery/api_a/static
-mvn clean install exec:exec
-```
-
-API B
-
-```
-cd ~/networknt/light-java-example/discovery/api_b/static
-mvn clean install exec:exec
-
-```
-
-API C
-
-```
-cd ~/networknt/light-java-example/discovery/api_c/static
-mvn clean install exec:exec
-
-```
-
-API D
-
-```
-cd ~/networknt/light-java-example/discovery/api_d/static
-mvn clean install exec:exec
-
-```
-
-### Test Servers
-
-Let's access API A and see if we can get messages from all four servers.
-
-```
-curl http://localhost:7001/v1/data
-
-```
-The result is 
-
-```
-["API C: Message 1","API C: Message 2","API D: Message 1","API D: Message 2","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
-```
-
-
-# Dynamic
-
-The above step uses static urls defined in configuration files. It won't work in a
-dynamic clustered environment as there are more instances of each service. In this
-step, we are going to use cluster component with direct registry so that we don't
-need to start external consul or zookeeper instances. We still go through registry
-for service discovery but the registry is defined in service.json. Next step we
-will use consul server for the discovery to mimic real production environment.
-
-
-First let's create a folder from static to dynamic.
-
-```
-cd ~/networknt/light-java-example/discovery/api_a
-cp -r static dynamic
-cd ~/networknt/light-java-example/discovery/api_b
-cp -r static dynamic
-cd ~/networknt/light-java-example/discovery/api_c
-cp -r static dynamic
-cd ~/networknt/light-java-example/discovery/api_d
-cp -r static dynamic
-```
-
-
-### API A
-
-Let's update API A Handler to use Cluster instance instead of using static config
-files. 
-
-DataGetHandler.java
-
-```
-package com.networknt.apia.handler;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.networknt.client.Client;
-import com.networknt.cluster.Cluster;
-import com.networknt.config.Config;
-import com.networknt.exception.ClientException;
-import com.networknt.service.SingletonServiceFactory;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Vector;
-import java.util.concurrent.CountDownLatch;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.concurrent.FutureCallback;
-import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-public class DataGetHandler implements HttpHandler {
-    private static Logger logger = LoggerFactory.getLogger(DataGetHandler.class);
-    private static Cluster cluster = (Cluster) SingletonServiceFactory.getBean(Cluster.class);
-
-    @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
-        List<String> list = new Vector<>();
-
-        String apibUrl = cluster.serviceToUrl("http", "com.networknt.apib-1.0.0") + "/v1/data";
-        if(logger.isDebugEnabled()) logger.debug("apibUrl = " + apibUrl);
-        String apicUrl = cluster.serviceToUrl("http", "com.networknt.apic-1.0.0") + "/v1/data";
-        if(logger.isDebugEnabled()) logger.debug("apicUrl = " + apicUrl);
         final HttpGet[] requests = new HttpGet[] {
                 new HttpGet(apibUrl),
                 new HttpGet(apicUrl),
@@ -605,78 +238,335 @@ public class DataGetHandler implements HttpHandler {
 
 ```
 
-For discovery, some new modules should be included into the pom.xml.
+The following is the config file that define the url for API B and API C. This is hard
+coded and can only be changed in this config file and restart the server. For now, I
+am just changing the file in src/main/resources/config folder, but it should be 
+externalized on official environment.
+
+api_a.yml
 
 ```
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>service</artifactId>
-            <version>${version.light-java}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>registry</artifactId>
-            <version>${version.light-java}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>balance</artifactId>
-            <version>${version.light-java}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>cluster</artifactId>
-            <version>${version.light-java}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>consul</artifactId>
-            <version>${version.light-java}</version>
-        </dependency>
+api_b_endpoint: http://localhost:7002/v1/data
+api_c_endpoint: http://localhost:7003/v1/data
+
 ```
 
-Also, we need service.json to inject several singleton implementations of
+### API B
+
+Change the handler to call API D and load configuration for API D url.
+
+DataGetHandler.java
+
+```
+package com.networknt.apib.handler;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.networknt.client.Client;
+import com.networknt.config.Config;
+import com.networknt.exception.ClientException;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.HttpString;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class DataGetHandler implements HttpHandler {
+    static String CONFIG_NAME = "api_b";
+    static String apidUrl = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_d_endpoint");
+
+    @Override
+    public void handleRequest(HttpServerExchange exchange) throws Exception {
+        List<String> list = new ArrayList<String>();
+        try {
+            CloseableHttpClient client = Client.getInstance().getSyncClient();
+            HttpGet httpGet = new HttpGet(apidUrl);
+            //Client.getInstance().propagateHeaders(httpGet, exchange);
+            CloseableHttpResponse response = client.execute(httpGet);
+            int responseCode = response.getStatusLine().getStatusCode();
+            if(responseCode != 200){
+                throw new Exception("Failed to call API D: " + responseCode);
+            }
+            List<String> apidList = Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
+                    new TypeReference<List<String>>(){});
+            list.addAll(apidList);
+        } catch (ClientException e) {
+            throw new Exception("Client Exception: ", e);
+        } catch (IOException e) {
+            throw new Exception("IOException:", e);
+        }
+        // now add API B specific messages
+        list.add("API B: Message 1");
+        list.add("API B: Message 2");
+        exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(list));
+    }
+}
+
+```
+
+Configuration file for API D url.
+
+api_b.yml
+
+```
+api_d_endpoint: http://localhost:7004/v1/data
+
+```
+
+### API C
+
+
+Update API C handler to return information that associates with API C.
+
+DataGetHandler.java
+
+```
+package com.networknt.apic.handler;
+
+import com.networknt.config.Config;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.HttpString;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class DataGetHandler implements HttpHandler {
+    @Override
+    public void handleRequest(HttpServerExchange exchange) throws Exception {
+        List<String> messages = new ArrayList<String>();
+        messages.add("API C: Message 1");
+        messages.add("API C: Message 2");
+        exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(messages));
+    }
+}
+
+```
+
+
+### API D
+
+Update Handler for API D to return messages related to API D.
+
+DataGetHandler.java
+
+```
+package com.networknt.apid.handler;
+
+import com.networknt.config.Config;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.HttpString;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class DataGetHandler implements HttpHandler {
+    @Override
+    public void handleRequest(HttpServerExchange exchange) throws Exception {
+        List<String> messages = new ArrayList<String>();
+        messages.add("API D: Message 1");
+        messages.add("API D: Message 2");
+        exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(messages));
+    }
+}
+
+```
+
+
+### Start Servers
+
+Now let's start all four servers from four terminals.
+
+API A
+
+```
+cd ~/networknt/light-example-4j/discovery/api_a/static
+mvn clean install exec:exec
+```
+
+API B
+
+```
+cd ~/networknt/light-example-4j/discovery/api_b/static
+mvn clean install exec:exec
+
+```
+
+API C
+
+```
+cd ~/networknt/light-example-4j/discovery/api_c/static
+mvn clean install exec:exec
+
+```
+
+API D
+
+```
+cd ~/networknt/light-example-4j/discovery/api_d/static
+mvn clean install exec:exec
+
+```
+
+### Test Servers
+
+Let's access API A and see if we can get messages from all four servers.
+
+```
+curl http://localhost:7001/v1/data
+
+```
+The result is 
+
+```
+["API C: Message 1","API C: Message 2","API D: Message 1","API D: Message 2","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
+```
+
+
+# Dynamic
+
+The above step uses static urls defined in configuration files. It won't work in a
+dynamic clustered environment as there are more instances of each service. In this
+step, we are going to use cluster component with direct registry so that we don't
+need to start external consul or zookeeper instances. We still go through registry
+for service discovery but the registry is defined in service.yml. Next step we
+will use consul server for the discovery to mimic real production environment.
+
+
+First let's create a folder from static to dynamic.
+
+```
+cd ~/networknt/light-example-4j/discovery/api_a
+cp -r static dynamic
+cd ~/networknt/light-example-4j/discovery/api_b
+cp -r static dynamic
+cd ~/networknt/light-example-4j/discovery/api_c
+cp -r static dynamic
+cd ~/networknt/light-example-4j/discovery/api_d
+cp -r static dynamic
+```
+
+
+### API A
+
+Let's update API A Handler to use Cluster instance instead of using static config
+files. 
+
+DataGetHandler.java
+
+```
+package com.networknt.apia.handler;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.networknt.client.Client;
+import com.networknt.cluster.Cluster;
+import com.networknt.config.Config;
+import com.networknt.exception.ClientException;
+import com.networknt.service.SingletonServiceFactory;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.concurrent.FutureCallback;
+import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Vector;
+import java.util.concurrent.CountDownLatch;
+
+public class DataGetHandler implements HttpHandler {
+    private static Cluster cluster = (Cluster) SingletonServiceFactory.getBean(Cluster.class);
+
+    @Override
+    public void handleRequest(HttpServerExchange exchange) throws Exception {
+        List<String> list = new Vector<String>();
+
+        String apibUrl = cluster.serviceToUrl("http", "com.networknt.apib-1.0.0", null) + "/v1/data";
+        String apicUrl = cluster.serviceToUrl("http", "com.networknt.apic-1.0.0", null) + "/v1/data";
+
+        final HttpGet[] requests = new HttpGet[] {
+                new HttpGet(apibUrl),
+                new HttpGet(apicUrl),
+        };
+        try {
+            CloseableHttpAsyncClient client = Client.getInstance().getAsyncClient();
+            final CountDownLatch latch = new CountDownLatch(requests.length);
+            for (final HttpGet request: requests) {
+                //Client.getInstance().propagateHeaders(request, exchange);
+                client.execute(request, new FutureCallback<HttpResponse>() {
+                    @Override
+                    public void completed(final HttpResponse response) {
+                        try {
+                            List<String> apiList = Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
+                                    new TypeReference<List<String>>(){});
+                            list.addAll(apiList);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        latch.countDown();
+                    }
+
+                    @Override
+                    public void failed(final Exception ex) {
+                        ex.printStackTrace();
+                        latch.countDown();
+                    }
+
+                    @Override
+                    public void cancelled() {
+                        System.out.println("cancelled");
+                        latch.countDown();
+                    }
+                });
+            }
+            latch.await();
+        } catch (ClientException e) {
+            e.printStackTrace();
+            throw new Exception("ClientException:", e);
+        }
+        // now add API A specific messages
+        list.add("API A: Message 1");
+        list.add("API A: Message 2");
+        exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(list));
+    }
+}
+
+```
+
+Also, we need service.yml to inject several singleton implementations of
 Cluster, LoadBanlance, URL and Registry. Please note that the key in parameters
 is serviceId of your calling APIs
 
 
 ```
-{
-  "description": "singleton service factory configuration",
-  "singletons": [
-    {
-      "com.networknt.registry.URL": [
-        {
-          "com.networknt.registry.URLImpl": {
-            "protocol": "https",
-            "host": "localhost",
-            "port": 8080,
-            "path": "direct",
-            "parameters": {
-              "com.networknt.apib-1.0.0": "http://localhost:7002",
-              "com.networknt.apic-1.0.0": "http://localhost:7003"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "com.networknt.registry.Registry" : [
-        "com.networknt.registry.support.DirectRegistry"
-      ]
-    },
-    {
-      "com.networknt.balance.LoadBalance" : [
-        "com.networknt.balance.RoundRobinLoadBalance"
-      ]
-    },
-    {
-      "com.networknt.cluster.Cluster" : [
-        "com.networknt.cluster.LightCluster"
-      ]
-    }
-  ]
-}
+singletons:
+- com.networknt.registry.URL:
+  - com.networknt.registry.URLImpl:
+      protocol: https
+      host: localhost
+      port: 8080
+      path: direct
+      parameters:
+        com.networknt.apib-1.0.0: http://localhost:7002
+        com.networknt.apic-1.0.0: http://localhost:7003
+- com.networknt.registry.Registry:
+  - com.networknt.registry.support.DirectRegistry
+- com.networknt.balance.LoadBalance:
+  - com.networknt.balance.RoundRobinLoadBalance
+- com.networknt.cluster.Cluster:
+  - com.networknt.cluster.LightCluster
 
 ```
 
@@ -696,29 +586,21 @@ import com.networknt.exception.ClientException;
 import com.networknt.service.SingletonServiceFactory;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HttpString;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DataGetHandler implements HttpHandler {
-    private static Logger logger = LoggerFactory.getLogger(DataGetHandler.class);
     private static Cluster cluster = (Cluster) SingletonServiceFactory.getBean(Cluster.class);
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        List<String> list = new ArrayList<>();
-        String apidUrl = cluster.serviceToUrl("http", "com.networknt.apid-1.0.0") + "/v1/data";
-        if(logger.isDebugEnabled()) logger.debug("apidUrl = " + apidUrl);
+        List<String> list = new ArrayList<String>();
+        String apidUrl = cluster.serviceToUrl("http", "com.networknt.apid-1.0.0", null) + "/v1/data";
 
         try {
             CloseableHttpClient client = Client.getInstance().getSyncClient();
@@ -746,76 +628,24 @@ public class DataGetHandler implements HttpHandler {
 
 ```
 
-As API B is calling API D, it needs discovery as well and the following dependencies
-should be added to pom.xml
-
-```
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>service</artifactId>
-            <version>${version.light-java}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>registry</artifactId>
-            <version>${version.light-java}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>balance</artifactId>
-            <version>${version.light-java}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>cluster</artifactId>
-            <version>${version.light-java}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>consul</artifactId>
-            <version>${version.light-java}</version>
-        </dependency>
-
-```
-
 Inject interface implementations and define the API D url.
 
 ```
-{
-  "description": "singleton service factory configuration",
-  "singletons": [
-    {
-      "com.networknt.registry.URL": [
-        {
-          "com.networknt.registry.URLImpl": {
-            "protocol": "https",
-            "host": "localhost",
-            "port": 8080,
-            "path": "direct",
-            "parameters": {
-              "com.networknt.apid-1.0.0": "http://localhost:7004"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "com.networknt.registry.Registry" : [
-        "com.networknt.registry.support.DirectRegistry"
-      ]
-    },
-    {
-      "com.networknt.balance.LoadBalance" : [
-        "com.networknt.balance.RoundRobinLoadBalance"
-      ]
-    },
-    {
-      "com.networknt.cluster.Cluster" : [
-        "com.networknt.cluster.LightCluster"
-      ]
-    }
-  ]
-}
+singletons:
+- com.networknt.registry.URL:
+  - com.networknt.registry.URLImpl:
+      protocol: https
+      host: localhost
+      port: 8080
+      path: direct
+      parameters:
+        com.networknt.apid-1.0.0: http://localhost:7004
+- com.networknt.registry.Registry:
+  - com.networknt.registry.support.DirectRegistry
+- com.networknt.balance.LoadBalance:
+  - com.networknt.balance.RoundRobinLoadBalance
+- com.networknt.cluster.Cluster:
+  - com.networknt.cluster.LightCluster
 
 ```
 
@@ -839,14 +669,14 @@ Now let's start all four servers from four terminals.
 API A
 
 ```
-cd ~/networknt/light-java-example/discovery/api_a/dynamic
+cd ~/networknt/light-example-4j/discovery/api_a/dynamic
 mvn clean install exec:exec
 ```
 
 API B
 
 ```
-cd ~/networknt/light-java-example/discovery/api_b/dynamic
+cd ~/networknt/light-example-4j/discovery/api_b/dynamic
 mvn clean install exec:exec
 
 ```
@@ -854,7 +684,7 @@ mvn clean install exec:exec
 API C
 
 ```
-cd ~/networknt/light-java-example/discovery/api_c/dynamic
+cd ~/networknt/light-example-4j/discovery/api_c/dynamic
 mvn clean install exec:exec
 
 ```
@@ -862,7 +692,7 @@ mvn clean install exec:exec
 API D
 
 ```
-cd ~/networknt/light-java-example/discovery/api_d/dynamic
+cd ~/networknt/light-example-4j/discovery/api_d/dynamic
 mvn clean install exec:exec
 
 ```
@@ -883,73 +713,53 @@ The result is
 
 # Multiple API D Instances
 
-In this step, we are going to start two API D instances that listening to 70041 and 70042.
+In this step, we are going to start two API D instances that listening to 7004 and 7005.
 
 Now let's copy from dynamic to multiple for each API.
  
 
 ```
-cd ~/networknt/light-java-example/discovery/api_a
+cd ~/networknt/light-example-4j/discovery/api_a
 cp -r dynamic multiple
-cd ~/networknt/light-java-example/discovery/api_b
+cd ~/networknt/light-example-4j/discovery/api_b
 cp -r dynamic multiple
-cd ~/networknt/light-java-example/discovery/api_c
+cd ~/networknt/light-example-4j/discovery/api_c
 cp -r dynamic multiple
-cd ~/networknt/light-java-example/discovery/api_d
+cd ~/networknt/light-example-4j/discovery/api_d
 cp -r dynamic multiple
 ```
 
  
 ### API B 
 
-Let's modify API B service.json to have two API D instances that listen to 70041
-and 70042. 
+Let's modify API B service.yml to have two API D instances that listen to 7004
+and 7005. 
 
-service.json
+service.yml
 
 ```
-{
-  "description": "singleton service factory configuration",
-  "singletons": [
-    {
-      "com.networknt.registry.URL": [
-        {
-          "com.networknt.registry.URLImpl": {
-            "protocol": "https",
-            "host": "localhost",
-            "port": 8080,
-            "path": "direct",
-            "parameters": {
-              "com.networknt.apid-1.0.0": "http://localhost:7004,http://localhost:7005"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "com.networknt.registry.Registry" : [
-        "com.networknt.registry.support.DirectRegistry"
-      ]
-    },
-    {
-      "com.networknt.balance.LoadBalance" : [
-        "com.networknt.balance.RoundRobinLoadBalance"
-      ]
-    },
-    {
-      "com.networknt.cluster.Cluster" : [
-        "com.networknt.cluster.LightCluster"
-      ]
-    }
-  ]
-}
+singletons:
+- com.networknt.registry.URL:
+  - com.networknt.registry.URLImpl:
+      protocol: https
+      host: localhost
+      port: 8080
+      path: direct
+      parameters:
+        com.networknt.apid-1.0.0: http://localhost:7004,http://localhost:7005
+- com.networknt.registry.Registry:
+  - com.networknt.registry.support.DirectRegistry
+- com.networknt.balance.LoadBalance:
+  - com.networknt.balance.RoundRobinLoadBalance
+- com.networknt.cluster.Cluster:
+  - com.networknt.cluster.LightCluster
 
 ```
 
 ### API D
 
 In order to start two instances with the same code base, we need to modify the
-server.json before starting the server. 
+server.yml before starting the server. 
 
 Also, let's update the handler so that we know which port serves the request.
 
@@ -962,18 +772,14 @@ import com.networknt.config.Config;
 import com.networknt.server.Server;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HttpString;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import org.apache.commons.lang3.StringEscapeUtils;
 
 public class DataGetHandler implements HttpHandler {
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        int port = Server.config.getPort();
+        int port = Server.config.getHttpPort();
         List<String> messages = new ArrayList<String>();
         messages.add("API D: Message 1 from port " + port);
         messages.add("API D: Message 2 from port " + port);
@@ -989,14 +795,14 @@ Now let's start all five servers from five terminals. API D has two instances.
 API A
 
 ```
-cd ~/networknt/light-java-example/discovery/api_a/multiple
+cd ~/networknt/light-example-4j/discovery/api_a/multiple
 mvn clean install exec:exec
 ```
 
 API B
 
 ```
-cd ~/networknt/light-java-example/discovery/api_b/multiple
+cd ~/networknt/light-example-4j/discovery/api_b/multiple
 mvn clean install exec:exec
 
 ```
@@ -1004,7 +810,7 @@ mvn clean install exec:exec
 API C
 
 ```
-cd ~/networknt/light-java-example/discovery/api_c/multiple
+cd ~/networknt/light-example-4j/discovery/api_c/multiple
 mvn clean install exec:exec
 
 ```
@@ -1015,28 +821,54 @@ API D
 And start the first instance that listen to 7004.
 
 ```
-cd ~/networknt/light-java-example/discovery/api_d/multiple
+cd ~/networknt/light-example-4j/discovery/api_d/multiple
 mvn clean install exec:exec
 
 ```
  
 Now let's start the second instance. Before starting the serer, let's update
-server.json with port 7005.
+server.yml with port 7005.
 
 ```
-{
-  "description": "server config",
-  "ip": "0.0.0.0",
-  "port": 7005,
-  "serviceId": "com.networknt.apid-1.0.0"
-}
+
+# Server configuration
+---
+# This is the default binding address if the service is dockerized.
+ip: 0.0.0.0
+
+# Http port if enableHttp is true.
+httpPort:  7005
+
+# Enable HTTP should be false on official environment.
+enableHttp: true
+
+# Https port if enableHttps is true.
+httpsPort:  7445
+
+# Enable HTTPS should be true on official environment.
+enableHttps: true
+
+# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
+keystoreName: tls/server.keystore
+
+# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
+enableTwoWayTls: false
+
+# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
+truststoreName: tls/server.truststore
+
+# Unique service identifier. Used in service registration and discovery etc.
+serviceId: com.networknt.apid-1.0.0
+
+# Flag to enable service registration. Only be true if running as standalone Java jar.
+enableRegistry: false
 
 ```
 
 And start the second instance
 
 ```
-cd ~/networknt/light-java-example/discovery/api_d/multiple
+cd ~/networknt/light-example-4j/discovery/api_d/multiple
 mvn clean install exec:exec
 
 ```
@@ -1047,7 +879,7 @@ mvn clean install exec:exec
 curl http://localhost:7001/v1/data
 ```
 
-And the result can be the following alternatively.
+And the result can be the following alternatively as two instances of API D are load balanced.
 
 ```
 ["API C: Message 1","API C: Message 2","API D: Message 1 from port 7004","API D: Message 2 from port 7004","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
@@ -1069,13 +901,13 @@ Now let's copy from multiple to consul for each API.
  
 
 ```
-cd ~/networknt/light-java-example/discovery/api_a
+cd ~/networknt/light-example-4j/discovery/api_a
 cp -r multiple consul
-cd ~/networknt/light-java-example/discovery/api_b
+cd ~/networknt/light-example-4j/discovery/api_b
 cp -r multiple consul
-cd ~/networknt/light-java-example/discovery/api_c
+cd ~/networknt/light-example-4j/discovery/api_c
 cp -r multiple consul
-cd ~/networknt/light-java-example/discovery/api_d
+cd ~/networknt/light-example-4j/discovery/api_d
 cp -r multiple consul
 ```
 
@@ -1083,143 +915,143 @@ cp -r multiple consul
 ### API A
 
 In order to switch from direct registry to consul registry, we just need to update
-service.json configuration to inject the consul implementation to the registry interface.
+service.yml configuration to inject the consul implementation to the registry interface.
 
-service.json
+service.yml
 
 ```
-{
-  "description": "singleton service factory configuration",
-  "singletons": [
-    {
-      "com.networknt.registry.URL": [
-        {
-          "com.networknt.registry.URLImpl": {
-            "protocol": "light",
-            "host": "localhost",
-            "port": 8080,
-            "path": "consul",
-            "parameters": {
-              "registryRetryPeriod": "30000"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "com.networknt.consul.client.ConsulClient": [
-        {
-          "com.networknt.consul.client.ConsulEcwidClient": [
-            {"java.lang.String": "localhost"},
-            {"int": 8500}
-          ]
-        }
-      ]
-    },
-    {
-      "com.networknt.registry.Registry" : [
-        "com.networknt.consul.ConsulRegistry"
-      ]
-    },
-    {
-      "com.networknt.balance.LoadBalance" : [
-        "com.networknt.balance.RoundRobinLoadBalance"
-      ]
-    },
-    {
-      "com.networknt.cluster.Cluster" : [
-        "com.networknt.cluster.LightCluster"
-      ]
-    }
-  ]
-}
+singletons:
+- com.networknt.registry.URL:
+  - com.networknt.registry.URLImpl:
+      protocol: light
+      host: localhost
+      port: 8080
+      path: consul
+      parameters:
+        registryRetryPeriod: '30000'
+- com.networknt.consul.client.ConsulClient:
+  - com.networknt.consul.client.ConsulEcwidClient:
+    - java.lang.String: localhost
+    - int: 8500
+- com.networknt.registry.Registry:
+  - com.networknt.consul.ConsulRegistry
+- com.networknt.balance.LoadBalance:
+  - com.networknt.balance.RoundRobinLoadBalance
+- com.networknt.cluster.Cluster:
+  - com.networknt.cluster.LightCluster
 ```
 
 Although in our case, there is no caller service for API A, we still need to register
-it to consul by enable it in server.json
+it to consul by enable it in server.yml. Note that enableRegsitry is turn on and enableHttps
+is turned off. 
+
+If you don't turn off the https port, both ports will be registered on Consul. 
 
 ```
-{
-  "description": "server config",
-  "ip": "0.0.0.0",
-  "port": 7001,
-  "serviceId": "com.networknt.apia-1.0.0",
-  "enableRegistry": true
-}
+
+# Server configuration
+---
+# This is the default binding address if the service is dockerized.
+ip: 0.0.0.0
+
+# Http port if enableHttp is true.
+httpPort:  7001
+
+# Enable HTTP should be false on official environment.
+enableHttp: true
+
+# Https port if enableHttps is true.
+httpsPort:  7441
+
+# Enable HTTPS should be true on official environment.
+enableHttps: false
+
+# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
+keystoreName: tls/server.keystore
+
+# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
+enableTwoWayTls: false
+
+# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
+truststoreName: tls/server.truststore
+
+# Unique service identifier. Used in service registration and discovery etc.
+serviceId: com.networknt.apia-1.0.0
+
+# Flag to enable service registration. Only be true if running as standalone Java jar.
+enableRegistry: true
 
 ```
 
 
 ### API B
 
-Let's update service.json to inject consul registry instead of direct registry used in
+Let's update service.yml to inject consul registry instead of direct registry used in
 the previous step.
 
-service.json
+service.yml
 
 ```
-{
-  "description": "singleton service factory configuration",
-  "singletons": [
-    {
-      "com.networknt.registry.URL": [
-        {
-          "com.networknt.registry.URLImpl": {
-            "protocol": "light",
-            "host": "localhost",
-            "port": 8080,
-            "path": "consul",
-            "parameters": {
-              "registryRetryPeriod": "30000"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "com.networknt.consul.client.ConsulClient": [
-        {
-          "com.networknt.consul.client.ConsulEcwidClient": [
-            {"java.lang.String": "localhost"},
-            {"int": 8500}
-          ]
-        }
-      ]
-    },
-    {
-      "com.networknt.registry.Registry" : [
-        "com.networknt.consul.ConsulRegistry"
-      ]
-    },
-    {
-      "com.networknt.balance.LoadBalance" : [
-        "com.networknt.balance.RoundRobinLoadBalance"
-      ]
-    },
-    {
-      "com.networknt.cluster.Cluster" : [
-        "com.networknt.cluster.LightCluster"
-      ]
-    }
-  ]
-}
+singletons:
+- com.networknt.registry.URL:
+  - com.networknt.registry.URLImpl:
+      protocol: light
+      host: localhost
+      port: 8080
+      path: consul
+      parameters:
+        registryRetryPeriod: '30000'
+- com.networknt.consul.client.ConsulClient:
+  - com.networknt.consul.client.ConsulEcwidClient:
+    - java.lang.String: localhost
+    - int: 8500
+- com.networknt.registry.Registry:
+  - com.networknt.consul.ConsulRegistry
+- com.networknt.balance.LoadBalance:
+  - com.networknt.balance.RoundRobinLoadBalance
+- com.networknt.cluster.Cluster:
+  - com.networknt.cluster.LightCluster
 ```
 
 As API B will be called by API A, it needs to register itself to consul registry so
 that API A can discover it through the same consul registry. To do that you only need
 to enable server registry in config file.
 
-server.json
+server.yml
 
 ```
-{
-  "description": "server config",
-  "ip": "0.0.0.0",
-  "port": 7002,
-  "serviceId": "com.networknt.apib-1.0.0",
-  "enableRegistry": true
-}
 
+# Server configuration
+---
+# This is the default binding address if the service is dockerized.
+ip: 0.0.0.0
+
+# Http port if enableHttp is true.
+httpPort:  7002
+
+# Enable HTTP should be false on official environment.
+enableHttp: true
+
+# Https port if enableHttps is true.
+httpsPort:  7442
+
+# Enable HTTPS should be true on official environment.
+enableHttps: false
+
+# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
+keystoreName: tls/server.keystore
+
+# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
+enableTwoWayTls: false
+
+# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
+truststoreName: tls/server.truststore
+
+# Unique service identifier. Used in service registration and discovery etc.
+serviceId: com.networknt.apib-1.0.0
+
+# Flag to enable service registration. Only be true if running as standalone Java jar.
+enableRegistry: true
 ```
 
 ### API C
@@ -1227,189 +1059,130 @@ server.json
 Although API C is not calling any other APIs, it needs to register itself to consul
 so that API A can discovery it from the same consul registry.
 
-service.json
+service.yml
 
 ```
-{
-  "description": "singleton service factory configuration",
-  "singletons": [
-    {
-      "com.networknt.registry.URL": [
-        {
-          "com.networknt.registry.URLImpl": {
-            "protocol": "light",
-            "host": "localhost",
-            "port": 8080,
-            "path": "consul",
-            "parameters": {
-              "registryRetryPeriod": "30000"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "com.networknt.consul.client.ConsulClient": [
-        {
-          "com.networknt.consul.client.ConsulEcwidClient": [
-            {"java.lang.String": "localhost"},
-            {"int": 8500}
-          ]
-        }
-      ]
-    },
-    {
-      "com.networknt.registry.Registry" : [
-        "com.networknt.consul.ConsulRegistry"
-      ]
-    },
-    {
-      "com.networknt.balance.LoadBalance" : [
-        "com.networknt.balance.RoundRobinLoadBalance"
-      ]
-    },
-    {
-      "com.networknt.cluster.Cluster" : [
-        "com.networknt.cluster.LightCluster"
-      ]
-    }
-  ]
-}
+singletons:
+- com.networknt.registry.URL:
+  - com.networknt.registry.URLImpl:
+      protocol: light
+      host: localhost
+      port: 8080
+      path: consul
+      parameters:
+        registryRetryPeriod: '30000'
+- com.networknt.consul.client.ConsulClient:
+  - com.networknt.consul.client.ConsulEcwidClient:
+    - java.lang.String: localhost
+    - int: 8500
+- com.networknt.registry.Registry:
+  - com.networknt.consul.ConsulRegistry
+- com.networknt.balance.LoadBalance:
+  - com.networknt.balance.RoundRobinLoadBalance
+- com.networknt.cluster.Cluster:
+  - com.networknt.cluster.LightCluster
 ```
 
 
-server.json
+server.yml
 
 ```
-{
-  "description": "server config",
-  "ip": "0.0.0.0",
-  "port": 7003,
-  "serviceId": "com.networknt.apic-1.0.0",
-  "enableRegistry": true
-}
+# Server configuration
+---
+# This is the default binding address if the service is dockerized.
+ip: 0.0.0.0
 
+# Http port if enableHttp is true.
+httpPort:  7003
+
+# Enable HTTP should be false on official environment.
+enableHttp: true
+
+# Https port if enableHttps is true.
+httpsPort:  7443
+
+# Enable HTTPS should be true on official environment.
+enableHttps: false
+
+# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
+keystoreName: tls/server.keystore
+
+# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
+enableTwoWayTls: false
+
+# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
+truststoreName: tls/server.truststore
+
+# Unique service identifier. Used in service registration and discovery etc.
+serviceId: com.networknt.apic-1.0.0
+
+# Flag to enable service registration. Only be true if running as standalone Java jar.
+enableRegistry: true
 ```
-
-Also, in previous step, we didn't add extra dependencies for registry, load balance
-cluster and consul modules. Let's add them here in pom.xml
-
-```
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>registry</artifactId>
-            <version>${version.light-java}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>balance</artifactId>
-            <version>${version.light-java}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>cluster</artifactId>
-            <version>${version.light-java}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>consul</artifactId>
-            <version>${version.light-java}</version>
-        </dependency>
-
-```
-
 
 ### API D
 
 Although API D is not calling any other APIs, it needs to register itself to consul
 so that API B can discovery it from the same consul registry.
 
-service.json
+service.yml
 
 ```
-{
-  "description": "singleton service factory configuration",
-  "singletons": [
-    {
-      "com.networknt.registry.URL": [
-        {
-          "com.networknt.registry.URLImpl": {
-            "protocol": "light",
-            "host": "localhost",
-            "port": 8080,
-            "path": "consul",
-            "parameters": {
-              "registryRetryPeriod": "30000"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "com.networknt.consul.client.ConsulClient": [
-        {
-          "com.networknt.consul.client.ConsulEcwidClient": [
-            {"java.lang.String": "localhost"},
-            {"int": 8500}
-          ]
-        }
-      ]
-    },
-    {
-      "com.networknt.registry.Registry" : [
-        "com.networknt.consul.ConsulRegistry"
-      ]
-    },
-    {
-      "com.networknt.balance.LoadBalance" : [
-        "com.networknt.balance.RoundRobinLoadBalance"
-      ]
-    },
-    {
-      "com.networknt.cluster.Cluster" : [
-        "com.networknt.cluster.LightCluster"
-      ]
-    }
-  ]
-}
+singletons:
+- com.networknt.registry.URL:
+  - com.networknt.registry.URLImpl:
+      protocol: light
+      host: localhost
+      port: 8080
+      path: consul
+      parameters:
+        registryRetryPeriod: '30000'
+- com.networknt.consul.client.ConsulClient:
+  - com.networknt.consul.client.ConsulEcwidClient:
+    - java.lang.String: localhost
+    - int: 8500
+- com.networknt.registry.Registry:
+  - com.networknt.consul.ConsulRegistry
+- com.networknt.balance.LoadBalance:
+  - com.networknt.balance.RoundRobinLoadBalance
+- com.networknt.cluster.Cluster:
+  - com.networknt.cluster.LightCluster
 ```
 
-server.json
+server.yml
 
 ```
-{
-  "description": "server config",
-  "ip": "0.0.0.0",
-  "port": 7004,
-  "serviceId": "com.networknt.apid-1.0.0",
-  "enableRegistry": true
-}
+# Server configuration
+---
+# This is the default binding address if the service is dockerized.
+ip: 0.0.0.0
 
-```
+# Http port if enableHttp is true.
+httpPort:  7004
 
-Also add extra dependencies to pom.xml to enable cluster.
+# Enable HTTP should be false on official environment.
+enableHttp: true
 
-```
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>registry</artifactId>
-            <version>${version.light-java}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>balance</artifactId>
-            <version>${version.light-java}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>cluster</artifactId>
-            <version>${version.light-java}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>consul</artifactId>
-            <version>${version.light-java}</version>
-        </dependency>
+# Https port if enableHttps is true.
+httpsPort:  7444
+
+# Enable HTTPS should be true on official environment.
+enableHttps: false
+
+# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
+keystoreName: tls/server.keystore
+
+# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
+enableTwoWayTls: false
+
+# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
+truststoreName: tls/server.truststore
+
+# Unique service identifier. Used in service registration and discovery etc.
+serviceId: com.networknt.apid-1.0.0
+
+# Flag to enable service registration. Only be true if running as standalone Java jar.
+enableRegistry: true
 
 ```
 
@@ -1431,23 +1204,26 @@ Now let's start four terminals to start servers.
 API A
 
 ```
-cd ~/networknt/light-java-example/discovery/api_a/consul
-mvn clean install exec:exec
+cd ~/networknt/light-example-4j/discovery/api_a/consul
+mvn clean install -DskipTests
+mvn exec:exec
 ```
 
 API B
 
 ```
-cd ~/networknt/light-java-example/discovery/api_b/consul
-mvn clean install exec:exec
+cd ~/networknt/light-example-4j/discovery/api_b/consul
+mvn clean install -DskipTests
+mvn exec:exec
 
 ```
 
 API C
 
 ```
-cd ~/networknt/light-java-example/discovery/api_c/consul
-mvn clean install exec:exec
+cd ~/networknt/light-example-4j/discovery/api_c/consul
+mvn clean install -DskipTests 
+mvn exec:exec
 
 ```
 
@@ -1457,10 +1233,18 @@ API D
 And start the first instance that listen to 7004 as default
 
 ```
-cd ~/networknt/light-java-example/discovery/api_d/consul
-mvn clean install exec:exec
+cd ~/networknt/light-example-4j/discovery/api_d/consul
+mvn clean install -DskipTests 
+mvn exec:exec
 
 ```
+
+Now you can see the registered service from Consul UI.
+
+```
+http://localhost:8500/ui
+```
+
 
 ### Test four servers
 
@@ -1477,23 +1261,50 @@ And the result will be
 ### Start another API D
  
 Now let's start the second instance of API D. Before starting the serer, let's update
-server.json with port 7005.
+server.yml with port 7005.
 
 ```
-{
-  "description": "server config",
-  "ip": "0.0.0.0",
-  "port": 7005,
-  "serviceId": "com.networknt.apid-1.0.0"
-}
+
+# Server configuration
+---
+# This is the default binding address if the service is dockerized.
+ip: 0.0.0.0
+
+# Http port if enableHttp is true.
+httpPort:  7005
+
+# Enable HTTP should be false on official environment.
+enableHttp: true
+
+# Https port if enableHttps is true.
+httpsPort:  7444
+
+# Enable HTTPS should be true on official environment.
+enableHttps: false
+
+# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
+keystoreName: tls/server.keystore
+
+# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
+enableTwoWayTls: false
+
+# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
+truststoreName: tls/server.truststore
+
+# Unique service identifier. Used in service registration and discovery etc.
+serviceId: com.networknt.apid-1.0.0
+
+# Flag to enable service registration. Only be true if running as standalone Java jar.
+enableRegistry: true
 
 ```
 
 And start the second instance
 
 ```
-cd ~/networknt/light-java-example/discovery/api_d/consul
-mvn clean install exec:exec
+cd ~/networknt/light-example-4j/discovery/api_d/consul
+mvn clean install -DskipTests 
+mvn exec:exec
 
 ```
 
@@ -1535,14 +1346,14 @@ Now let's copy from consul to docker for each API.
  
 
 ```
-cd ~/networknt/light-java-example/discovery/api_a
+cd ~/networknt/light-example-4j/discovery/api_a
 cp -r consul consuldocker
-cd ~/networknt/light-java-example/discovery/api_b
+cd ~/networknt/light-example-4j/discovery/api_b
 cp -r consul consuldocker
-cd ~/networknt/light-java-example/discovery/api_c
+cd ~/networknt/light-example-4j/discovery/api_c
 cp -r consul consuldocker
-cd ~/networknt/light-java-example/discovery/api_d
-cp -r consul consulcdocker
+cd ~/networknt/light-example-4j/discovery/api_d
+cp -r consul consuldocker
 ```
 
 Before starting the services, let's start consul and registrator.
@@ -1568,21 +1379,45 @@ docker run -d --name=registrator --net=host --volume=/var/run/docker.sock:/tmp/d
 
 Since we are using registrator to register the service, we need to disable the application service registration.
 
-server.json
+server.yml
 
 ```
-{
-  "description": "server config",
-  "ip": "0.0.0.0",
-  "port": 7001,
-  "serviceId": "com.networknt.apia-1.0.0",
-  "enableRegistry": false
-}
+# Server configuration
+---
+# This is the default binding address if the service is dockerized.
+ip: 0.0.0.0
+
+# Http port if enableHttp is true.
+httpPort:  7001
+
+# Enable HTTP should be false on official environment.
+enableHttp: true
+
+# Https port if enableHttps is true.
+httpsPort:  7441
+
+# Enable HTTPS should be true on official environment.
+enableHttps: false
+
+# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
+keystoreName: tls/server.keystore
+
+# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
+enableTwoWayTls: false
+
+# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
+truststoreName: tls/server.truststore
+
+# Unique service identifier. Used in service registration and discovery etc.
+serviceId: com.networknt.apia-1.0.0
+
+# Flag to enable service registration. Only be true if running as standalone Java jar.
+enableRegistry: false
 ```
 
 
 ```
-cd ~/networknt/light-java-example/discovery/api_a/consuldocker
+cd ~/networknt/light-example-4j/discovery/api_a/consuldocker
 mvn clean install
 docker build -t networknt/com.networknt.apia-1.0.0 .
 docker run -it -p 7001:7001 --net=host --name=com.networknt.apia-1.0.0 networknt/com.networknt.apia-1.0.0
@@ -1590,21 +1425,45 @@ docker run -it -p 7001:7001 --net=host --name=com.networknt.apia-1.0.0 networknt
 
 ### API B
 
-server.json
+server.yml
 
 ```
-{
-  "description": "server config",
-  "ip": "0.0.0.0",
-  "port": 7002,
-  "serviceId": "com.networknt.apib-1.0.0",
-  "enableRegistry": false
-}
+# Server configuration
+---
+# This is the default binding address if the service is dockerized.
+ip: 0.0.0.0
+
+# Http port if enableHttp is true.
+httpPort:  7002
+
+# Enable HTTP should be false on official environment.
+enableHttp: true
+
+# Https port if enableHttps is true.
+httpsPort:  7442
+
+# Enable HTTPS should be true on official environment.
+enableHttps: false
+
+# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
+keystoreName: tls/server.keystore
+
+# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
+enableTwoWayTls: false
+
+# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
+truststoreName: tls/server.truststore
+
+# Unique service identifier. Used in service registration and discovery etc.
+serviceId: com.networknt.apib-1.0.0
+
+# Flag to enable service registration. Only be true if running as standalone Java jar.
+enableRegistry: false
 
 ```
 
 ```
-cd ~/networknt/light-java-example/discovery/api_b/consuldocker
+cd ~/networknt/light-example-4j/discovery/api_b/consuldocker
 mvn clean install
 docker build -t networknt/com.networknt.apib-1.0.0 .
 docker run -it -p 7002:7002 --net=host --name=com.networknt.apib-1.0.0 networknt/com.networknt.apib-1.0.0
@@ -1613,21 +1472,46 @@ docker run -it -p 7002:7002 --net=host --name=com.networknt.apib-1.0.0 networknt
 
 ### API C
 
-server.json
-
-```
-{
-  "description": "server config",
-  "ip": "0.0.0.0",
-  "port": 7003,
-  "serviceId": "com.networknt.apic-1.0.0",
-  "enableRegistry": false
-}
+server.yml
 
 ```
 
+# Server configuration
+---
+# This is the default binding address if the service is dockerized.
+ip: 0.0.0.0
+
+# Http port if enableHttp is true.
+httpPort:  7003
+
+# Enable HTTP should be false on official environment.
+enableHttp: true
+
+# Https port if enableHttps is true.
+httpsPort:  7443
+
+# Enable HTTPS should be true on official environment.
+enableHttps: false
+
+# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
+keystoreName: tls/server.keystore
+
+# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
+enableTwoWayTls: false
+
+# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
+truststoreName: tls/server.truststore
+
+# Unique service identifier. Used in service registration and discovery etc.
+serviceId: com.networknt.apic-1.0.0
+
+# Flag to enable service registration. Only be true if running as standalone Java jar.
+enableRegistry: false
+
 ```
-cd ~/networknt/light-java-example/discovery/api_c/consuldocker
+
+```
+cd ~/networknt/light-example-4j/discovery/api_c/consuldocker
 mvn clean install
 docker build -t networknt/com.networknt.apic-1.0.0 .
 docker run -it -p 7003:7003 --net=host --name=com.networknt.apic-1.0.0 networknt/com.networknt.apic-1.0.0
@@ -1636,21 +1520,45 @@ docker run -it -p 7003:7003 --net=host --name=com.networknt.apic-1.0.0 networknt
 
 ### API D
 
-server.json
+server.yml
 
 ```
-{
-  "description": "server config",
-  "ip": "0.0.0.0",
-  "port": 7004,
-  "serviceId": "com.networknt.apid-1.0.0",
-  "enableRegistry": false
-}
+# Server configuration
+---
+# This is the default binding address if the service is dockerized.
+ip: 0.0.0.0
+
+# Http port if enableHttp is true.
+httpPort:  7004
+
+# Enable HTTP should be false on official environment.
+enableHttp: true
+
+# Https port if enableHttps is true.
+httpsPort:  7444
+
+# Enable HTTPS should be true on official environment.
+enableHttps: false
+
+# Keystore file name in config folder. KeystorePass is in secret.yml to access it.
+keystoreName: tls/server.keystore
+
+# Flag that indicate if two way TLS is enabled. Not recommended in docker container.
+enableTwoWayTls: false
+
+# Truststore file name in config folder. TruststorePass is in secret.yml to access it.
+truststoreName: tls/server.truststore
+
+# Unique service identifier. Used in service registration and discovery etc.
+serviceId: com.networknt.apid-1.0.0
+
+# Flag to enable service registration. Only be true if running as standalone Java jar.
+enableRegistry: false
 
 ```
 
 ```
-cd ~/networknt/light-java-example/discovery/api_d/consuldocker
+cd ~/networknt/light-example-4j/discovery/api_d/consuldocker
 mvn clean install
 docker build -t networknt/com.networknt.apid-1.0.0 .
 docker run -it -p 7004:7004 --net=host --name=com.networknt.apid-1.0.0 networknt/com.networknt.apid-1.0.0
@@ -1672,3 +1580,5 @@ And here is the result.
 
 # Kubernetes
 
+Kubernetes should be used for production service scheduling with registrator like Docker 
+compose.  
