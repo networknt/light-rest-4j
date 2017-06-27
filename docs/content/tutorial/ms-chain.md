@@ -210,6 +210,13 @@ cd ~/networknt/light-codegen
 java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/ms_chain/api_a/generated -m ../model-config/rest/api_a/1.0.0/swagger.json -c ../model-config/rest/api_a/1.0.0/config.json
 ```
 
+You might realized that light-codegen is very fast compare with other code generators. It is 
+due to using rocker template engine which compiles templates into Java classes during build 
+process. It supports dynamic template reloading but we are not using it. That is why is has
+a info logging "INFO com.fizzed.rocker.runtime.RockerRuntime - Rocker template reloading not 
+activated". This message can be simply ignored. 
+
+
 #### Build and run the mock API
 
 And now you have a new project created in light-example-4j/rest/ms_chain/api_a/generated. 
