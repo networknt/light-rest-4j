@@ -1423,6 +1423,13 @@ docker build -t networknt/com.networknt.apia-1.0.0 .
 docker run -it -p 7001:7001 --net=host --name=com.networknt.apia-1.0.0 networknt/com.networknt.apia-1.0.0
 ```
 
+If you are using Docker for Mac, please use the following command to start Docker container
+to workaround a bug. 
+
+```
+docker run -it -p 7001:7001  --add-host=moby:127.0.0.1 --name=com.networknt.apia-1.0.0 networknt/com.networknt.apia-1.0.0
+```
+
 ### API B
 
 server.yml
@@ -1469,6 +1476,14 @@ docker build -t networknt/com.networknt.apib-1.0.0 .
 docker run -it -p 7002:7002 --net=host --name=com.networknt.apib-1.0.0 networknt/com.networknt.apib-1.0.0
 
 ```
+
+If you are using Docker for Mac, please use the following command to start Docker container
+to workaround a bug. 
+
+```
+docker run -it -p 7002:7002  --add-host=moby:127.0.0.1 --name=com.networknt.apib-1.0.0 networknt/com.networknt.apib-1.0.0
+```
+
 
 ### API C
 
@@ -1518,6 +1533,13 @@ docker run -it -p 7003:7003 --net=host --name=com.networknt.apic-1.0.0 networknt
 
 ```
 
+If you are using Docker for Mac, please use the following command to start Docker container
+to workaround a bug. 
+
+```
+docker run -it -p 7003:7003  --add-host=moby:127.0.0.1 --name=com.networknt.apic-1.0.0 networknt/com.networknt.apic-1.0.0
+```
+
 ### API D
 
 server.yml
@@ -1565,6 +1587,12 @@ docker run -it -p 7004:7004 --net=host --name=com.networknt.apid-1.0.0 networknt
 
 ```
 
+If you are using Docker for Mac, please use the following command to start Docker container
+to workaround a bug. 
+
+```
+docker run -it -p 7004:7004  --add-host=moby:127.0.0.1 --name=com.networknt.apid-1.0.0 networknt/com.networknt.apid-1.0.0
+```
 
 ### Test Servers
 
