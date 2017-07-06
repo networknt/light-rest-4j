@@ -1339,8 +1339,8 @@ running.
 
 # Docker
 
-In this step, we are going to dockerize all the APIs and then use registrator for service
-registry. 
+In this step, we are going to dockerize all the APIs and then use [registrator](https://github.com/gliderlabs/registrator) 
+for service registry. To make it easier, we are going to use docker-compose to put everything together.
 
 Now let's copy from consul to docker for each API.
  
@@ -1355,25 +1355,6 @@ cp -r consul consuldocker
 cd ~/networknt/light-example-4j/discovery/api_d
 cp -r consul consuldocker
 ```
-
-Before starting the services, let's start consul and registrator.
-
-Consul
-
-```
-docker run -d -p 8400:8400 -p 8500:8500/tcp -p 8600:53/udp -e 'CONSUL_LOCAL_CONFIG={"acl_datacenter":"dc1","acl_default_policy":"allow","acl_down_policy":"extend-cache","acl_master_token":"the_one_ring","bootstrap_expect":1,"datacenter":"dc1","data_dir":"/usr/local/bin/consul.d/data","server":true}' consul agent -server -ui -bind=127.0.0.1 -client=0.0.0.0
-```
-
-Regsitrator
-
-We use -ip 127.0.0.1 in the command line to make sure that ServiceAddress in
-consul is populated with ip and port. The latest version of regsitrator won't
-set default ip anymore.
-
-```
-docker run -d --name=registrator --net=host --volume=/var/run/docker.sock:/tmp/docker.sock gliderlabs/registrator:latest -ip 127.0.0.1 consul://localhost:8500
-```
-
 
 ### API A
 
@@ -1415,19 +1396,60 @@ serviceId: com.networknt.apia-1.0.0
 enableRegistry: false
 ```
 
+Please note that enableRegistry is set to false as we don't need the server to register itself
+as it is running inside the Docker container and doesn't know the Container IP address and port.
+
+In order to discover services from client module, we need to update service.yml to setup properties
+of URLImpl and properties of ConsulEcwidClient with hostname Consul and port 8500.
+
+service.yml
+
+```
+singletons:
+- com.networknt.registry.URL:
+  - com.networknt.registry.URLImpl:
+      protocol: light
+      host: apia
+      port: 7001
+      path: consul
+      parameters:
+        registryRetryPeriod: '30000'
+- com.networknt.consul.client.ConsulClient:
+  - com.networknt.consul.client.ConsulEcwidClient:
+    - java.lang.String: consul
+    - int: 8500
+- com.networknt.registry.Registry:
+  - com.networknt.consul.ConsulRegistry
+- com.networknt.balance.LoadBalance:
+  - com.networknt.balance.RoundRobinLoadBalance
+- com.networknt.cluster.Cluster:
+  - com.networknt.cluster.LightCluster
+
+```
+
+The Dockerfile generated from light-codegen will have a default expose port 8080 and it will be
+fixed later in the light-codegen (https://github.com/networknt/light-codegen/issues/54)
+
+For now, let's update it to the same port in the server.yml. Otherwise, registrator will register two
+services with port 7001 and 8080. 
+
+Dockerfile
+
+```
+FROM openjdk:8-jre-alpine
+EXPOSE 7001
+ADD /target/apia-1.0.0.jar server.jar
+CMD ["/bin/sh","-c","java -Dlight-4j-config-dir=/config -Dlogback.configurationFile=/config/logback.xml -jar /server.jar"]
+```
+
+
+Let's build a docker image for this service and push it to docker hub.
 
 ```
 cd ~/networknt/light-example-4j/discovery/api_a/consuldocker
 mvn clean install
 docker build -t networknt/com.networknt.apia-1.0.0 .
-docker run -it -p 7001:7001 --net=host --name=com.networknt.apia-1.0.0 networknt/com.networknt.apia-1.0.0
-```
-
-If you are using Docker for Mac, please use the following command to start Docker container
-to workaround a bug. 
-
-```
-docker run -it -p 7001:7001  --add-host=moby:127.0.0.1 --name=com.networknt.apia-1.0.0 networknt/com.networknt.apia-1.0.0
+docker push networknt/com.networknt.apia-1.0.0
 ```
 
 ### API B
@@ -1469,21 +1491,50 @@ enableRegistry: false
 
 ```
 
+service.yml
+
+```
+singletons:
+- com.networknt.registry.URL:
+  - com.networknt.registry.URLImpl:
+      protocol: light
+      host: apib
+      port: 7002
+      path: consul
+      parameters:
+        registryRetryPeriod: '30000'
+- com.networknt.consul.client.ConsulClient:
+  - com.networknt.consul.client.ConsulEcwidClient:
+    - java.lang.String: consul
+    - int: 8500
+- com.networknt.registry.Registry:
+  - com.networknt.consul.ConsulRegistry
+- com.networknt.balance.LoadBalance:
+  - com.networknt.balance.RoundRobinLoadBalance
+- com.networknt.cluster.Cluster:
+  - com.networknt.cluster.LightCluster
+
+```
+
+Dockerfile
+
+
+```
+FROM openjdk:8-jre-alpine
+EXPOSE 7002
+ADD /target/apib-1.0.0.jar server.jar
+CMD ["/bin/sh","-c","java -Dlight-4j-config-dir=/config -Dlogback.configurationFile=/config/logback.xml -jar /server.jar"]
+```
+
+Let's build a docker image for this service and push it to docker hub.
+
 ```
 cd ~/networknt/light-example-4j/discovery/api_b/consuldocker
 mvn clean install
 docker build -t networknt/com.networknt.apib-1.0.0 .
-docker run -it -p 7002:7002 --net=host --name=com.networknt.apib-1.0.0 networknt/com.networknt.apib-1.0.0
+docker push networknt/com.networknt.apib-1.0.0
 
 ```
-
-If you are using Docker for Mac, please use the following command to start Docker container
-to workaround a bug. 
-
-```
-docker run -it -p 7002:7002  --add-host=moby:127.0.0.1 --name=com.networknt.apib-1.0.0 networknt/com.networknt.apib-1.0.0
-```
-
 
 ### API C
 
@@ -1525,20 +1576,49 @@ enableRegistry: false
 
 ```
 
+service.yml
+
+```
+singletons:
+- com.networknt.registry.URL:
+  - com.networknt.registry.URLImpl:
+      protocol: light
+      host: apic
+      port: 7003
+      path: consul
+      parameters:
+        registryRetryPeriod: '30000'
+- com.networknt.consul.client.ConsulClient:
+  - com.networknt.consul.client.ConsulEcwidClient:
+    - java.lang.String: consul
+    - int: 8500
+- com.networknt.registry.Registry:
+  - com.networknt.consul.ConsulRegistry
+- com.networknt.balance.LoadBalance:
+  - com.networknt.balance.RoundRobinLoadBalance
+- com.networknt.cluster.Cluster:
+  - com.networknt.cluster.LightCluster
+
+```
+
+Dockerfile
+
+```
+FROM openjdk:8-jre-alpine
+EXPOSE 7003
+ADD /target/apic-1.0.0.jar server.jar
+CMD ["/bin/sh","-c","java -Dlight-4j-config-dir=/config -Dlogback.configurationFile=/config/logback.xml -jar /server.jar"]
+```
+
+Let's build a docker image for this service and push it to docker hub.
+
 ```
 cd ~/networknt/light-example-4j/discovery/api_c/consuldocker
 mvn clean install
 docker build -t networknt/com.networknt.apic-1.0.0 .
-docker run -it -p 7003:7003 --net=host --name=com.networknt.apic-1.0.0 networknt/com.networknt.apic-1.0.0
-
+docker push networknt/com.networknt.apic-1.0.0
 ```
 
-If you are using Docker for Mac, please use the following command to start Docker container
-to workaround a bug. 
-
-```
-docker run -it -p 7003:7003  --add-host=moby:127.0.0.1 --name=com.networknt.apic-1.0.0 networknt/com.networknt.apic-1.0.0
-```
 
 ### API D
 
@@ -1579,20 +1659,65 @@ enableRegistry: false
 
 ```
 
+service.yml
+
+```
+singletons:
+- com.networknt.registry.URL:
+  - com.networknt.registry.URLImpl:
+      protocol: light
+      host: apid
+      port: 7004
+      path: consul
+      parameters:
+        registryRetryPeriod: '30000'
+- com.networknt.consul.client.ConsulClient:
+  - com.networknt.consul.client.ConsulEcwidClient:
+    - java.lang.String: consul
+    - int: 8500
+- com.networknt.registry.Registry:
+  - com.networknt.consul.ConsulRegistry
+- com.networknt.balance.LoadBalance:
+  - com.networknt.balance.RoundRobinLoadBalance
+- com.networknt.cluster.Cluster:
+  - com.networknt.cluster.LightCluster
+
+```
+
+Dockerfile
+
+```
+FROM openjdk:8-jre-alpine
+EXPOSE 7004
+ADD /target/apid-1.0.0.jar server.jar
+CMD ["/bin/sh","-c","java -Dlight-4j-config-dir=/config -Dlogback.configurationFile=/config/logback.xml -jar /server.jar"]
+```
+
+
+Let's build a docker image for this service and push it to docker hub.
+
 ```
 cd ~/networknt/light-example-4j/discovery/api_d/consuldocker
 mvn clean install
 docker build -t networknt/com.networknt.apid-1.0.0 .
-docker run -it -p 7004:7004 --net=host --name=com.networknt.apid-1.0.0 networknt/com.networknt.apid-1.0.0
+docker push networknt/com.networknt.apid-1.0.0
 
 ```
 
-If you are using Docker for Mac, please use the following command to start Docker container
-to workaround a bug. 
+### Start docker-compose
+
+Now we have all four API built, dockerized and pushed to docker hub. Let's start the docker-compose.
 
 ```
-docker run -it -p 7004:7004  --add-host=moby:127.0.0.1 --name=com.networknt.apid-1.0.0 networknt/com.networknt.apid-1.0.0
+cd ~/networknt
+git clone git@github.com:networknt/light-docker.git
+cd light-docker
+docker-compose -f docker-compose-consul-registrator.yml up
+
 ```
+
+This compose will start Consul, Registrator and four services together.
+
 
 ### Test Servers
 
