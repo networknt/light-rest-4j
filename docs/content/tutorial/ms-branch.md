@@ -1,24 +1,20 @@
 ---
-date: 2017-06-16T22:45:02-04:00
-title: Aggregate Pattern Microservices
+date: 2017-07-12T16:37:05-04:00
+title: Branch Pattern Microservices
 ---
 
-This is another pattern that is very useful for serving mobile native applications. The mobile
-app just send one request to the aggregate API and it will call multiple APIs to gether info
-and send back to the consumer. This avoid mobile device to call multiple APIs to get data on a
-slow network. 
+This is another pattern that is very useful which is a hybrid of chain pattern and aggregate
+pattern.
 
-This tutorial shows you how to build 4 services with one of them the aggregator. And it will
-be the foundation for our microserives benchmarks.
+This tutorial shows you how to build 4 services in branch pattern. 
 
 ```
 
-API A -> API B
-      -> API C
-      -> API D
+API A -> API B -> API D
+          -> API C
 ```
 
-API A calls API B, API C and API D to fulfill its request.
+API A calls API B and API C. API B calls API D.
 
 ## Prepare workspace
 
@@ -38,12 +34,12 @@ git clone git@github.com:networknt/light-docker.git
 
 ```
 
-As we are going to regenerate API A, B, C and D, let's rename ms_aggregate folder from
+As we are going to regenerate API A, B, C and D, let's rename ms_branch folder from
 light-example-4j.
 
 ```
 cd ~/networknt/light-example-4j/rest
-mv ms_aggregate ms_aggregate.bak
+mv ms_branch ms_branch.bak
 cd ~/networknt
 ```
 
@@ -72,9 +68,8 @@ on how to use the editor, let's create four API specifications in model-config r
 API A will call API B, API C and API D
 
 ```
-API A -> API B 
-      -> API C 
-      -> API D
+API A -> API B -> API D 
+          -> API C 
 ```
 
 Here is the API A swagger.yaml and others can be found at
@@ -141,7 +136,7 @@ scope api_a.r or scope api_a.w to access the endpoint /data.
 ## light-codegen
 
 Now we have four API swagger.yaml files available. Let's use light-codegen
-to start four projects in light-example-4j/rest/ms_aggregate. In normal API build, you 
+to start four projects in light-example-4j/rest/ms_branch. In normal API build, you 
 should create a repo for each API. For us, we have to user light-example-4j for all the
 examples and tutorial for easy management in networknt github organization.
 
@@ -150,7 +145,7 @@ examples and tutorial for easy management in networknt github organization.
 The project is cloned to the local already during the prepare stage. Let's build it.
 
 ```
-cd light-codegen
+cd ~/networknt/light-codegen
 mvn clean install -DskipTests
 ```
 
@@ -199,17 +194,17 @@ directory ~/networknt and you are in ~/networknt/light-codegen now.
 
 ```
 cd ~/networknt/light-codegen
-java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/ms_aggregate/api_a/generated -m ../model-config/rest/api_a/1.0.0/swagger.json -c ../model-config/rest/api_a/1.0.0/config.json
+java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/ms_branch/api_a/generated -m ../model-config/rest/api_a/1.0.0/swagger.json -c ../model-config/rest/api_a/1.0.0/config.json
 ```
 
 #### Build and run the mock API
 
-And now you have a new project created in light-example-4j/rest/ms_aggregate/api_a/generated. 
+And now you have a new project created in light-example-4j/rest/ms_branch/api_a/generated. 
 Let's build it and run the test cases. If everything is OK, start the server.
 
 ```
 cd ..
-cd light-example-4j/rest/ms_aggregate/api_a/generated
+cd light-example-4j/rest/ms_branch/api_a/generated
 mvn clean install exec:exec
 ```
 
@@ -238,9 +233,9 @@ directory.
 
 ```
 cd ~/networknt/light-codegen
-java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/ms_aggregate/api_b/generated -m ../model-config/rest/api_b/1.0.0/swagger.json -c ../model-config/rest/api_b/1.0.0/config.json
-java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/ms_aggregate/api_c/generated -m ../model-config/rest/api_c/1.0.0/swagger.json -c ../model-config/rest/api_c/1.0.0/config.json
-java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/ms_aggregate/api_d/generated -m ../model-config/rest/api_d/1.0.0/swagger.json -c ../model-config/rest/api_d/1.0.0/config.json
+java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/ms_branch/api_b/generated -m ../model-config/rest/api_b/1.0.0/swagger.json -c ../model-config/rest/api_b/1.0.0/config.json
+java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/ms_branch/api_c/generated -m ../model-config/rest/api_c/1.0.0/swagger.json -c ../model-config/rest/api_c/1.0.0/config.json
+java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/ms_branch/api_d/generated -m ../model-config/rest/api_d/1.0.0/swagger.json -c ../model-config/rest/api_d/1.0.0/config.json
 ```
 
 Now you have four APIs generated from four OpenAPI specifications. Let's check
@@ -250,7 +245,7 @@ this step.
 ```
 cd ../light-example-4j
 git add .
-git commit -m "checkin 4 apis"
+git commit -m "checkin 4 apis in ms_branch"
 git push origin master
 ```
 
@@ -258,37 +253,38 @@ git push origin master
 
 Now these APIs are working if you start them and they will output the mock responses
 generated based on the API specifications. Let's take a look at the API handler itself
-and update it based on our business logic, you can call API A and subsequently all other
-APIs will be called by API A.
+and update it based on our business logic, you can call API A and subsequently all API B and
+API C will be called by API A. And API D will be called by API B.
 
 #### Prepare Environment
 
-Before starting this step, let's create a folder called httpaggregate in each sub folder under
-ms_aggregate and copy everything from generated folder to the httpaggregate. We are going to update
-httpaggregate folder to have business logic to call another api and change the configuration
-to listen to different port. You can compare between generated and httpaggregate to see what has
+Before starting this step, let's create a folder called httpbranch in each sub folder under
+ms_branch and copy everything from generated folder to the httpbranch. We are going to update
+httpbranch folder to have business logic to call other API(s) and change the configuration
+to listen to different port. You can compare between generated and httpbranch to see what has
 been changed later on.
 
 ```
-cd ~/networknt/light-example-4j/rest/ms_aggregate/api_a
-cp -r generated httpaggregate
-cd ~/networknt/light-example-4j/rest/ms_aggregate/api_b
-cp -r generated httpaggregate
-cd ~/networknt/light-example-4j/rest/ms_aggregate/api_c
-cp -r generated httpaggregate
-cd ~/networknt/light-example-4j/rest/ms_aggregate/api_d
-cp -r generated httpaggregate
+cd ~/networknt/light-example-4j/rest/ms_branch/api_a
+cp -r generated httpbranch
+cd ~/networknt/light-example-4j/rest/ms_branch/api_b
+cp -r generated httpbranch
+cd ~/networknt/light-example-4j/rest/ms_branch/api_c
+cp -r generated httpbranch
+cd ~/networknt/light-example-4j/rest/ms_branch/api_d
+cp -r generated httpbranch
 
 ```
 
-Now we have httpaggregate folder copied from generated and all updates in this step will be
-in httpaggregate folder. 
+Now we have httpbranch folder copied from generated and all updates in this step will be
+in httpbranch folder. 
 
 #### API D
 Let's take a look at the PathHandlerProvider.java in
-ms_aggregate/api_d/httpaggregate/src/main/java/com/networknt/apid
+ms_branch/api_d/httpbranch/src/main/java/com/networknt/apid
 
 ```
+
 package com.networknt.apid;
 
 import com.networknt.config.Config;
@@ -330,7 +326,6 @@ The generated handler is named "DataGetHandler" and it returns example response 
 in swagger specification. Here is the generated handler code. 
  
 ```
-
 package com.networknt.apid.handler;
 
 import io.undertow.server.HttpHandler;
@@ -674,3 +669,4 @@ the httpaggregate folder we just created and updated.
 For more steps, please refer to 
 
 https://networknt.github.io/light-rest-4j/tutorial/ms-chain/
+
