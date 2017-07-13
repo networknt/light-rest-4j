@@ -9,6 +9,8 @@ The following tutorials are leveraging light-rest-4j framework and they will hel
 
 * [How to implement Aggregate Pattern of microservices](https://networknt.github.io/light-rest-4j/tutorial/ms-aggregate/)
 
+* [How to implement Branch Pattern of Microservices](https://networknt.github.io/light-rest-4j/tutorial/ms-branch/)
+
 * [How to access database in microservices](https://networknt.github.io/light-rest-4j/tutorial/database/)
 
 * [How to register and discover services](https://networknt.github.io/light-rest-4j/tutorial/discovery/)

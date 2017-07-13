@@ -374,7 +374,7 @@ public class DataGetHandler implements HttpHandler {
 
 Now, let's build it and start the server. 
 ```
-cd ~/networknt/light-example-4j/rest/ms_aggregate/api_d/httpaggregate
+cd ~/networknt/light-example-4j/rest/ms_branch/api_d/httpbranch
 mvn clean install exec:exec
 ```
 Test it with curl.
@@ -400,7 +400,7 @@ certificate and we don't want to verify the domain.
 
 #### API C
 Let's leave API D running and update API C DataGetHandler in 
-~/networknt/light-example-4j/rest/ms_aggregate/api_c/httpaggregate
+~/networknt/light-example-4j/rest/ms_branch/api_c/httpbranch
 
 
 ```
@@ -431,7 +431,7 @@ public class DataGetHandler implements HttpHandler {
 Start API C server and test the endpoint /v1/data
 
 ```
-cd ~/networknt/light-example-4j/rest/ms_aggregate/api_c/httpaggregate
+cd ~/networknt/light-example-4j/rest/ms_branch/api_c/httpbranch
 mvn clean install exec:exec
 ```
 From another terminal window run:
@@ -461,31 +461,67 @@ Now let's update the generated DataGetHandler.java to this.
 ```
 package com.networknt.apib.handler;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.networknt.client.Client;
 import com.networknt.config.Config;
+import com.networknt.exception.ClientException;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class DataGetHandler implements HttpHandler {
+    static String CONFIG_NAME = "api_b";
+    static String apidUrl = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_d_endpoint");
+
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        List<String> messages = new ArrayList<String>();
-        messages.add("API B: Message 1");
-        messages.add("API B: Message 2");
-        exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(messages));
+        List<String> list = new ArrayList<String>();
+        try {
+            CloseableHttpClient client = Client.getInstance().getSyncClient();
+            HttpGet httpGet = new HttpGet(apidUrl);
+            //Client.getInstance().propagateHeaders(httpGet, exchange);
+            CloseableHttpResponse response = client.execute(httpGet);
+            int responseCode = response.getStatusLine().getStatusCode();
+            if(responseCode != 200){
+                throw new Exception("Failed to call API D: " + responseCode);
+            }
+            List<String> apidList = Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
+                    new TypeReference<List<String>>(){});
+            list.addAll(apidList);
+        } catch (ClientException e) {
+            throw new Exception("Client Exception: ", e);
+        } catch (IOException e) {
+            throw new Exception("IOException:", e);
+        }
+        // now add API B specific messages
+        list.add("API B: Message 1");
+        list.add("API B: Message 2");
+        exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(list));
     }
 }
+```
+Configuration file for API D url.
+
+api_b.yml
+
+```
+api_d_endpoint: http://localhost:7004/v1/data
+
 ```
 
 Start API B server and test the endpoint /v1/data
 
 ```
-cd ~/networknt/light-example-4j/rest/ms_aggregate/api_b/httpaggregate
+cd ~/networknt/light-example-4j/rest/ms_branch/api_b/httpbranch
 mvn clean install exec:exec
 ```
 From another terminal window run:
@@ -496,7 +532,7 @@ curl localhost:7002/v1/data
 And the result is
 
 ```
-["API D: Message 1","API D: Message 2","API C: Message 1","API C: Message 2","API B: Message 1","API B: Message 2"]
+["API D: Message 1","API D: Message 2","API B: Message 1","API B: Message 2"]
 ```
 
 Here is the https port and the result is the same.
@@ -509,7 +545,7 @@ curl -k https://localhost:7442/v1/data
 
 #### API A
 
-API A will call API B, C, D to fulfill its request. Now let's update the 
+API A will call API B and API C to fulfill its request. Now let's update the 
 generated DataGetHandler.java code to
 
 ```
@@ -536,9 +572,8 @@ import java.util.concurrent.CountDownLatch;
 
 public class DataGetHandler implements HttpHandler {
     static String CONFIG_NAME = "api_a";
-    static String apibUrl = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_b_endpoint");
+    static String apibUrl = (String)Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_b_endpoint");
     static String apicUrl = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_c_endpoint");
-    static String apidUrl = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_d_endpoint");
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
@@ -546,13 +581,12 @@ public class DataGetHandler implements HttpHandler {
         final HttpGet[] requests = new HttpGet[] {
                 new HttpGet(apibUrl),
                 new HttpGet(apicUrl),
-                new HttpGet(apidUrl),
         };
         try {
             CloseableHttpAsyncClient client = Client.getInstance().getAsyncClient();
             final CountDownLatch latch = new CountDownLatch(requests.length);
             for (final HttpGet request: requests) {
-                Client.getInstance().propagateHeaders(request, exchange);
+                //Client.getInstance().propagateHeaders(request, exchange);
                 client.execute(request, new FutureCallback<HttpResponse>() {
                     @Override
                     public void completed(final HttpResponse response) {
@@ -593,23 +627,21 @@ public class DataGetHandler implements HttpHandler {
 ```
 
 
-API A needs to have the urls of API B, C and D in order to call them. Let's put it in a config file for
-now and move to service discovery later.
+API A needs to have the urls of API B, and API C in order to call them. Let's put it in a config 
+file for now and move to service discovery later.
 
 Create api_a.yml in src/main/resources/config folder.
 
 ```
 api_b_endpoint: http://localhost:7002/v1/data
 api_c_endpoint: http://localhost:7003/v1/data
-api_d_endpoint: http://localhost:7004/v1/data
-
 ```
 
 
 Start API A server and test the endpoint /v1/data
 
 ```
-cd ~/networknt/light-example-4j/rest/ms_aggregate/api_a/httpaggregate
+cd ~/networknt/light-example-4j/rest/ms_branch/api_a/httpbranch
 mvn clean install exec:exec
 ```
 From another terminal window run:
