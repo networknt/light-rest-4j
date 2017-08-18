@@ -39,7 +39,7 @@ access. You will need [swagger editor](https://networknt.github.io/light-4j/tool
 to create a specification. 
 
 Here is the OpenAPI specification created and it can be found in 
-[model-config repo](https://github.com/networknt/model-config/tree/master/rest/database) 
+[model-config](https://github.com/networknt/model-config/tree/master/rest/database) 
 
 ```
 swagger: '2.0'
@@ -193,28 +193,42 @@ Here is the content of the file and it can be found in ~/networknt/model-config/
 
 ```
 {
-  "invokerPackage": "com.networknt.database",
-  "apiPackage":"com.networknt.database.handler",
-  "modelPackage":"com.networknt.database.model",
+  "name": "database",
+  "version": "1.0.0",
+  "groupId": "com.networknt",
   "artifactId": "database",
-  "groupId": "com.networknt"
+  "rootPackage": "com.networknt.database",
+  "handlerPackage":"com.networknt.database.handler",
+  "modelPackage":"com.networknt.database.model",
+  "overwriteHandler": true,
+  "overwriteHandlerTest": true,
+  "overwriteModel": true,
+  "httpPort": 8080,
+  "enableHttp": true,
+  "httpsPort": 8443,
+  "enableHttps": true,
+  "enableRegistry": false,
+  "supportOracle": true,
+  "supportMysql": true,
+  "supportPostgresql": true,
+  "supportH2ForTest": true,
+  "supportClient": false
 }
 ```
 
+As you can see that we have enabled Oracle, Mysql, Postgres and H2 for test cases. 
 
 Code generation
 
 ```
-cd ~/networknt/swagger-codegen
-java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -c ~/networknt/swagger/database/config.json -i ~/networknt/swagger/database/swagger.yaml -l light-java -o ~/networknt/light-java-example/database/generated
-
+cd ~/networknt/light-codegen
+java -jar codegen-cli/target/codegen-cli.jar -f light-rest-4j -o ../light-example-4j/rest/database/generated -m ../model-config/rest/database/swagger.json -c ../model-config/rest/database/config.json
 ```
 
 Now you should have a project generated. Let's build it and run it.
 
 ```
-cd ~/networknt
-cd light-java-example/database/generated
+cd ~/networknt/light-example-4j/rest/database/generated
 mvn clean install exec:exec
 ```
 
@@ -223,11 +237,11 @@ Now you can access the service with curl following the step below.
 
 ### Generate code with docker container
 
-Let's remove the generated folder from light-example-4j/database folder and
+Let's remove the generated folder from light-example-4j/rest/database folder and
 generate the project again with docker container.
 
 ```
-cd ~/networknt/light-java-example/database
+cd ~/networknt/light-example-4j/rest/database
 rm -rf generated
 ```
 
@@ -235,14 +249,21 @@ Now let's generate the project again with docker.
 
 ```
 cd ~/networknt
-docker run -it -v ~/networknt/swagger/database:/swagger-api/swagger -v ~/networknt/light-java-example/database:/swagger-api/out networknt/swagger-codegen generate -c /swagger-api/swagger/config.json -i /swagger-api/swagger/swagger.yaml -l light-java -o /swagger-api/out/generated
+docker run -it -v ~/networknt/model-config/rest/database:/light-api/input -v ~/networknt/light-example-4j/rest/database:/light-api/out networknt/light-codegen -f light-rest-4j -m /light-api/input/swagger.json -c /light-api/input/config.json -o /light-api/out/generated
+```
 
+Node that on Linux, the generated folder in ~/networknt/light-example-4j/rest/database will be 
+owned by root:root and it needs to be changed to your user:group before compile the project.
+
+```
+cd ~/networknt/light-example-4j/rest/database
+sudo chown -R steve:steve .
 ```
 
 Let's build and start the service
 
 ```
-cd ~/networknt/light-java-example/database/generated
+cd ~/networknt/light-example-4j/rest/database/generated
 mvn clean install exec:exec
 ```
 
@@ -257,32 +278,78 @@ Single query
 
 ```
 curl http://localhost:8080/v1/query
+```
 
-{  "randomNumber" : 123,  "id" : 123}
+Result:
+
+```json
+ {
+                                "id": 123,
+                                "randomNumber": 456
+                            }
 ```
 
 Multiple queries with default number of object returned
 
 ```
 curl http://localhost:8080/v1/queries
+```
 
-[ {  "randomNumber" : 123,  "id" : 123} ]
+Result:
+
+```json
+ [
+                                {
+                                    "id": 123,
+                                    "randomNumber": 456
+                                },
+                                {
+                                    "id": 567,
+                                    "randomNumber": 789
+                                }
+                            ]
 ```
 
 Multiple queries with 10 numbers returned
 
 ```
 curl http://localhost:8080/v1/queries?queries=10
+```
 
-[ {  "randomNumber" : 123,  "id" : 123} ]
+Result: 
+
+```json
+ [
+                                {
+                                    "id": 123,
+                                    "randomNumber": 456
+                                },
+                                {
+                                    "id": 567,
+                                    "randomNumber": 789
+                                }
+                            ]
 ```
 
 Multiple updates with default number of object updated
 
 ```
 curl http://localhost:8080/v1/updates
+```
 
-[ {  "randomNumber" : 123,  "id" : 123} ]
+Result:
+
+```json
+ [
+                                {
+                                    "id": 123,
+                                    "randomNumber": 456
+                                },
+                                {
+                                    "id": 567,
+                                    "randomNumber": 789
+                                }
+                            ]
 ```
 
 
@@ -290,8 +357,21 @@ Multiple updates with 10 numbers updated
 
 ```
 curl http://localhost:8080/v1/updates?queries=10
+```
 
-[ {  "randomNumber" : 123,  "id" : 123} ]
+Result:
+
+```json
+ [
+                                {
+                                    "id": 123,
+                                    "randomNumber": 456
+                                },
+                                {
+                                    "id": 567,
+                                    "randomNumber": 789
+                                }
+                            ]
 ```
 
 # Prepare Database Scripts
@@ -434,8 +514,9 @@ INSERT INTO fortune (id, message) VALUES (12, 'フレームワークのベンチ
 
 ```
 
-Above scripts can be found in https://github.com/networknt/light-example-4j/tree/master/database/dbscript
-
+Above scripts can be found in https://github.com/networknt/light-example-4j/tree/master/rest/database/dbscript
+You can just copy the dbscript folder from database.bak to database folder as scripting for these three databases
+are out of scope in this tutorial.
 
 # Start Databases
 
@@ -447,114 +528,74 @@ use mysql and later on we can switch to Postgres and Oracle.
 Oracle Database
 
 ```
-docker run -v ~/networknt/light-java-example/database/dbscript/oracle:/docker-entrypoint-initdb.d -d -p 1522:1521 wnameless/oracle-xe-11g
+docker run -v ~/networknt/light-example-4j/rest/database/dbscript/oracle:/docker-entrypoint-initdb.d -d -p 1522:1521 wnameless/oracle-xe-11g
 ```
 
  
 Mysql Database
 
 ```
-docker run -v ~/networknt/light-java-example/database/dbscript/mysql:/docker-entrypoint-initdb.d -e MYSQL_ROOT_PASSWORD=my-secret-pw -d -p 3306:3306 mysql
+docker run -v ~/networknt/light-example-4j/rest/database/dbscript/mysql:/docker-entrypoint-initdb.d -e MYSQL_ROOT_PASSWORD=my-secret-pw -d -p 3306:3306 mysql
 
 ```
 
 Postgres Database
 
 ```
-docker run -v ~/networknt/light-java-example/database/dbscript/postgres:/docker-entrypoint-initdb.d -e POSTGRES_PASSWORD=my-secret-pw -e POSTGRES_DB=hello_world -d -p 5432:5432 postgres
+docker run -v ~/networknt/light-example-4j/rest/database/dbscript/postgres:/docker-entrypoint-initdb.d -e POSTGRES_PASSWORD=my-secret-pw -e POSTGRES_DB=hello_world -d -p 5432:5432 postgres
 
 ```
 
 # Setup Connection Pool
 
-To connect to database we need to create service.json that can inject connection pool
+To connect to database we need to create service.yml that can inject connection pool
 to the microservice you are building.
 
 Now we have generated project, let's copy it and update with db connection pool
 
 ```
-cd ~/networknt/light-java-example/database
+cd ~/networknt/light-example-4j/rest/database
 cp -r generated connection
 ```
 
-Add the following service.json to ~/networknt/light-example-4j/database/connection/src/main/resources/config
+Add the following service.yml to ~/networknt/light-example-4j/rest/database/connection/src/main/resources/config
 
 ```
-{
-  "description": "singleton service factory configuration",
-  "singletons": [
-    {
-      "javax.sql.DataSource": [
-        {
-          "com.zaxxer.hikari.HikariDataSource":
-          {
-            "jdbcUrl": "jdbc:mysql://localhost:3306/hello_world?useSSL=false",
-            "username": "root",
-            "password": "my-secret-pw",
-            "maximumPoolSize": 95,
-            "useServerPrepStmts": true,
-            "cachePrepStmts": true,
-            "cacheCallableStmts": true,
-            "prepStmtCacheSize": 4096,
-            "prepStmtCacheSqlLimit": 2048
-          }
-        }
-      ]
-    }
-  ]
-}
+# Singleton service factory configuration
+singletons: 
+ - javax.sql.DataSource: 
+   - com.zaxxer.hikari.HikariDataSource: 
+     jdbcUrl: "jdbc:mysql://localhost:3306/hello_world?useSSL=false"
+     username: root
+     password: "my-secret-pw"
+     maximumPoolSize: 95
+     useServerPrepStmts: true
+     cachePrepStmts: true
+     cacheCallableStmts: true
+     prepStmtCacheSize: 4096
+     prepStmtCacheSqlLimit: 2048
 
 ```
 
-The service.json will make sure the a Hikari DataSource will be created during server startup 
-with the dependency injection module. You can find other database's service.json in 
-https://github.com/networknt/light-example-4j/tree/master/database/dbscript
+The service.yaml will make sure the a Hikari DataSource will be created during server startup 
+with the dependency injection module. You can find other database's service.yml in 
+https://github.com/networknt/light-example-4j/tree/master/rest/database/dbscript
 
-In order to do that we need to add several jars into the dependency in pom.xml
-
-```
-        <version.hikaricp>2.6.2</version.hikaricp>
-        <version.fastscanner>2.0.8</version.fastscanner>
-        <version.h2>1.3.176</version.h2>
-        <version.hazelcast>3.6.7</version.hazelcast>
-        <version.oracle>11.2.0.3</version.oracle>
-        <version.mysql>6.0.4</version.mysql>
-        <version.postgres>9.4.1211</version.postgres>
-
-
-        <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
-            <version>${version.hikaricp}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.lukehutch</groupId>
-            <artifactId>fast-classpath-scanner</artifactId>
-            <version>${version.fastscanner}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.oracle</groupId>
-            <artifactId>ojdbc6</artifactId>
-            <version>${version.oracle}</version>
-        </dependency>
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>${version.mysql}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>${version.postgres}</version>
-        </dependency>
-
-```
+In the config.json for light-codegen, we've enabled multiple databases support so that pom.xml
+should have all the dependencies included. 
 
 Now you can add a line in each handler to get the DataSource as a static variable.
 
 
 ```
     private static final DataSource ds = (DataSource) SingletonServiceFactory.getBean(DataSource.class);
+
+```
+If you are using IDE, it will help you to add imports, otherwise, you have to add the following imports.
+
+```
+import com.networknt.service.SingletonServiceFactory;
+import javax.sql.DataSource;
 
 ```
 
@@ -566,7 +607,7 @@ is created. The next step we will try to query from database.
 Let's copy connection to query
 
 ```
-cd ~/networknt/light-java-example/database
+cd ~/networknt/light-example-4j/rest/database
 cp -r connection query
 
 ```
@@ -579,19 +620,22 @@ package com.networknt.database.handler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.config.Config;
 import com.networknt.database.model.RandomNumber;
-import com.networknt.service.SingletonServiceFactory;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
+import io.undertow.util.HttpString;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
+
+import com.networknt.service.SingletonServiceFactory;
+import javax.sql.DataSource;
 
 public class QueryGetHandler implements HttpHandler {
     private static final DataSource ds = (DataSource) SingletonServiceFactory.getBean(DataSource.class);
@@ -706,7 +750,7 @@ public class Helper {
 ```
 
 
-And add a constructor that accept two integer as parameters for RandomNumber.
+And add a constructor that accept two integer as parameters for RandomNumber in model folder.
 
 ```
   public RandomNumber(int id, int randomNumber) {
@@ -719,15 +763,21 @@ And add a constructor that accept two integer as parameters for RandomNumber.
 We are good to go.
 
 ```
-cd ~/networknt/light-java-example/database/query
+cd ~/networknt/light-example-4j/rest/database/query
 mvn clean install exec:exec
 ```
 
 Access the query endpoint and you will result the random number as result.
 
+Note that we need to make sure Mysql database docker container is up and running.
+
 ```
 curl http://localhost:8080/v1/query
+```
 
+Result:
+
+```
 {"id":4495,"randomNumber":6569}
 ```
 
@@ -737,7 +787,7 @@ curl http://localhost:8080/v1/query
 Let's build multiple queries based on the codebase of single query.
 
 ```
-cd ~/networknt/light-java-example/database
+cd ~/networknt/light-example-4j/rest/database
 cp -r query queries
 ```
 
@@ -749,24 +799,19 @@ package com.networknt.database.handler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.config.Config;
 import com.networknt.database.model.RandomNumber;
-import com.networknt.service.SingletonServiceFactory;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import com.networknt.service.SingletonServiceFactory;
 import io.undertow.util.Headers;
-import io.undertow.util.HttpString;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
-
-import org.apache.commons.lang3.StringEscapeUtils;
-
-import javax.sql.DataSource;
 
 public class QueriesGetHandler implements HttpHandler {
     private static final DataSource ds = (DataSource) SingletonServiceFactory.getBean(DataSource.class);
@@ -817,7 +862,7 @@ public class QueriesGetHandler implements HttpHandler {
 Now let's build and test the server
 
 ```
-cd ~/networknt/light-java-example/database/queries
+cd ~/networknt/light-example-4j/rest/database/queries
 mvn clean install exec:exec
 ```
 
@@ -825,6 +870,11 @@ Let's test it.
 
 ```
 curl http://localhost:8080/v1/queries
+```
+
+Result:
+
+```
 [{"id":1480,"randomNumber":4720}]
 ```
 
@@ -832,7 +882,10 @@ Again with 10 random numbers
 
 ```
 curl http://localhost:8080/v1/queries?queries=10
+```
+Result: 
 
+```
 [{"id":4473,"randomNumber":2370},{"id":1142,"randomNumber":3999},{"id":6022,"randomNumber":1683},{"id":159,"randomNumber":4017},{"id":8512,"randomNumber":3248},{"id":4291,"randomNumber":620},{"id":3238,"randomNumber":1257},{"id":8524,"randomNumber":256},{"id":7869,"randomNumber":1709},{"id":6410,"randomNumber":9362}]
 ```
 
@@ -841,7 +894,7 @@ curl http://localhost:8080/v1/queries?queries=10
 Let's copy the queries to updates in order to work on updates
 
 ```
-cd ~/networknt/light-java-example/database
+cd ~/networknt/light-example-4j/rest/database
 cp -r queries updates
 ```
 
@@ -853,23 +906,19 @@ package com.networknt.database.handler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.config.Config;
 import com.networknt.database.model.RandomNumber;
-import com.networknt.service.SingletonServiceFactory;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
-import io.undertow.util.HttpString;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
-import org.apache.commons.lang3.StringEscapeUtils;
-
+import com.networknt.service.SingletonServiceFactory;
 import javax.sql.DataSource;
 
 public class UpdatesGetHandler implements HttpHandler {
@@ -929,7 +978,7 @@ public class UpdatesGetHandler implements HttpHandler {
 Let's build and start the server
 
 ```
-cd ~/networknt/light-java-example/database/updates
+cd ~/networknt/light-example-4j/rest/database/updates
 mvn clean install exec:exec
 
 ```
@@ -938,7 +987,11 @@ Let's test it with one update
 
 ```
 curl http://localhost:8080/v1/updates
+```
 
+Result: 
+
+```
 [{"id":4682,"randomNumber":1717}]
 ```
 
@@ -946,7 +999,11 @@ Let's test it with multiple updates
 
 ```
 curl http://localhost:8080/v1/updates?queries=10
+```
 
+Result:
+
+```
 [{"id":6395,"randomNumber":938},{"id":4124,"randomNumber":4406},{"id":7694,"randomNumber":936},{"id":502,"randomNumber":5784},{"id":6992,"randomNumber":8037},{"id":3607,"randomNumber":3462},{"id":6910,"randomNumber":6195},{"id":7388,"randomNumber":9233},{"id":6235,"randomNumber":4825},{"id":4924,"randomNumber":1066}]
 ```
 
@@ -955,14 +1012,14 @@ curl http://localhost:8080/v1/updates?queries=10
 The first step is to start the postgres database in docker. The command
 has shown above. 
 
-To switch to Postgres database, you just need to replace server.json from 
+To switch to Postgres database, you just need to replace service.yml from 
 dbscript/postgres/config folder. First let's create a new folder from 
-updates and modify the service.json
+updates and copy the service.yml
 
 ```
-cd ~/networknt/light-java-example/database
+cd ~/networknt/light-example-4j/rest/database
 cp -r updates postgres
-cp dbscript/postgres/config/service.json postgres/src/main/resources/config
+cp dbscript/postgres/config/service.yml postgres/src/main/resources/config
 ```
 
 Now let's build the server from postgres folder.
@@ -985,29 +1042,21 @@ curl http://localhost:8080/v1/query
 The first step is to start Oracle database in docker. The command has
 shown above.
 
-Next we need to add a repo into pom.xml as Oracle client jar is not in
-maven central due to licensing issue. 
+Next we need to add manually install Oracle JDBC driver jar into your local maven
+repository. You can search on Internet on the instructions. If you are not interested 
+in Oracle, please just skip this step. The only reason I have Oracle in this tutorial
+is because one of our customers only have Oracle database as approved. Downloading
+Oracle XE Docker image will take a long time and that image is not stable and can be
+broken at anytime. 
 
-```
-    <repositories>
-        <!-- Repository for ORACLE ojdbc6. -->
-        <repository>
-            <id>codelds</id>
-            <url>https://code.lds.org/nexus/content/groups/main-repo</url>
-        </repository>
-    </repositories>
-
-```
-
-
-To switch to Oracle database, you just need to replace server.json from
+To switch to Oracle database, you just need to replace service.yml from
 dbscript/oracle/config folder. First let's create a new folder from
-updates and modify the service.json
+updates and copy the service.yml
 
 ```
-cd ~/networknt/light-java-example/database
+cd ~/networknt/light-example-4j/rest/database
 cp -r updates oracle
-cp dbscript/oracle/config/service.json oracle/src/main/resources/config
+cp dbscript/oracle/config/service.yml oracle/src/main/resources/config
 ```
 
 Now let's build the server from postgres folder.
@@ -1039,7 +1088,7 @@ First let's create a new folder call test from updates which is using Mysql.
 
 
 ```
-cd ~/networknt/light-java-example/database
+cd ~/networknt/light-example-4j/rest/database
 cp -r updates test
 ```
 
@@ -1068,9 +1117,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-/**
-* Generated by swagger-codegen
-*/
+
 public class QueryGetHandlerTest {
     @ClassRule
     public static TestServer server = TestServer.getInstance();
@@ -1078,15 +1125,17 @@ public class QueryGetHandlerTest {
     static final Logger logger = LoggerFactory.getLogger(QueryGetHandlerTest.class);
 
     @Test
-    public void testQueryGetHandler() throws ClientException, ApiException {
+    public void testQueryGetHandlerTest() throws ClientException, ApiException {
         CloseableHttpClient client = Client.getInstance().getSyncClient();
-        HttpGet httpGet = new HttpGet("http://localhost:8080/v1/query");
+        HttpGet httpGet = new HttpGet ("http://localhost:8080/v1/query");
         /*
-        Client.getInstance().addAuthorization(httpPost);
+        Client.getInstance().addAuthorization(httpGet);
         try {
             CloseableHttpResponse response = client.execute(httpGet);
-            Assert.assertEquals(200, response.getStatusLine().getStatusCode());
-            Assert.assertEquals("getQuery", IOUtils.toString(response.getEntity().getContent(), "utf8"));
+            int statusCode = response.getStatusLine().getStatusCode();
+            String body = IOUtils.toString(response.getEntity().getContent(), "utf8");
+            Assert.assertEquals(200, statusCode);
+            Assert.assertEquals("", body);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1102,11 +1151,167 @@ is one test case with some of the logic commented out. This test is a positive
 test generated based on swagger specification. The result checking code
 is commented out because we don't know what is the exact object returned.
 
-Let's modify it to make it work in our service that is connecting to Mysql.
-Later on, we are going to remove Mysql dependency with H2 database embedded.
+Let's modify this test to make it work in our service and connect to H2 database
+for local testing without external database. The H2 dependency and service.yml
+has been added in light-codegen config.json
+
+Here is the modified test case. 
+
+```java
+package com.networknt.database.handler;
+
+import com.networknt.client.Client;
+import com.networknt.server.Server;
+import com.networknt.exception.ClientException;
+import com.networknt.exception.ApiException;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.methods.*;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.junit.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 
+public class QueryGetHandlerTest {
+    @ClassRule
+    public static TestServer server = TestServer.getInstance();
 
+    static final Logger logger = LoggerFactory.getLogger(QueryGetHandlerTest.class);
+
+    @Test
+    public void testQueryGetHandlerTest() throws ClientException, ApiException {
+        CloseableHttpClient client = Client.getInstance().getSyncClient();
+        HttpGet httpGet = new HttpGet ("http://localhost:8080/v1/query");
+        try {
+            CloseableHttpResponse response = client.execute(httpGet);
+            int statusCode = response.getStatusLine().getStatusCode();
+            String body = IOUtils.toString(response.getEntity().getContent(), "utf8");
+            Assert.assertEquals(200, statusCode);
+            Assert.assertEquals("", body);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+```
+
+
+Before run the test case, we need to prepare H2 database script. Here is the create_h2.sql
+file that need to be created in src/test/resources
+
+```sql
+DROP table IF EXISTS world;
+
+CREATE TABLE  world (
+  id int auto_increment primary key,
+  randomNumber int NOT NULL
+);
+
+
+INSERT INTO world
+SELECT id_seq.nextval,
+dbms_random.value(1,10000)
+FROM  dual
+CONNECT BY level <= 10000;
+
+
+```
+
+And then we need to change TestServer.java to initial H2 database. Here is the
+updated file.
+
+```java
+
+package com.networknt.database.handler;
+
+import com.networknt.server.Server;
+import com.networknt.service.SingletonServiceFactory;
+import org.h2.tools.RunScript;
+import org.junit.rules.ExternalResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import com.networknt.server.Server;
+import com.networknt.server.ServerConfig;
+
+import javax.sql.DataSource;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+public class TestServer extends ExternalResource {
+    static final Logger logger = LoggerFactory.getLogger(TestServer.class);
+
+    private static final AtomicInteger refCount = new AtomicInteger(0);
+    private static Server server;
+
+    private static final TestServer instance  = new TestServer();
+
+    public static TestServer getInstance () {
+        return instance;
+    }
+
+    private TestServer() {
+        DataSource ds = (DataSource) SingletonServiceFactory.getBean(DataSource.class);
+        try (Connection connection = ds.getConnection()) {
+            String schemaResourceName = "/create_h2.sql";
+            InputStream in = TestServer.class.getResourceAsStream(schemaResourceName);
+
+            if (in == null) {
+                throw new RuntimeException("Failed to load resource: " + schemaResourceName);
+            }
+            InputStreamReader reader = new InputStreamReader(in, UTF_8);
+            RunScript.execute(connection, reader);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public ServerConfig getServerConfig() {
+        return Server.config;
+    }
+
+    @Override
+    protected void before() {
+        try {
+            if (refCount.get() == 0) {
+                Server.start();
+            }
+        }
+        finally {
+            refCount.getAndIncrement();
+        }
+    }
+
+    @Override
+    protected void after() {
+        refCount.getAndDecrement();
+        if (refCount.get() == 0) {
+            Server.stop();
+        }
+    }
+}
+
+```
+
+Now you can run the test case. 
+
+Note that the test case fails as the H2 script cannot insert the available data into
+the database with generator. This tutorial will be changed later to have static data
+instead of dynamic data. 
 
 # Performance Test
 
