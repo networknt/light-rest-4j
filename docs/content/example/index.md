@@ -9,5 +9,5 @@ than any other style of microserivces. All rest examples can be found at https:/
 Most example applications consist multiple services and only petstore is a single service
 which is described in [getting started](https://networknt.github.io/light-rest-4j/getting-started/)
 
-The rest of examples are used in [tutorial](https://networknt.github.io/light-rest-4j/tutorial/)
+The rest of examples are used in [tutorials](https://networknt.github.io/light-rest-4j/tutorial/)
 and you can follow them step by step into the details.
