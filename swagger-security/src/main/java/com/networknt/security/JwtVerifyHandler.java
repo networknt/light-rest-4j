@@ -85,11 +85,11 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                     auditInfo = new HashMap<>();
                     exchange.putAttachment(AuditHandler.AUDIT_INFO, auditInfo);
                 }
-                auditInfo.put(Constants.CLIENT_ID, claims.getStringClaimValue(Constants.CLIENT_ID));
-                auditInfo.put(Constants.USER_ID, claims.getStringClaimValue(Constants.USER_ID));
+                auditInfo.put(Constants.CLIENT_ID_STRING, claims.getStringClaimValue(Constants.CLIENT_ID_STRING));
+                auditInfo.put(Constants.USER_ID_STRING, claims.getStringClaimValue(Constants.USER_ID_STRING));
                 if(config != null && (Boolean)config.get(ENABLE_VERIFY_SCOPE) && SwaggerHelper.swagger != null) {
                     Operation operation = null;
-                    SwaggerOperation swaggerOperation = (SwaggerOperation)auditInfo.get(Constants.SWAGGER_OPERATION);
+                    SwaggerOperation swaggerOperation = (SwaggerOperation)auditInfo.get(Constants.SWAGGER_OPERATION_STRING);
                     if(swaggerOperation == null) {
                         final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI());
                         final Optional<NormalisedPath> maybeApiPath = SwaggerHelper.findMatchingApiPath(requestPath);
@@ -115,8 +115,8 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                             return;
                         }
                         swaggerOperation = new SwaggerOperation(swaggerPathString, swaggerPath, httpMethod, operation);
-                        auditInfo.put(Constants.SWAGGER_OPERATION, swaggerOperation);
-                        auditInfo.put(Constants.ENDPOINT, swaggerPathString.normalised() + "@" + httpMethod);
+                        auditInfo.put(Constants.SWAGGER_OPERATION_STRING, swaggerOperation);
+                        auditInfo.put(Constants.ENDPOINT_STRING, swaggerPathString.normalised() + "@" + httpMethod);
                     } else {
                         operation = swaggerOperation.getOperation();
                     }
@@ -129,7 +129,7 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                         try {
                             JwtClaims scopeClaims = JwtHelper.verifyJwt(scopeJwt);
                             secondaryScopes = scopeClaims.getStringListClaimValue("scope");
-                            auditInfo.put(Constants.SCOPE_CLIENT_ID, scopeClaims.getStringClaimValue(Constants.CLIENT_ID));
+                            auditInfo.put(Constants.SCOPE_CLIENT_ID_STRING, scopeClaims.getStringClaimValue(Constants.CLIENT_ID_STRING));
                         } catch (InvalidJwtException | MalformedClaimException e) {
                             logger.error("InvalidJwtException", e);
                             Status status = new Status(STATUS_INVALID_SCOPE_TOKEN);

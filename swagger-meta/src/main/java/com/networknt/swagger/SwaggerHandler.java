@@ -88,8 +88,8 @@ public class SwaggerHandler implements MiddlewareHandler {
         final SwaggerOperation swaggerOperation = new SwaggerOperation(swaggerPathString, swaggerPath, httpMethod, operation);
         String endpoint = swaggerPathString.normalised() + "@" + httpMethod.toString().toLowerCase();
         Map<String, Object> auditInfo = new HashMap<>();
-        auditInfo.put(Constants.ENDPOINT, endpoint);
-        auditInfo.put(Constants.SWAGGER_OPERATION, swaggerOperation);
+        auditInfo.put(Constants.ENDPOINT_STRING, endpoint);
+        auditInfo.put(Constants.SWAGGER_OPERATION_STRING, swaggerOperation);
         exchange.putAttachment(AuditHandler.AUDIT_INFO, auditInfo);
 
         next.handleRequest(exchange);

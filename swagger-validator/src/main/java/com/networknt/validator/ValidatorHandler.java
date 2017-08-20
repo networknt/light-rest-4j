@@ -63,7 +63,7 @@ public class ValidatorHandler implements MiddlewareHandler {
         SwaggerOperation swaggerOperation = null;
         Map<String, Object> auditInfo = exchange.getAttachment(AuditHandler.AUDIT_INFO);
         if(auditInfo != null) {
-            swaggerOperation = (SwaggerOperation)auditInfo.get(Constants.SWAGGER_OPERATION);
+            swaggerOperation = (SwaggerOperation)auditInfo.get(Constants.SWAGGER_OPERATION_STRING);
         }
         if(swaggerOperation == null) {
             Status status = new Status(STATUS_MISSING_SWAGGER_OPERATION);

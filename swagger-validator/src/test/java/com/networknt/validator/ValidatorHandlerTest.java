@@ -17,27 +17,34 @@
 package com.networknt.validator;
 
 import com.networknt.body.BodyHandler;
+import com.networknt.client.Http2Client;
 import com.networknt.config.Config;
+import com.networknt.exception.ClientException;
 import com.networknt.status.Status;
 import com.networknt.swagger.SwaggerHandler;
 import io.undertow.Handlers;
 import io.undertow.Undertow;
+import io.undertow.client.ClientConnection;
+import io.undertow.client.ClientRequest;
+import io.undertow.client.ClientResponse;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.RoutingHandler;
 import io.undertow.util.Headers;
+import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xnio.IoUtils;
+import org.xnio.OptionMap;
+
+import java.net.URI;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Created by steve on 01/09/16.
@@ -153,95 +160,202 @@ public class ValidatorHandlerTest {
 
     @Test
     public void testInvalidRequstPath() throws Exception {
-        String url = "http://localhost:8080/api";
-        CloseableHttpClient client = HttpClients.createDefault();
-        HttpGet httpGet = new HttpGet(url);
-        ResponseHandler<String> responseHandler = response -> {
-            int status = response.getStatusLine().getStatusCode();
-            Assert.assertEquals(404, status);
-            return null;
-        };
-        String responseBody = null;
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
         try {
-            responseBody = client.execute(httpGet, responseHandler);
+            connection = client.connect(new URI("http://localhost:8080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.EMPTY).get();
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/api").setMethod(Methods.GET);
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        Assert.assertEquals(404, statusCode);
+        if(statusCode == 404) {
+            Status status = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY), Status.class);
+            Assert.assertNotNull(status);
+            Assert.assertEquals("ERR10007", status.getCode());
         }
     }
 
     @Test
     public void testInvalidMethod() throws Exception {
-        String url = "http://localhost:8080/v2/pet";
-        CloseableHttpClient client = HttpClients.createDefault();
-        HttpGet httpGet = new HttpGet(url);
-        ResponseHandler<String> responseHandler = response -> {
-            int status = response.getStatusLine().getStatusCode();
-            Assert.assertEquals(405, status);
-            return null;
-        };
-        String responseBody = null;
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
         try {
-            responseBody = client.execute(httpGet, responseHandler);
+            connection = client.connect(new URI("http://localhost:8080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.EMPTY).get();
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/v2/pet").setMethod(Methods.GET);
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        Assert.assertEquals(405, statusCode);
+        if(statusCode == 405) {
+            Status status = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY), Status.class);
+            Assert.assertNotNull(status);
+            Assert.assertEquals("ERR10008", status.getCode());
         }
     }
 
     @Test
     public void testInvalidPost() throws Exception {
-        String url = "http://localhost:8080/v2/pet";
-        CloseableHttpClient client = HttpClients.createDefault();
-        HttpPost httpPost = new HttpPost(url);
-        httpPost.setHeader(Headers.CONTENT_TYPE.toString(), "application/json");
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:8080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
 
-        StringEntity entity = new StringEntity("{\"name\":\"Pinky\", \"photoUrl\": \"http://www.photo.com/1.jpg\"}");
-        httpPost.setEntity(entity);
-        HttpResponse response = client.execute(httpPost);
-        Assert.assertEquals(400, response.getStatusLine().getStatusCode());
-        String body = EntityUtils.toString(response.getEntity());
-        logger.debug("response body = " + body);
-        Assert.assertNotEquals("addPet", body);
+        try {
+            String post = "{\"name\":\"Pinky\", \"photoUrl\": \"http://www.photo.com/1.jpg\"}";
+            connection.getIoThread().execute(new Runnable() {
+                @Override
+                public void run() {
+                    final ClientRequest request = new ClientRequest().setMethod(Methods.POST).setPath("/post");
+                    request.getRequestHeaders().put(Headers.HOST, "localhost");
+                    request.getRequestHeaders().put(Headers.CONTENT_TYPE, "application/json");
+                    request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
+                    connection.sendRequest(request, client.createClientCallback(reference, latch, post));
+                }
+            });
 
+            latch.await(10, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            logger.error("IOException: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
+        Assert.assertEquals(404, statusCode);
+        if(statusCode == 404) {
+            Status status = Config.getInstance().getMapper().readValue(body, Status.class);
+            Assert.assertNotNull(status);
+            Assert.assertEquals("ERR10007", status.getCode());
+        }
     }
 
     @Test
     public void testValidPost() throws Exception {
-        String url = "http://localhost:8080/v2/pet";
-        CloseableHttpClient client = HttpClients.createDefault();
-        HttpPost httpPost = new HttpPost(url);
-        httpPost.setHeader(Headers.CONTENT_TYPE.toString(), "application/json");
-        StringEntity entity = new StringEntity("{\"id\":0,\"category\":{\"id\":0,\"name\":\"string\"},\"name\":\"doggie\",\"photoUrls\":[\"string\"],\"tags\":[{\"id\":0,\"name\":\"string\"}],\"status\":\"available\"}");
-        httpPost.setEntity(entity);
-        HttpResponse response = client.execute(httpPost);
-        Assert.assertEquals(200, response.getStatusLine().getStatusCode());
-        String body = EntityUtils.toString(response.getEntity());
-        logger.debug("response body = " + body);
-        Assert.assertEquals("addPet", body);
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:8080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
 
+        try {
+            String post = "{\"id\":0,\"category\":{\"id\":0,\"name\":\"string\"},\"name\":\"doggie\",\"photoUrls\":[\"string\"],\"tags\":[{\"id\":0,\"name\":\"string\"}],\"status\":\"available\"}";
+            connection.getIoThread().execute(new Runnable() {
+                @Override
+                public void run() {
+                    final ClientRequest request = new ClientRequest().setMethod(Methods.POST).setPath("/v2/pet");
+                    request.getRequestHeaders().put(Headers.HOST, "localhost");
+                    request.getRequestHeaders().put(Headers.CONTENT_TYPE, "application/json");
+                    request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
+                    connection.sendRequest(request, client.createClientCallback(reference, latch, post));
+                }
+            });
+
+            latch.await(10, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            logger.error("IOException: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
+        Assert.assertEquals(200, statusCode);
+        if(statusCode == 200) {
+            Assert.assertNotNull(body);
+            Assert.assertEquals("addPet", body);
+        }
     }
 
     @Test
     public void testGetParam() throws Exception {
-        String url = "http://localhost:8080/v2/pet/111";
-        CloseableHttpClient client = HttpClients.createDefault();
-        HttpGet httpGet = new HttpGet(url);
-        HttpResponse response = client.execute(httpGet);
-        Assert.assertEquals(200, response.getStatusLine().getStatusCode());
-        String body = EntityUtils.toString(response.getEntity());
-        logger.debug("response body = " + body);
-        Assert.assertEquals("getPetById", body);
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:8080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/v2/pet/111").setMethod(Methods.GET);
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
+        Assert.assertEquals(200, statusCode);
+        if(statusCode == 200) {
+            Assert.assertNotNull(body);
+            Assert.assertEquals("getPetById", body);
+        }
     }
 
     @Test
     public void testDeleteWithoutHeader() throws Exception {
-        String url = "http://localhost:8080/v2/pet/111";
-        CloseableHttpClient client = HttpClients.createDefault();
-        HttpDelete httpDelete = new HttpDelete(url);
-        HttpResponse response = client.execute(httpDelete);
-        int statusCode = response.getStatusLine().getStatusCode();
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:8080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/v2/pet/111").setMethod(Methods.DELETE);
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
         Assert.assertEquals(400, statusCode);
         if(statusCode == 400) {
-            Status status = Config.getInstance().getMapper().readValue(response.getEntity().getContent(), Status.class);
+            Status status = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY), Status.class);
             Assert.assertNotNull(status);
             Assert.assertEquals("ERR11017", status.getCode());
         }
@@ -249,17 +363,32 @@ public class ValidatorHandlerTest {
 
     @Test
     public void testDeleteWithHeader() throws Exception {
-        String url = "http://localhost:8080/v2/pet/111";
-        CloseableHttpClient client = HttpClients.createDefault();
-        HttpDelete httpDelete = new HttpDelete(url);
-        httpDelete.setHeader("api_key", "key");
-        HttpResponse response = client.execute(httpDelete);
-        int statusCode = response.getStatusLine().getStatusCode();
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:8080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/v2/pet/111").setMethod(Methods.DELETE);
+            request.getRequestHeaders().put(new HttpString("api_key"), "key");
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
         Assert.assertEquals(200, statusCode);
         if(statusCode == 200) {
-            String body = EntityUtils.toString(response.getEntity());
+            Assert.assertNotNull(body);
             Assert.assertEquals("deletePet", body);
         }
     }
-
 }
