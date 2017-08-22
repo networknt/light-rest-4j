@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+## 1.4.0 - 2017-08-22
+### Added
+
+### Changed
+- fixes #16 Switch from Client to Http2Client in test cases
+- fixes #15 rearrange petstore example from light-4j to light-rest-4j
+- fixes #14 Upgrade to Undertow 1.4.18.Final and remove JsonPath
+- Upgrade to light-4j 1.4.0
+
 ## 1.3.5 - 2017-08-01
 ### Added
 
