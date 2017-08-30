@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+## 1.4.1 - 2017-08-30
+### Added
+
+### Changed
+- fixes #17 Upgrade Undertow and Jackson to the newer version
+- Upgrade to light-4j 1.4.1
+
 ## 1.4.0 - 2017-08-22
 ### Added
 
