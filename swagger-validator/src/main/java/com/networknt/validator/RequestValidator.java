@@ -60,8 +60,9 @@ public class RequestValidator {
 
     /**
      * Validate the request against the given API operation
-     *
+     * @param requestPath normalised path
      * @param exchange The HttpServerExchange to validate
+     * @param swaggerOperation swagger operation
      * @return A validation report containing validation errors
      */
     public Status validateRequest(final NormalisedPath requestPath, HttpServerExchange exchange, SwaggerOperation swaggerOperation) {
