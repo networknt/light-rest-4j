@@ -7,12 +7,20 @@ title: Registry and Discovery
 
 This is a tutorial to show you how to use service registry and discovery
 for microservices. The example services are implemented in RESTful style but
-they can be implmented in graphql or hybrid as well. We are going to use 
+they can be implemented in graphql or hybrid as well. We are going to use 
 api_a, api_b, api_c and api_d as our examples. To simply the tutorial, I am 
 going to disable the security all the time. There are some details that might
 not be shown in this tutorial, for example, walking through light-codegen config
 files etc. It is recommended to go through [ms-chain](ms-chain/) before this
 tutorial. 
+
+There are two situations that you need service discovery: 
+
+* A client application to consume services and it needs to locate the service
+instance by serviceId
+
+* A service that has to call another service to fulfill its request in request/
+response style.  
 
 The specifications for above APIs can be found at 
 https://github.com/networknt/model-config rest folder.
@@ -154,7 +162,7 @@ define the calling service urls.
 ### API A
 
 For API A, as it is calling API B and API C, its handler needs to be changed to
-calling two other APIs and needs to load a configuration file that define the 
+call two other APIs and needs to load a configuration file that define the 
 urls for API B and API C.
 
 DataGetHandler.java
@@ -163,73 +171,104 @@ DataGetHandler.java
 package com.networknt.apia.handler;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.networknt.client.Client;
+import com.networknt.client.Http2Client;
 import com.networknt.config.Config;
 import com.networknt.exception.ClientException;
+import com.networknt.security.JwtHelper;
+import io.undertow.UndertowOptions;
+import io.undertow.client.ClientConnection;
+import io.undertow.client.ClientRequest;
+import io.undertow.client.ClientResponse;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.concurrent.FutureCallback;
-import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import io.undertow.util.Methods;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xnio.OptionMap;
 
-import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class DataGetHandler implements HttpHandler {
     static String CONFIG_NAME = "api_a";
-    static String apibUrl = (String)Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_b_endpoint");
-    static String apicUrl = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_c_endpoint");
+    static Logger logger = LoggerFactory.getLogger(DataGetHandler.class);
+    static String apibHost = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_b_host");
+    static String apibPath = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_b_path");
+    static String apicHost = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_c_host");
+    static String apicPath = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_c_path");
+    static Map<String, Object> securityConfig = (Map)Config.getInstance().getJsonMapConfig(JwtHelper.SECURITY_CONFIG);
+    static boolean securityEnabled = (Boolean)securityConfig.get(JwtHelper.ENABLE_VERIFY_JWT);
+    static Http2Client client = Http2Client.getInstance();
+    static ClientConnection connectionB;
+    static ClientConnection connectionC;
+
+    public DataGetHandler() {
+        try {
+            connectionB = client.connect(new URI(apibHost), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true)).get();
+            connectionC = client.connect(new URI(apicHost), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true)).get();
+        } catch (Exception e) {
+            logger.error("Exeption:", e);
+        }
+    }
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        List<String> list = new Vector<String>();
-        final HttpGet[] requests = new HttpGet[] {
-                new HttpGet(apibUrl),
-                new HttpGet(apicUrl),
-        };
-        try {
-            CloseableHttpAsyncClient client = Client.getInstance().getAsyncClient();
-            final CountDownLatch latch = new CountDownLatch(requests.length);
-            for (final HttpGet request: requests) {
-                //Client.getInstance().propagateHeaders(request, exchange);
-                client.execute(request, new FutureCallback<HttpResponse>() {
-                    @Override
-                    public void completed(final HttpResponse response) {
-                        try {
-                            List<String> apiList = Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
-                                    new TypeReference<List<String>>(){});
-                            list.addAll(apiList);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        latch.countDown();
-                    }
-
-                    @Override
-                    public void failed(final Exception ex) {
-                        ex.printStackTrace();
-                        latch.countDown();
-                    }
-
-                    @Override
-                    public void cancelled() {
-                        System.out.println("cancelled");
-                        latch.countDown();
-                    }
-                });
+        List<String> list = new ArrayList<>();
+        if(connectionB == null || !connectionB.isOpen()) {
+            try {
+                connectionB = client.connect(new URI(apibHost), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true)).get();
+            } catch (Exception e) {
+                logger.error("Exeption:", e);
+                throw new ClientException(e);
             }
-            latch.await();
-        } catch (ClientException e) {
-            e.printStackTrace();
-            throw new Exception("ClientException:", e);
         }
-        // now add API A specific messages
+        if(connectionC == null || !connectionC.isOpen()) {
+            try {
+                connectionC = client.connect(new URI(apicHost), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true)).get();
+            } catch (Exception e) {
+                logger.error("Exeption:", e);
+                throw new ClientException(e);
+            }
+        }
+        final CountDownLatch latch = new CountDownLatch(2);
+        final AtomicReference<ClientResponse> referenceB = new AtomicReference<>();
+        final AtomicReference<ClientResponse> referenceC = new AtomicReference<>();
+        try {
+            ClientRequest requestB = new ClientRequest().setMethod(Methods.GET).setPath(apibPath);
+            if(securityEnabled) client.propagateHeaders(requestB, exchange);
+            connectionB.sendRequest(requestB, client.createClientCallback(referenceB, latch));
+
+            ClientRequest requestC = new ClientRequest().setMethod(Methods.GET).setPath(apicPath);
+            if(securityEnabled) client.propagateHeaders(requestC, exchange);
+            connectionC.sendRequest(requestB, client.createClientCallback(referenceC, latch));
+
+            latch.await();
+
+            int statusCodeB = referenceB.get().getResponseCode();
+            if(statusCodeB >= 300){
+                throw new Exception("Failed to call API B: " + statusCodeB);
+            }
+            List<String> apibList = Config.getInstance().getMapper().readValue(referenceB.get().getAttachment(Http2Client.RESPONSE_BODY),
+                    new TypeReference<List<String>>(){});
+            list.addAll(apibList);
+
+            int statusCodeC = referenceC.get().getResponseCode();
+            if(statusCodeC >= 300){
+                throw new Exception("Failed to call API C: " + statusCodeC);
+            }
+            List<String> apicList = Config.getInstance().getMapper().readValue(referenceC.get().getAttachment(Http2Client.RESPONSE_BODY),
+                    new TypeReference<List<String>>(){});
+            list.addAll(apicList);
+        } catch (Exception e) {
+            logger.error("Exception:", e);
+            throw new ClientException(e);
+        }
         list.add("API A: Message 1");
         list.add("API A: Message 2");
         exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(list));
@@ -246,9 +285,10 @@ externalized on official environment.
 api_a.yml
 
 ```
-api_b_endpoint: http://localhost:7002/v1/data
-api_c_endpoint: http://localhost:7003/v1/data
-
+api_b_host: https://localhost:7442
+api_b_path: /v1/data
+api_c_host: https://localhost:7443
+api_c_path: /v1/data
 ```
 
 ### API B
@@ -261,53 +301,82 @@ DataGetHandler.java
 package com.networknt.apib.handler;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.networknt.client.Client;
+import com.networknt.client.Http2Client;
 import com.networknt.config.Config;
 import com.networknt.exception.ClientException;
+import com.networknt.security.JwtHelper;
+import io.undertow.UndertowOptions;
+import io.undertow.client.ClientConnection;
+import io.undertow.client.ClientRequest;
+import io.undertow.client.ClientResponse;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HttpString;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
+import io.undertow.util.Methods;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xnio.OptionMap;
 
-import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class DataGetHandler implements HttpHandler {
     static String CONFIG_NAME = "api_b";
-    static String apidUrl = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_d_endpoint");
+    static Logger logger = LoggerFactory.getLogger(DataGetHandler.class);
+    static String apidHost = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_d_host");
+    static String apidPath = (String) Config.getInstance().getJsonMapConfig(CONFIG_NAME).get("api_d_path");
+    static Map<String, Object> securityConfig = (Map)Config.getInstance().getJsonMapConfig(JwtHelper.SECURITY_CONFIG);
+    static boolean securityEnabled = (Boolean)securityConfig.get(JwtHelper.ENABLE_VERIFY_JWT);
+    static Http2Client client = Http2Client.getInstance();
+    static ClientConnection connection;
+
+    public DataGetHandler() {
+        try {
+            connection = client.connect(new URI(apidHost), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true)).get();
+        } catch (Exception e) {
+            logger.error("Exeption:", e);
+        }
+    }
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        List<String> list = new ArrayList<String>();
-        try {
-            CloseableHttpClient client = Client.getInstance().getSyncClient();
-            HttpGet httpGet = new HttpGet(apidUrl);
-            //Client.getInstance().propagateHeaders(httpGet, exchange);
-            CloseableHttpResponse response = client.execute(httpGet);
-            int responseCode = response.getStatusLine().getStatusCode();
-            if(responseCode != 200){
-                throw new Exception("Failed to call API D: " + responseCode);
+        List<String> list = new ArrayList<>();
+        final CountDownLatch latch = new CountDownLatch(1);
+        if(connection == null || !connection.isOpen()) {
+            try {
+                connection = client.connect(new URI(apidHost), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true)).get();
+            } catch (Exception e) {
+                logger.error("Exeption:", e);
+                throw new ClientException(e);
             }
-            List<String> apidList = Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setMethod(Methods.GET).setPath(apidPath);
+            // this is to ask client module to pass through correlationId and traceabilityId as well as
+            // getting access token from oauth2 server automatically and attatch authorization headers.
+            if(securityEnabled) client.propagateHeaders(request, exchange);
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+            int statusCode = reference.get().getResponseCode();
+            if(statusCode >= 300){
+                throw new Exception("Failed to call API D: " + statusCode);
+            }
+            List<String> apidList = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY),
                     new TypeReference<List<String>>(){});
             list.addAll(apidList);
-        } catch (ClientException e) {
-            throw new Exception("Client Exception: ", e);
-        } catch (IOException e) {
-            throw new Exception("IOException:", e);
+        } catch (Exception e) {
+            logger.error("Exception:", e);
+            throw new ClientException(e);
         }
-        // now add API B specific messages
         list.add("API B: Message 1");
         list.add("API B: Message 2");
         exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(list));
     }
 }
-
 ```
 
 Configuration file for API D url.
@@ -315,8 +384,8 @@ Configuration file for API D url.
 api_b.yml
 
 ```
-api_d_endpoint: http://localhost:7004/v1/data
-
+api_d_host: https://localhost:7444
+api_d_path: /v1/data
 ```
 
 ### API C
@@ -342,7 +411,7 @@ import java.util.Map;
 public class DataGetHandler implements HttpHandler {
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        List<String> messages = new ArrayList<String>();
+        List<String> messages = new ArrayList<>();
         messages.add("API C: Message 1");
         messages.add("API C: Message 2");
         exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(messages));
@@ -374,7 +443,7 @@ import java.util.Map;
 public class DataGetHandler implements HttpHandler {
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        List<String> messages = new ArrayList<String>();
+        List<String> messages = new ArrayList<>();
         messages.add("API D: Message 1");
         messages.add("API D: Message 2");
         exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(messages));
@@ -418,6 +487,10 @@ cd ~/networknt/light-example-4j/discovery/api_d/static
 mvn clean install exec:exec
 
 ```
+
+When starting servers in above sequence, you can see some errors in API A and B as
+the target server are not up yet. However, once you issue a call to API A, the
+connections will be established immediately and then cached.
 
 ### Test Servers
 
@@ -469,74 +542,110 @@ DataGetHandler.java
 package com.networknt.apia.handler;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.networknt.client.Client;
+import com.networknt.client.Http2Client;
 import com.networknt.cluster.Cluster;
 import com.networknt.config.Config;
 import com.networknt.exception.ClientException;
+import com.networknt.security.JwtHelper;
 import com.networknt.service.SingletonServiceFactory;
+import io.undertow.UndertowOptions;
+import io.undertow.client.ClientConnection;
+import io.undertow.client.ClientRequest;
+import io.undertow.client.ClientResponse;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.concurrent.FutureCallback;
-import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import io.undertow.util.HttpString;
+import io.undertow.util.Methods;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xnio.OptionMap;
 
-import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Vector;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class DataGetHandler implements HttpHandler {
-    private static Cluster cluster = (Cluster) SingletonServiceFactory.getBean(Cluster.class);
+    static Logger logger = LoggerFactory.getLogger(DataGetHandler.class);
+    static Cluster cluster = SingletonServiceFactory.getBean(Cluster.class);
+    static String apibHost;
+    static String apicHost;
+    static String path = "/v1/data";
+    static Map<String, Object> securityConfig = (Map)Config.getInstance().getJsonMapConfig(JwtHelper.SECURITY_CONFIG);
+    static boolean securityEnabled = (Boolean)securityConfig.get(JwtHelper.ENABLE_VERIFY_JWT);
+
+    static Http2Client client = Http2Client.getInstance();
+    static ClientConnection connectionB;
+    static ClientConnection connectionC;
+
+    public DataGetHandler() {
+        try {
+            apibHost = cluster.serviceToUrl("https", "com.networknt.apib-1.0.0", null);
+            apicHost = cluster.serviceToUrl("https", "com.networknt.apic-1.0.0", null);
+            connectionB = client.connect(new URI(apibHost), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true)).get();
+            connectionC = client.connect(new URI(apicHost), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true)).get();
+        } catch (Exception e) {
+            logger.error("Exeption:", e);
+        }
+    }
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        List<String> list = new Vector<String>();
-
-        String apibUrl = cluster.serviceToUrl("http", "com.networknt.apib-1.0.0", null) + "/v1/data";
-        String apicUrl = cluster.serviceToUrl("http", "com.networknt.apic-1.0.0", null) + "/v1/data";
-
-        final HttpGet[] requests = new HttpGet[] {
-                new HttpGet(apibUrl),
-                new HttpGet(apicUrl),
-        };
-        try {
-            CloseableHttpAsyncClient client = Client.getInstance().getAsyncClient();
-            final CountDownLatch latch = new CountDownLatch(requests.length);
-            for (final HttpGet request: requests) {
-                //Client.getInstance().propagateHeaders(request, exchange);
-                client.execute(request, new FutureCallback<HttpResponse>() {
-                    @Override
-                    public void completed(final HttpResponse response) {
-                        try {
-                            List<String> apiList = Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
-                                    new TypeReference<List<String>>(){});
-                            list.addAll(apiList);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        latch.countDown();
-                    }
-
-                    @Override
-                    public void failed(final Exception ex) {
-                        ex.printStackTrace();
-                        latch.countDown();
-                    }
-
-                    @Override
-                    public void cancelled() {
-                        System.out.println("cancelled");
-                        latch.countDown();
-                    }
-                });
+        List<String> list = new ArrayList<>();
+        if(connectionB == null || !connectionB.isOpen()) {
+            try {
+                apibHost = cluster.serviceToUrl("https", "com.networknt.apib-1.0.0", null);
+                connectionB = client.connect(new URI(apibHost), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true)).get();
+            } catch (Exception e) {
+                logger.error("Exeption:", e);
+                throw new ClientException(e);
             }
-            latch.await();
-        } catch (ClientException e) {
-            e.printStackTrace();
-            throw new Exception("ClientException:", e);
         }
-        // now add API A specific messages
+        if(connectionC == null || !connectionC.isOpen()) {
+            try {
+                apicHost = cluster.serviceToUrl("https", "com.networknt.apic-1.0.0", null);
+                connectionC = client.connect(new URI(apicHost), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true)).get();
+            } catch (Exception e) {
+                logger.error("Exeption:", e);
+                throw new ClientException(e);
+            }
+        }
+        final CountDownLatch latch = new CountDownLatch(2);
+        final AtomicReference<ClientResponse> referenceB = new AtomicReference<>();
+        final AtomicReference<ClientResponse> referenceC = new AtomicReference<>();
+        try {
+            ClientRequest requestB = new ClientRequest().setMethod(Methods.GET).setPath(path);
+            if(securityEnabled) client.propagateHeaders(requestB, exchange);
+            connectionB.sendRequest(requestB, client.createClientCallback(referenceB, latch));
+
+            ClientRequest requestC = new ClientRequest().setMethod(Methods.GET).setPath(path);
+            if(securityEnabled) client.propagateHeaders(requestC, exchange);
+            connectionC.sendRequest(requestB, client.createClientCallback(referenceC, latch));
+
+            latch.await();
+
+            int statusCodeB = referenceB.get().getResponseCode();
+            if(statusCodeB >= 300){
+                throw new Exception("Failed to call API B: " + statusCodeB);
+            }
+            List<String> apibList = Config.getInstance().getMapper().readValue(referenceB.get().getAttachment(Http2Client.RESPONSE_BODY),
+                    new TypeReference<List<String>>(){});
+            list.addAll(apibList);
+
+            int statusCodeC = referenceC.get().getResponseCode();
+            if(statusCodeC >= 300){
+                throw new Exception("Failed to call API C: " + statusCodeC);
+            }
+            List<String> apicList = Config.getInstance().getMapper().readValue(referenceC.get().getAttachment(Http2Client.RESPONSE_BODY),
+                    new TypeReference<List<String>>(){});
+            list.addAll(apicList);
+        } catch (Exception e) {
+            logger.error("Exception:", e);
+            throw new ClientException(e);
+        }
         list.add("API A: Message 1");
         list.add("API A: Message 2");
         exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(list));
@@ -559,8 +668,8 @@ singletons:
       port: 8080
       path: direct
       parameters:
-        com.networknt.apib-1.0.0: http://localhost:7002
-        com.networknt.apic-1.0.0: http://localhost:7003
+        com.networknt.apib-1.0.0: https://localhost:7442
+        com.networknt.apic-1.0.0: https://localhost:7443
 - com.networknt.registry.Registry:
   - com.networknt.registry.support.DirectRegistry
 - com.networknt.balance.LoadBalance:
@@ -569,6 +678,8 @@ singletons:
   - com.networknt.cluster.LightCluster
 
 ```
+
+As we don't need api_a.yml anymore, it can be removed.
 
 
 ### API B
@@ -579,53 +690,86 @@ DataGetHandler.java
 package com.networknt.apib.handler;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.networknt.client.Client;
+import com.networknt.client.Http2Client;
 import com.networknt.cluster.Cluster;
 import com.networknt.config.Config;
 import com.networknt.exception.ClientException;
+import com.networknt.security.JwtHelper;
 import com.networknt.service.SingletonServiceFactory;
+import io.undertow.UndertowOptions;
+import io.undertow.client.ClientConnection;
+import io.undertow.client.ClientRequest;
+import io.undertow.client.ClientResponse;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
+import io.undertow.util.Methods;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xnio.OptionMap;
 
-import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class DataGetHandler implements HttpHandler {
-    private static Cluster cluster = (Cluster) SingletonServiceFactory.getBean(Cluster.class);
+    static Logger logger = LoggerFactory.getLogger(DataGetHandler.class);
+    static Cluster cluster = SingletonServiceFactory.getBean(Cluster.class);
+    static String apidHost;
+    static String path = "/v1/data";
+    static Map<String, Object> securityConfig = (Map)Config.getInstance().getJsonMapConfig(JwtHelper.SECURITY_CONFIG);
+    static boolean securityEnabled = (Boolean)securityConfig.get(JwtHelper.ENABLE_VERIFY_JWT);
+    static Http2Client client = Http2Client.getInstance();
+    static ClientConnection connection;
+
+    public DataGetHandler() {
+        try {
+            apidHost = cluster.serviceToUrl("https", "com.networknt.apid-1.0.0", null);
+            connection = client.connect(new URI(apidHost), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true)).get();
+        } catch (Exception e) {
+            logger.error("Exeption:", e);
+        }
+    }
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        List<String> list = new ArrayList<String>();
-        String apidUrl = cluster.serviceToUrl("http", "com.networknt.apid-1.0.0", null) + "/v1/data";
-
-        try {
-            CloseableHttpClient client = Client.getInstance().getSyncClient();
-            HttpGet httpGet = new HttpGet(apidUrl);
-            //Client.getInstance().propagateHeaders(httpGet, exchange);
-            CloseableHttpResponse response = client.execute(httpGet);
-            int responseCode = response.getStatusLine().getStatusCode();
-            if(responseCode != 200){
-                throw new Exception("Failed to call API D: " + responseCode);
+        List<String> list = new ArrayList<>();
+        final CountDownLatch latch = new CountDownLatch(1);
+        if(connection == null || !connection.isOpen()) {
+            try {
+                apidHost = cluster.serviceToUrl("https", "com.networknt.apid-1.0.0", null);
+                connection = client.connect(new URI(apidHost), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true)).get();
+            } catch (Exception e) {
+                logger.error("Exeption:", e);
+                throw new ClientException(e);
             }
-            List<String> apidList = Config.getInstance().getMapper().readValue(response.getEntity().getContent(),
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setMethod(Methods.GET).setPath(path);
+            // this is to ask client module to pass through correlationId and traceabilityId as well as
+            // getting access token from oauth2 server automatically and attatch authorization headers.
+            if(securityEnabled) client.propagateHeaders(request, exchange);
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+            int statusCode = reference.get().getResponseCode();
+            if(statusCode >= 300){
+                throw new Exception("Failed to call API D: " + statusCode);
+            }
+            List<String> apidList = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY),
                     new TypeReference<List<String>>(){});
             list.addAll(apidList);
-        } catch (ClientException e) {
-            throw new Exception("Client Exception: ", e);
-        } catch (IOException e) {
-            throw new Exception("IOException:", e);
+        } catch (Exception e) {
+            logger.error("Exception:", e);
+            throw new ClientException(e);
         }
-        // now add API B specific messages
         list.add("API B: Message 1");
         list.add("API B: Message 2");
         exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(list));
     }
 }
-
 ```
 
 Inject interface implementations and define the API D url.
@@ -639,7 +783,7 @@ singletons:
       port: 8080
       path: direct
       parameters:
-        com.networknt.apid-1.0.0: http://localhost:7004
+        com.networknt.apid-1.0.0: https://localhost:7444
 - com.networknt.registry.Registry:
   - com.networknt.registry.support.DirectRegistry
 - com.networknt.balance.LoadBalance:
@@ -649,6 +793,7 @@ singletons:
 
 ```
 
+As we don't need api_b.yml anymore, it can be removed.
 
 ### API C
 
@@ -713,7 +858,7 @@ The result is
 
 # Multiple API D Instances
 
-In this step, we are going to start two API D instances that listening to 7004 and 7005.
+In this step, we are going to start two API D instances that listening to 7444 and 7445.
 
 Now let's copy from dynamic to multiple for each API.
  
@@ -732,8 +877,8 @@ cp -r dynamic multiple
  
 ### API B 
 
-Let's modify API B service.yml to have two API D instances that listen to 7004
-and 7005. 
+Let's modify API B service.yml to have two API D instances that listen to 7444
+and 7445. 
 
 service.yml
 
@@ -746,7 +891,7 @@ singletons:
       port: 8080
       path: direct
       parameters:
-        com.networknt.apid-1.0.0: http://localhost:7004,http://localhost:7005
+        com.networknt.apid-1.0.0: https://localhost:7444,https://localhost:7445
 - com.networknt.registry.Registry:
   - com.networknt.registry.support.DirectRegistry
 - com.networknt.balance.LoadBalance:
@@ -818,7 +963,7 @@ mvn clean install exec:exec
 API D
 
 
-And start the first instance that listen to 7004.
+And start the first instance that listen to 7444.
 
 ```
 cd ~/networknt/light-example-4j/discovery/api_d/multiple
@@ -826,8 +971,8 @@ mvn clean install exec:exec
 
 ```
  
-Now let's start the second instance. Before starting the serer, let's update
-server.yml with port 7005.
+Now let's start the second instance of API D. Before starting the serer, let's update
+server.yml with https port 7445 and disable HTTP.
 
 ```
 
@@ -837,16 +982,19 @@ server.yml with port 7005.
 ip: 0.0.0.0
 
 # Http port if enableHttp is true.
-httpPort:  7005
+httpPort:  7004
 
 # Enable HTTP should be false on official environment.
-enableHttp: true
+enableHttp: false
 
 # Https port if enableHttps is true.
 httpsPort:  7445
 
 # Enable HTTPS should be true on official environment.
 enableHttps: true
+
+# Http/2 is enabled by default.
+enableHttp2: true
 
 # Keystore file name in config folder. KeystorePass is in secret.yml to access it.
 keystoreName: tls/server.keystore
@@ -882,13 +1030,15 @@ curl http://localhost:7001/v1/data
 And the result can be the following alternatively as two instances of API D are load balanced.
 
 ```
-["API C: Message 1","API C: Message 2","API D: Message 1 from port 7004","API D: Message 2 from port 7004","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
+["API C: Message 1","API C: Message 2","API D: Message 1 from port 7445","API D: Message 2 from port 7445","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
 ```
 
-or 
+If you send multiple requests, the result should be same as it is using the same cached connection.
+Now let's kill the last started 7445 instance by CTRL+C and run the curl command again. You will see
+the following result as it failed over to the other server. 
 
 ```
-["API C: Message 1","API C: Message 2","API D: Message 1 from port 7005","API D: Message 2 from port 7005","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
+["API C: Message 1","API C: Message 2","API D: Message 1 from port 7444","API D: Message 2 from port 7444","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
 ```
 
 # Consul
@@ -942,10 +1092,10 @@ singletons:
 ```
 
 Although in our case, there is no caller service for API A, we still need to register
-it to consul by enable it in server.yml. Note that enableRegsitry is turn on and enableHttps
+it to consul by enable it in server.yml. Note that enableRegsitry is turn on and enableHttp
 is turned off. 
 
-If you don't turn off the https port, both ports will be registered on Consul. 
+If you don't turn off the http port, both ports will be registered on Consul. 
 
 ```
 
@@ -958,13 +1108,16 @@ ip: 0.0.0.0
 httpPort:  7001
 
 # Enable HTTP should be false on official environment.
-enableHttp: true
+enableHttp: false
 
 # Https port if enableHttps is true.
 httpsPort:  7441
 
 # Enable HTTPS should be true on official environment.
-enableHttps: false
+enableHttps: true
+
+# Http/2 is enabled by default.
+enableHttp2: true
 
 # Keystore file name in config folder. KeystorePass is in secret.yml to access it.
 keystoreName: tls/server.keystore
@@ -1021,6 +1174,7 @@ server.yml
 
 ```
 
+
 # Server configuration
 ---
 # This is the default binding address if the service is dockerized.
@@ -1030,13 +1184,16 @@ ip: 0.0.0.0
 httpPort:  7002
 
 # Enable HTTP should be false on official environment.
-enableHttp: true
+enableHttp: false
 
 # Https port if enableHttps is true.
 httpsPort:  7442
 
 # Enable HTTPS should be true on official environment.
-enableHttps: false
+enableHttps: true
+
+# Http/2 is enabled by default.
+enableHttp2: true
 
 # Keystore file name in config folder. KeystorePass is in secret.yml to access it.
 keystoreName: tls/server.keystore
@@ -1057,7 +1214,7 @@ enableRegistry: true
 ### API C
 
 Although API C is not calling any other APIs, it needs to register itself to consul
-so that API A can discovery it from the same consul registry.
+so that API A can discovery it from the same consul registry. Let's create service.yml
 
 service.yml
 
@@ -1087,6 +1244,7 @@ singletons:
 server.yml
 
 ```
+
 # Server configuration
 ---
 # This is the default binding address if the service is dockerized.
@@ -1096,13 +1254,16 @@ ip: 0.0.0.0
 httpPort:  7003
 
 # Enable HTTP should be false on official environment.
-enableHttp: true
+enableHttp: false
 
 # Https port if enableHttps is true.
 httpsPort:  7443
 
 # Enable HTTPS should be true on official environment.
-enableHttps: false
+enableHttps: true
+
+# Http/2 is enabled by default.
+enableHttp2: true
 
 # Keystore file name in config folder. KeystorePass is in secret.yml to access it.
 keystoreName: tls/server.keystore
@@ -1123,7 +1284,7 @@ enableRegistry: true
 ### API D
 
 Although API D is not calling any other APIs, it needs to register itself to consul
-so that API B can discovery it from the same consul registry.
+so that API B can discovery it from the same consul registry. Let's create service.yml
 
 service.yml
 
@@ -1152,6 +1313,7 @@ singletons:
 server.yml
 
 ```
+
 # Server configuration
 ---
 # This is the default binding address if the service is dockerized.
@@ -1161,13 +1323,16 @@ ip: 0.0.0.0
 httpPort:  7004
 
 # Enable HTTP should be false on official environment.
-enableHttp: true
+enableHttp: false
 
 # Https port if enableHttps is true.
 httpsPort:  7444
 
 # Enable HTTPS should be true on official environment.
-enableHttps: false
+enableHttps: true
+
+# Http/2 is enabled by default.
+enableHttp2: true
 
 # Keystore file name in config folder. KeystorePass is in secret.yml to access it.
 keystoreName: tls/server.keystore
@@ -1230,7 +1395,7 @@ mvn exec:exec
 API D
 
 
-And start the first instance that listen to 7004 as default
+And start the first instance that listen to 7444 as default
 
 ```
 cd ~/networknt/light-example-4j/discovery/api_d/consul
@@ -1238,6 +1403,11 @@ mvn clean install -DskipTests
 mvn exec:exec
 
 ```
+
+If you follow the above sequence to start servers, then you will find that API A and 
+API B show some error messages as they cannot establish connections to target servers. 
+
+You can ignore these errors and as the connections will be recreated on the first request. 
 
 Now you can see the registered service from Consul UI.
 
@@ -1249,21 +1419,22 @@ http://localhost:8500/ui
 ### Test four servers
 
 ```
-curl http://localhost:7001/v1/data
+curl -k https://localhost:7441/v1/data
 ```
 
 And the result will be
 
 ```
-["API C: Message 1","API C: Message 2","API D: Message 1 from port 7004","API D: Message 2 from port 7004","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
+["API C: Message 1","API C: Message 2","API D: Message 1 from port 7444","API D: Message 2 from port 7444","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
 ```
  
 ### Start another API D
  
 Now let's start the second instance of API D. Before starting the serer, let's update
-server.yml with port 7005.
+server.yml with port 7445.
 
 ```
+
 
 # Server configuration
 ---
@@ -1271,16 +1442,19 @@ server.yml with port 7005.
 ip: 0.0.0.0
 
 # Http port if enableHttp is true.
-httpPort:  7005
+httpPort:  7004
 
 # Enable HTTP should be false on official environment.
-enableHttp: true
+enableHttp: false
 
 # Https port if enableHttps is true.
-httpsPort:  7444
+httpsPort:  7445
 
 # Enable HTTPS should be true on official environment.
-enableHttps: false
+enableHttps: true
+
+# Http/2 is enabled by default.
+enableHttp2: true
 
 # Keystore file name in config folder. KeystorePass is in secret.yml to access it.
 keystoreName: tls/server.keystore
@@ -1310,32 +1484,27 @@ mvn exec:exec
 
 ### Test Servers
 
-Wait 10 seconds, your API B cached API D service urls will be updated automatically
-with the new instance. Now you have to instance of API D to serve API B.
+As we cache the connection in our application, so even there is a new server added to
+consul, it won't be used unless we create a new connection for each request. 
+
+Let's issue the same command again. 
 
 ```
-curl http://localhost:7001/v1/data
+curl -k https://localhost:7441/v1/data
 ```
 
-And the result can be the following alternatively.
+And the result should be the same.
 
 ```
-["API C: Message 1","API C: Message 2","API D: Message 1 from port 7004","API D: Message 2 from port 7004","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
+["API C: Message 1","API C: Message 2","API D: Message 1 from port 7444","API D: Message 2 from port 7444","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
 ```
 
-or 
+Shutdown the server 7444 and wait for 10 seconds. Now when you call the same curl command, 
+you will see 7445 server picks up the request. 
 
 ```
-["API C: Message 1","API C: Message 2","API D: Message 1 from port 7005","API D: Message 2 from port 7005","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
+["API C: Message 1","API C: Message 2","API D: Message 1 from port 7445","API D: Message 2 from port 7445","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
 ```
-
-
-### Shutdown one API D
-
-Let's shutdown one instance of API D and wait for 10 seconds. Now when you call the same
-curl command, API D message will be always served by the same port which is the one still
-running.
-
 
 # Docker
 
@@ -1358,11 +1527,121 @@ cp -r consul consuldocker
 
 ### API A
 
+As we will be using docker-compose to start consul, registrator and APIs altogether
+and there is no easy way to control the start sequence. We are going to update the 
+handler to remove the connection creation in constructor. 
+
+```
+package com.networknt.apia.handler;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.networknt.client.Http2Client;
+import com.networknt.cluster.Cluster;
+import com.networknt.config.Config;
+import com.networknt.exception.ClientException;
+import com.networknt.security.JwtHelper;
+import com.networknt.service.SingletonServiceFactory;
+import io.undertow.UndertowOptions;
+import io.undertow.client.ClientConnection;
+import io.undertow.client.ClientRequest;
+import io.undertow.client.ClientResponse;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.HttpString;
+import io.undertow.util.Methods;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xnio.OptionMap;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+
+public class DataGetHandler implements HttpHandler {
+    static Logger logger = LoggerFactory.getLogger(DataGetHandler.class);
+    static Cluster cluster = SingletonServiceFactory.getBean(Cluster.class);
+    static String apibHost;
+    static String apicHost;
+    static String path = "/v1/data";
+    static Map<String, Object> securityConfig = (Map)Config.getInstance().getJsonMapConfig(JwtHelper.SECURITY_CONFIG);
+    static boolean securityEnabled = (Boolean)securityConfig.get(JwtHelper.ENABLE_VERIFY_JWT);
+
+    static Http2Client client = Http2Client.getInstance();
+    static ClientConnection connectionB;
+    static ClientConnection connectionC;
+
+    @Override
+    public void handleRequest(HttpServerExchange exchange) throws Exception {
+        List<String> list = new ArrayList<>();
+        if(connectionB == null || !connectionB.isOpen()) {
+            try {
+                apibHost = cluster.serviceToUrl("https", "com.networknt.apib-1.0.0", null);
+                connectionB = client.connect(new URI(apibHost), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true)).get();
+            } catch (Exception e) {
+                logger.error("Exeption:", e);
+                throw new ClientException(e);
+            }
+        }
+        if(connectionC == null || !connectionC.isOpen()) {
+            try {
+                apicHost = cluster.serviceToUrl("https", "com.networknt.apic-1.0.0", null);
+                connectionC = client.connect(new URI(apicHost), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true)).get();
+            } catch (Exception e) {
+                logger.error("Exeption:", e);
+                throw new ClientException(e);
+            }
+        }
+        final CountDownLatch latch = new CountDownLatch(2);
+        final AtomicReference<ClientResponse> referenceB = new AtomicReference<>();
+        final AtomicReference<ClientResponse> referenceC = new AtomicReference<>();
+        try {
+            ClientRequest requestB = new ClientRequest().setMethod(Methods.GET).setPath(path);
+            if(securityEnabled) client.propagateHeaders(requestB, exchange);
+            connectionB.sendRequest(requestB, client.createClientCallback(referenceB, latch));
+
+            ClientRequest requestC = new ClientRequest().setMethod(Methods.GET).setPath(path);
+            if(securityEnabled) client.propagateHeaders(requestC, exchange);
+            connectionC.sendRequest(requestB, client.createClientCallback(referenceC, latch));
+
+            latch.await();
+
+            int statusCodeB = referenceB.get().getResponseCode();
+            if(statusCodeB >= 300){
+                throw new Exception("Failed to call API B: " + statusCodeB);
+            }
+            List<String> apibList = Config.getInstance().getMapper().readValue(referenceB.get().getAttachment(Http2Client.RESPONSE_BODY),
+                    new TypeReference<List<String>>(){});
+            list.addAll(apibList);
+
+            int statusCodeC = referenceC.get().getResponseCode();
+            if(statusCodeC >= 300){
+                throw new Exception("Failed to call API C: " + statusCodeC);
+            }
+            List<String> apicList = Config.getInstance().getMapper().readValue(referenceC.get().getAttachment(Http2Client.RESPONSE_BODY),
+                    new TypeReference<List<String>>(){});
+            list.addAll(apicList);
+        } catch (Exception e) {
+            logger.error("Exception:", e);
+            throw new ClientException(e);
+        }
+        list.add("API A: Message 1");
+        list.add("API A: Message 2");
+        exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(list));
+    }
+}
+
+```
+
 Since we are using registrator to register the service, we need to disable the application service registration.
 
 server.yml
 
 ```
+
 # Server configuration
 ---
 # This is the default binding address if the service is dockerized.
@@ -1372,13 +1651,16 @@ ip: 0.0.0.0
 httpPort:  7001
 
 # Enable HTTP should be false on official environment.
-enableHttp: true
+enableHttp: false
 
 # Https port if enableHttps is true.
 httpsPort:  7441
 
 # Enable HTTPS should be true on official environment.
-enableHttps: false
+enableHttps: true
+
+# Http/2 is enabled by default.
+enableHttp2: true
 
 # Keystore file name in config folder. KeystorePass is in secret.yml to access it.
 keystoreName: tls/server.keystore
@@ -1409,8 +1691,8 @@ singletons:
 - com.networknt.registry.URL:
   - com.networknt.registry.URLImpl:
       protocol: light
-      host: apia
-      port: 7001
+      host: localhost
+      port: 8080
       path: consul
       parameters:
         registryRetryPeriod: '30000'
@@ -1427,32 +1709,111 @@ singletons:
 
 ```
 
-The Dockerfile generated from light-codegen will have a default expose port 8080 and it will be
-fixed later in the light-codegen (https://github.com/networknt/light-codegen/issues/54)
-
-For now, let's update it to the same port in the server.yml. Otherwise, registrator will register two
-services with port 7001 and 8080. 
+The Dockerfile generated from light-codegen should expose 7441 based on the config.json
 
 Dockerfile
 
 ```
 FROM openjdk:8-jre-alpine
-EXPOSE 7001
+EXPOSE  7441
 ADD /target/apia-1.0.0.jar server.jar
 CMD ["/bin/sh","-c","java -Dlight-4j-config-dir=/config -Dlogback.configurationFile=/config/logback.xml -jar /server.jar"]
 ```
 
 
-Let's build a docker image for this service and push it to docker hub.
+Let's build a docker image for this service and push it to docker hub. For you own testing
+you can ignore the last command to push the image to docker hub or you can change is to
+your own docker hub account. 
 
 ```
 cd ~/networknt/light-example-4j/discovery/api_a/consuldocker
-mvn clean install
+mvn clean install -DskipTests
 docker build -t networknt/com.networknt.apia-1.0.0 .
 docker push networknt/com.networknt.apia-1.0.0
 ```
 
 ### API B
+
+Similar with API A, we are going to remove the connection creation in constructor for
+the handler. 
+
+```
+package com.networknt.apib.handler;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.networknt.client.Http2Client;
+import com.networknt.cluster.Cluster;
+import com.networknt.config.Config;
+import com.networknt.exception.ClientException;
+import com.networknt.security.JwtHelper;
+import com.networknt.service.SingletonServiceFactory;
+import io.undertow.UndertowOptions;
+import io.undertow.client.ClientConnection;
+import io.undertow.client.ClientRequest;
+import io.undertow.client.ClientResponse;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.Methods;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xnio.OptionMap;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+
+public class DataGetHandler implements HttpHandler {
+    static Logger logger = LoggerFactory.getLogger(DataGetHandler.class);
+    static Cluster cluster = SingletonServiceFactory.getBean(Cluster.class);
+    static String apidHost;
+    static String path = "/v1/data";
+    static Map<String, Object> securityConfig = (Map)Config.getInstance().getJsonMapConfig(JwtHelper.SECURITY_CONFIG);
+    static boolean securityEnabled = (Boolean)securityConfig.get(JwtHelper.ENABLE_VERIFY_JWT);
+    static Http2Client client = Http2Client.getInstance();
+    static ClientConnection connection;
+
+    @Override
+    public void handleRequest(HttpServerExchange exchange) throws Exception {
+        List<String> list = new ArrayList<>();
+        final CountDownLatch latch = new CountDownLatch(1);
+        if(connection == null || !connection.isOpen()) {
+            try {
+                apidHost = cluster.serviceToUrl("https", "com.networknt.apid-1.0.0", null);
+                connection = client.connect(new URI(apidHost), Http2Client.WORKER, Http2Client.SSL, Http2Client.POOL, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true)).get();
+            } catch (Exception e) {
+                logger.error("Exeption:", e);
+                throw new ClientException(e);
+            }
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setMethod(Methods.GET).setPath(path);
+            // this is to ask client module to pass through correlationId and traceabilityId as well as
+            // getting access token from oauth2 server automatically and attatch authorization headers.
+            if(securityEnabled) client.propagateHeaders(request, exchange);
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+            int statusCode = reference.get().getResponseCode();
+            if(statusCode >= 300){
+                throw new Exception("Failed to call API D: " + statusCode);
+            }
+            List<String> apidList = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY),
+                    new TypeReference<List<String>>(){});
+            list.addAll(apidList);
+        } catch (Exception e) {
+            logger.error("Exception:", e);
+            throw new ClientException(e);
+        }
+        list.add("API B: Message 1");
+        list.add("API B: Message 2");
+        exchange.getResponseSender().send(Config.getInstance().getMapper().writeValueAsString(list));
+    }
+}
+
+```
 
 server.yml
 
@@ -1466,13 +1827,16 @@ ip: 0.0.0.0
 httpPort:  7002
 
 # Enable HTTP should be false on official environment.
-enableHttp: true
+enableHttp: false
 
 # Https port if enableHttps is true.
 httpsPort:  7442
 
 # Enable HTTPS should be true on official environment.
-enableHttps: false
+enableHttps: true
+
+# Http/2 is enabled by default.
+enableHttp2: true
 
 # Keystore file name in config folder. KeystorePass is in secret.yml to access it.
 keystoreName: tls/server.keystore
@@ -1498,8 +1862,8 @@ singletons:
 - com.networknt.registry.URL:
   - com.networknt.registry.URLImpl:
       protocol: light
-      host: apib
-      port: 7002
+      host: localhost
+      port: 8080
       path: consul
       parameters:
         registryRetryPeriod: '30000'
@@ -1516,12 +1880,12 @@ singletons:
 
 ```
 
-Dockerfile
+Dockerfile should be generated correctly based on the config.json for light-codegen
 
 
 ```
 FROM openjdk:8-jre-alpine
-EXPOSE 7002
+EXPOSE  7442
 ADD /target/apib-1.0.0.jar server.jar
 CMD ["/bin/sh","-c","java -Dlight-4j-config-dir=/config -Dlogback.configurationFile=/config/logback.xml -jar /server.jar"]
 ```
@@ -1530,7 +1894,7 @@ Let's build a docker image for this service and push it to docker hub.
 
 ```
 cd ~/networknt/light-example-4j/discovery/api_b/consuldocker
-mvn clean install
+mvn clean install -DskipTests
 docker build -t networknt/com.networknt.apib-1.0.0 .
 docker push networknt/com.networknt.apib-1.0.0
 
@@ -1541,7 +1905,6 @@ docker push networknt/com.networknt.apib-1.0.0
 server.yml
 
 ```
-
 # Server configuration
 ---
 # This is the default binding address if the service is dockerized.
@@ -1551,13 +1914,16 @@ ip: 0.0.0.0
 httpPort:  7003
 
 # Enable HTTP should be false on official environment.
-enableHttp: true
+enableHttp: false
 
 # Https port if enableHttps is true.
 httpsPort:  7443
 
 # Enable HTTPS should be true on official environment.
-enableHttps: false
+enableHttps: true
+
+# Http/2 is enabled by default.
+enableHttp2: true
 
 # Keystore file name in config folder. KeystorePass is in secret.yml to access it.
 keystoreName: tls/server.keystore
@@ -1573,7 +1939,6 @@ serviceId: com.networknt.apic-1.0.0
 
 # Flag to enable service registration. Only be true if running as standalone Java jar.
 enableRegistry: false
-
 ```
 
 service.yml
@@ -1583,8 +1948,8 @@ singletons:
 - com.networknt.registry.URL:
   - com.networknt.registry.URLImpl:
       protocol: light
-      host: apic
-      port: 7003
+      host: localhost
+      port: 8080
       path: consul
       parameters:
         registryRetryPeriod: '30000'
@@ -1598,14 +1963,13 @@ singletons:
   - com.networknt.balance.RoundRobinLoadBalance
 - com.networknt.cluster.Cluster:
   - com.networknt.cluster.LightCluster
-
 ```
 
-Dockerfile
+Dockerfile should be
 
 ```
 FROM openjdk:8-jre-alpine
-EXPOSE 7003
+EXPOSE  7443
 ADD /target/apic-1.0.0.jar server.jar
 CMD ["/bin/sh","-c","java -Dlight-4j-config-dir=/config -Dlogback.configurationFile=/config/logback.xml -jar /server.jar"]
 ```
@@ -1634,13 +1998,16 @@ ip: 0.0.0.0
 httpPort:  7004
 
 # Enable HTTP should be false on official environment.
-enableHttp: true
+enableHttp: false
 
 # Https port if enableHttps is true.
-httpsPort:  7444
+httpsPort:  7445
 
 # Enable HTTPS should be true on official environment.
-enableHttps: false
+enableHttps: true
+
+# Http/2 is enabled by default.
+enableHttp2: true
 
 # Keystore file name in config folder. KeystorePass is in secret.yml to access it.
 keystoreName: tls/server.keystore
@@ -1666,8 +2033,8 @@ singletons:
 - com.networknt.registry.URL:
   - com.networknt.registry.URLImpl:
       protocol: light
-      host: apid
-      port: 7004
+      host: localhost
+      port: 8080
       path: consul
       parameters:
         registryRetryPeriod: '30000'
@@ -1688,7 +2055,7 @@ Dockerfile
 
 ```
 FROM openjdk:8-jre-alpine
-EXPOSE 7004
+EXPOSE  7444
 ADD /target/apid-1.0.0.jar server.jar
 CMD ["/bin/sh","-c","java -Dlight-4j-config-dir=/config -Dlogback.configurationFile=/config/logback.xml -jar /server.jar"]
 ```
@@ -1707,6 +2074,8 @@ docker push networknt/com.networknt.apid-1.0.0
 ### Start docker-compose
 
 Now we have all four API built, dockerized and pushed to docker hub. Let's start the docker-compose.
+Before we start the new docker-compose, make sure we stop the current consul docker container. 
+
 
 ```
 cd ~/networknt
@@ -1722,14 +2091,18 @@ This compose will start Consul, Registrator and four services together.
 ### Test Servers
 
 ```
-curl http://localhost:7001/v1/data
+curl -k https://localhost:7441/v1/data
 ```
 
 And here is the result.
 
 ```
-["API C: Message 1","API C: Message 2","API D: Message 1 from port 7004","API D: Message 2 from port 7004","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
+["API C: Message 1","API C: Message 2","API D: Message 1 from port 7444","API D: Message 2 from port 7444","API B: Message 1","API B: Message 2","API A: Message 1","API A: Message 2"]
 ```
+
+
+Note: with the latest registrator, it registers apia, b, c and d into address 172.25.0.4 - 7
+and these IPs are not reachable. It is broken and need further investigation. 
 
 # Kubernetes
 
