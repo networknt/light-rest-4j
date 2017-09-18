@@ -100,7 +100,10 @@ public class RequestValidator {
 
         if (requestBody == null) {
             if (bodyParameter.isPresent() && bodyParameter.get().getRequired()) {
-                return new Status(VALIDATOR_REQUEST_BODY_MISSING, swaggerOperation.getMethod(), swaggerOperation.getPathString().original());
+                // most likely, the BodyHandler is missing from the request chain and we cannot find the body attachment in the exchange
+                // the second scenario is that application/json is not in the request header and BodyHandler is skipped.
+                logger.warn("Body object doesn't exist in exchange attachment. Most likely the BodyHandler is not in the request chain before RequestValidator or reqeust misses application/json content type header");
+                //return new Status(VALIDATOR_REQUEST_BODY_MISSING, swaggerOperation.getMethod(), swaggerOperation.getPathString().original());
             }
             return null;
         }
