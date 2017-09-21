@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+## 1.4.4 - 2017-09-20
+### Added
+
+### Changed
+- fixes #18 break the hard dependency on BodyHandler from RequestValidator
+- Upgrade to light-4j 1.4.4
+
 ## 1.4.3 - 2017-09-10
 ### Added
 
