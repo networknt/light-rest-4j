@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+## 1.4.6 - 2017-09-22
+### Added
+
+### Changed
+- fixes #19 Make swagger-validator aware of body parser enabled or not
+- Upgrade to light-4j 1.4.6
+
 ## 1.4.5 - 2017-09-22
 ### Added
 
