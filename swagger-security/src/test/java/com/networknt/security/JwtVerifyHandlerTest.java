@@ -31,7 +31,7 @@ import io.undertow.server.RoutingHandler;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;

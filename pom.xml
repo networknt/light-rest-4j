@@ -67,28 +67,25 @@
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <version.light-4j>1.4.6</version.light-4j>
-        <version.jackson>2.8.10</version.jackson>
+        <version.jackson>2.9.1</version.jackson>
         <version.slf4j>1.7.25</version.slf4j>
         <version.jose4j>0.5.5</version.jose4j>
         <version.antlr4>4.7</version.antlr4>
-        <version.commons-lang>2.6</version.commons-lang>
-        <version.commons.io>2.5</version.commons.io>
-        <version.commons.codec>1.10</version.commons.codec>
+        <version.commons-text>1.1</version.commons-text>
         <version.encoder>1.2</version.encoder>
         <version.logback>1.2.3</version.logback>
         <version.junit>4.12</version.junit>
-        <version.mockito>2.7.21</version.mockito>
-        <version.undertow>1.4.19.Final</version.undertow>
+        <version.mockito>2.10.0</version.mockito>
+        <version.undertow>1.4.20.Final</version.undertow>
         <version.swagger>1.0.28</version.swagger>
-        <version.hamcrest>1.3</version.hamcrest>
-        <version.assertj>2.1.0</version.assertj>
-        <version.hdrhistogram>2.1.8</version.hdrhistogram>
-        <version.jsr305>3.0.1</version.jsr305>
-        <version.json-schema-validator>0.1.7</version.json-schema-validator>
-        <version.consul>1.2.1</version.consul>
-        <version.zookeeper>3.5.2-alpha</version.zookeeper>
+        <version.hdrhistogram>2.1.10</version.hdrhistogram>
+        <version.jsr305>3.0.2</version.jsr305>
+        <version.json-schema-validator>0.1.10</version.json-schema-validator>
+        <version.consul>1.2.4</version.consul>
+        <version.zookeeper>3.5.3-beta</version.zookeeper>
         <version.zkclient>0.3</version.zkclient>
-        <version.curator>3.2.1</version.curator>
+        <version.curator>4.0.0</version.curator>
+        <versions.maven-version>2.4</versions.maven-version>
         <argLine>-Xmx512m -XX:MaxPermSize=256m</argLine>
     </properties>
 
@@ -231,11 +228,7 @@
                 <groupId>com.networknt</groupId>
                 <artifactId>zookeeper</artifactId>
                 <version>${version.light-4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.networknt</groupId>
-                <artifactId>cors</artifactId>
-                <version>${version.light-4j}</version>
+                <optional>true</optional>
             </dependency>
             <dependency>
                 <groupId>com.networknt</groupId>
@@ -265,34 +258,9 @@
                 <version>${version.slf4j}</version>
             </dependency>
             <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-ext</artifactId>
-                <version>${version.slf4j}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.bitbucket.b_c</groupId>
                 <artifactId>jose4j</artifactId>
                 <version>${version.jose4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.antlr</groupId>
-                <artifactId>antlr4-runtime</artifactId>
-                <version>${version.antlr4}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-lang</groupId>
-                <artifactId>commons-lang</artifactId>
-                <version>${version.commons-lang}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
-                <version>${version.commons.io}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-codec</groupId>
-                <artifactId>commons-codec</artifactId>
-                <version>${version.commons.codec}</version>
             </dependency>
             <dependency>
                 <groupId>org.owasp.encoder</groupId>
@@ -303,51 +271,6 @@
                 <groupId>io.undertow</groupId>
                 <artifactId>undertow-core</artifactId>
                 <version>${version.undertow}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hdrhistogram</groupId>
-                <artifactId>HdrHistogram</artifactId>
-                <version>${version.hdrhistogram}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.code.findbugs</groupId>
-                <artifactId>jsr305</artifactId>
-                <version>${version.jsr305}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ecwid.consul</groupId>
-                <artifactId>consul-api</artifactId>
-                <version>${version.consul}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.zookeeper</groupId>
-                <artifactId>zookeeper</artifactId>
-                <version>${version.zookeeper}</version>
-                <scope>compile</scope>
-                <optional>true</optional>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>com.101tec</groupId>
-                <artifactId>zkclient</artifactId>
-                <version>${version.zkclient}</version>
-                <scope>compile</scope>
-                <optional>true</optional>
-                <exclusions>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <!-- Test dependencies -->
@@ -370,21 +293,15 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.hamcrest</groupId>
-                <artifactId>hamcrest-library</artifactId>
-                <version>${version.hamcrest}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.assertj</groupId>
-                <artifactId>assertj-core</artifactId>
-                <version>${version.assertj}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-test</artifactId>
                 <version>${version.curator}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>${version.commons-text}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
@@ -413,6 +330,11 @@
         </testResources>
 
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>versions-maven-plugin</artifactId>
+                <version>${versions.maven-version}</version>
+            </plugin>
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
@@ -588,7 +510,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>2.19.1</version>
+                <version>2.20.1</version>
             </plugin>
         </plugins>
     </reporting>
