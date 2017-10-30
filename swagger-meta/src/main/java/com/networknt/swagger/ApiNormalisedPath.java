@@ -82,7 +82,7 @@ public class ApiNormalisedPath implements NormalisedPath {
 
     private String normalise(String requestPath) {
         if (SwaggerHelper.swagger != null && SwaggerHelper.swagger.getBasePath() != null) {
-            requestPath = requestPath.replace(SwaggerHelper.swagger.getBasePath(), "");
+            requestPath = requestPath.replaceFirst(SwaggerHelper.swagger.getBasePath(), "");
         }
         if (!requestPath.startsWith("/")) {
             return "/" + requestPath;
