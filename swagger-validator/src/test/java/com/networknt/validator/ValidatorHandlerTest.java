@@ -16,6 +16,7 @@
 
 package com.networknt.validator;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.networknt.body.BodyHandler;
 import com.networknt.client.Http2Client;
 import com.networknt.config.Config;
@@ -41,7 +42,9 @@ import org.slf4j.LoggerFactory;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 
+import java.io.IOException;
 import java.net.URI;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -390,5 +393,15 @@ public class ValidatorHandlerTest {
             Assert.assertNotNull(body);
             Assert.assertEquals("deletePet", body);
         }
+    }
+
+    @Test
+    public void testNullValue() throws IOException {
+        String json = "{\"selection\": {\"id\": null}}";
+        Map<String, Object> map = Config.getInstance().getMapper().readValue(json, new TypeReference<Map<String, Object>>() {
+        });
+        Map<String, Object> selectionMap = (Map<String, Object>)map.get("selection");
+        Assert.assertNull(selectionMap.get("id"));
+
     }
 }
