@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+## 1.5.1 - 2017-11-08
+### Added
+
+### Changed
+- fixes #21 Fix for case when swagger.getBasePath is "/" (Thanks @chaudhryfaisal)
+- Upgrade to light-4j 1.5.1
+
 ## 1.5.0 - 2017-10-21
 ### Added
 
