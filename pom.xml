@@ -67,6 +67,7 @@
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <version.light-4j>1.5.1</version.light-4j>
+        <version.openapi-parser>0.1.0</version.openapi-parser>
         <version.jackson>2.9.1</version.jackson>
         <version.slf4j>1.7.25</version.slf4j>
         <version.jose4j>0.6.1</version.jose4j>
@@ -93,6 +94,9 @@
         <module>swagger-meta</module>
         <module>swagger-validator</module>
         <module>swagger-security</module>
+        <module>openapi-meta</module>
+        <module>openapi-validator</module>
+        <module>openapi-security</module>
     </modules>
 
     <dependencyManagement>
@@ -111,6 +115,21 @@
             <dependency>
                 <groupId>com.networknt</groupId>
                 <artifactId>swagger-security</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.networknt</groupId>
+                <artifactId>openapi-meta</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.networknt</groupId>
+                <artifactId>openapi-validator</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.networknt</groupId>
+                <artifactId>openapi-security</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -235,6 +254,12 @@
                 <artifactId>server</artifactId>
                 <version>${version.light-4j}</version>
             </dependency>
+            <dependency>
+                <groupId>com.networknt</groupId>
+                <artifactId>openapi-parser</artifactId>
+                <version>${version.openapi-parser}</version>
+            </dependency>
+
             <!-- External dependencies -->
 
             <dependency>
