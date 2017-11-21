@@ -53,7 +53,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Pets"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Pet"
+                  }
                 },
                 "example": [
                   {
@@ -155,7 +158,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Pets"
+                  "$ref": "#/components/schemas/Pet"
                 },
                 "example": {
                   "id": 1,
@@ -216,7 +219,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Pets"
+                  "$ref": "#/components/schemas/Pet"
                 }
               }
             }
@@ -268,12 +271,6 @@
           "tag": {
             "type": "string"
           }
-        }
-      },
-      "Pets": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/Pet"
         }
       },
       "Error": {
