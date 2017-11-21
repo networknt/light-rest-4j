@@ -37,7 +37,7 @@ import java.util.Optional;
  */
 public class OpenApiHelper {
 
-    static final String OPENAPI_CONFIG = "openapi.yaml";
+    static final String OPENAPI_CONFIG = "openapi.json";
     static final Logger logger = LoggerFactory.getLogger(OpenApiHelper.class);
 
     public static OpenApi3 openApi3;
@@ -51,8 +51,8 @@ public class OpenApiHelper {
             logger.error("MalformedURLException", e);
         }
         if(openApi3 == null) {
-            logger.error("Unable to load openapi.yaml");
-            throw new RuntimeException("Unable to load openapi.yaml");
+            logger.error("Unable to load openapi.json");
+            throw new RuntimeException("Unable to load openapi.json");
         } else {
             oauth2Name = getOAuth2Name();
             basePath = getBasePath();
