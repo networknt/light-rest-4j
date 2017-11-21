@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+## 1.5.4 - 2017-11-20
+### Added
+- fixes #23 Support OpenAPI 3.0 specification format
+
+### Changed
+- fixes #24 Switch OpenAPI 3.0 specification file from yaml to json for framework input
+- Upgrade to light-4j 1.5.4
+
 ## 1.5.3 - 2017-11-20
 ### Added
 

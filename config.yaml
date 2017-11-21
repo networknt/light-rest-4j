@@ -1,8 +1,17 @@
 variables:
   regex: '<version.light[a-z-]+4j>\d\.\d\.\d</version.light[a-z-]+4j>'
+  regex1: '<version.openapi-parser>\d\.\d\.\d</version.openapi-parser>'
 paths:
 - path: pom.xml
   match: "{{ .regex }}"
+  replace: "{{ .old }}"
+  with: "{{ .new }}"
+  must_include:
+    - modelVersion
+    - groupId
+    - artifactId
+- path: pom.xml
+  match: "{{ .regex1 }}"
   replace: "{{ .old }}"
   with: "{{ .new }}"
   must_include:
