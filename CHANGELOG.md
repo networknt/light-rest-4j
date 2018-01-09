@@ -1,6 +1,6 @@
 # Change Log
 
-## [1.5.6](https://github.com/networknt/light-rest-4j/tree/1.5.6) (2017-12-30)
+## [1.5.6](https://github.com/networknt/light-rest-4j/tree/1.5.6) (2017-12-28)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.4...1.5.6)
 
 **Closed issues:**
