@@ -81,7 +81,7 @@
         <version.swagger>1.0.32</version.swagger>
         <version.hdrhistogram>2.1.10</version.hdrhistogram>
         <version.jsr305>3.0.2</version.jsr305>
-        <version.json-schema-validator>0.1.10</version.json-schema-validator>
+        <version.json-schema-validator>0.1.15</version.json-schema-validator>
         <version.consul>1.2.4</version.consul>
         <version.zookeeper>3.5.3-beta</version.zookeeper>
         <version.zkclient>0.3</version.zkclient>
