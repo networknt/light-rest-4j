@@ -86,7 +86,7 @@ public class SchemaValidator {
         Status status = null;
         Set<ValidationMessage> processingReport = null;
         try {
-            JsonSchema jsonSchema = new JsonSchemaFactory(Config.getInstance().getMapper()).getSchema(schema);
+            JsonSchema jsonSchema = JsonSchemaFactory.getInstance().getSchema(schema);
             final JsonNode content = Config.getInstance().getMapper().valueToTree(value);
             processingReport = jsonSchema.validate(content);
         } catch (Exception e) {

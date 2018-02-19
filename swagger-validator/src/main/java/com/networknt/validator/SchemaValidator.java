@@ -109,7 +109,7 @@ public class SchemaValidator {
                 ((ObjectNode)schemaObject).set(DEFINITIONS_FIELD, this.definitions);
             }
 
-            JsonSchema jsonSchema = new JsonSchemaFactory(Config.getInstance().getMapper()).getSchema(schemaObject);
+            JsonSchema jsonSchema = JsonSchemaFactory.getInstance().getSchema(schemaObject);
 
             final JsonNode content = Json.mapper().valueToTree(value);
             processingReport = jsonSchema.validate(content);
@@ -168,7 +168,7 @@ public class SchemaValidator {
                 ((ObjectNode)schemaObject).set(DEFINITIONS_FIELD, this.definitions);
             }
 
-            JsonSchema jsonSchema = new JsonSchemaFactory(Config.getInstance().getMapper()).getSchema(schemaObject);
+            JsonSchema jsonSchema = JsonSchemaFactory.getInstance().getSchema(schemaObject);
 
             String normalisedValue = value;
             if (schema instanceof StringProperty) {
