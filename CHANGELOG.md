@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.5.10](https://github.com/networknt/light-rest-4j/tree/1.5.10) (2018-03-02)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.9...1.5.10)
+
+**Closed issues:**
+
+- add subject\_claims and access\_claims in auditInfo attachment [\#31](https://github.com/networknt/light-rest-4j/issues/31)
+
 ## [1.5.9](https://github.com/networknt/light-rest-4j/tree/1.5.9) (2018-02-21)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.8...1.5.9)
 
