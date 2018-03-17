@@ -175,8 +175,10 @@ public class RequestValidator {
 
     private Status validateHeader(final HttpServerExchange exchange,
                                   final OpenApiOperation openApiOperation) {
+
+        // validate path level parameters for headers first.
         Optional<Status> optional = openApiOperation
-                .getOperation()
+                .getPathObject()
                 .getParameters()
                 .stream()
                 .filter(p -> p.getIn().equalsIgnoreCase("header"))
@@ -186,7 +188,20 @@ public class RequestValidator {
         if(optional.isPresent()) {
             return optional.get();
         } else {
-            return null;
+            // validate operation level parameter for headers second.
+            optional = openApiOperation
+                    .getOperation()
+                    .getParameters()
+                    .stream()
+                    .filter(p -> p.getIn().equalsIgnoreCase("header"))
+                    .map(p -> validateHeader(exchange, openApiOperation, p))
+                    .filter(s -> s != null)
+                    .findFirst();
+            if(optional.isPresent()) {
+                return optional.get();
+            } else {
+                return null;
+            }
         }
     }
 
