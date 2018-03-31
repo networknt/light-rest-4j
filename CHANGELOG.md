@@ -1,5 +1,16 @@
 # Change Log
 
+## [1.5.11](https://github.com/networknt/light-rest-4j/tree/1.5.11) (2018-03-31)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.10...1.5.11)
+
+**Implemented enhancements:**
+
+- support parameters validation in path item object  [\#33](https://github.com/networknt/light-rest-4j/issues/33)
+
+**Closed issues:**
+
+- remove docs folder as all documents moved to light-doc [\#32](https://github.com/networknt/light-rest-4j/issues/32)
+
 ## [1.5.10](https://github.com/networknt/light-rest-4j/tree/1.5.10) (2018-03-02)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.9...1.5.10)
 
