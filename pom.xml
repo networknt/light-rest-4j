@@ -78,7 +78,7 @@
         <version.junit>4.12</version.junit>
         <version.mockito>2.10.0</version.mockito>
         <version.undertow>1.4.20.Final</version.undertow>
-        <version.swagger>1.0.32</version.swagger>
+        <version.swagger-parser>1.0.34</version.swagger-parser>
         <version.hdrhistogram>2.1.10</version.hdrhistogram>
         <version.jsr305>3.0.2</version.jsr305>
         <version.json-schema-validator>0.1.15</version.json-schema-validator>
@@ -270,7 +270,7 @@
             <dependency>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-parser</artifactId>
-                <version>${version.swagger}</version>
+                <version>${version.swagger-parser}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
