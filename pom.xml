@@ -79,6 +79,7 @@
         <version.mockito>2.10.0</version.mockito>
         <version.undertow>1.4.20.Final</version.undertow>
         <version.swagger-parser>1.0.34</version.swagger-parser>
+        <version.swagger-core>1.5.18</version.swagger-core>
         <version.hdrhistogram>2.1.10</version.hdrhistogram>
         <version.jsr305>3.0.2</version.jsr305>
         <version.json-schema-validator>0.1.15</version.json-schema-validator>
@@ -261,11 +262,36 @@
             </dependency>
 
             <!-- External dependencies -->
-
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${version.jackson}</version>                   
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${version.jackson}</version>                   
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-dataformat</artifactId>
+                <version>${version.jackson}</version>                   
+            </dependency>            
             <dependency>
                 <groupId>com.networknt</groupId>
                 <artifactId>json-schema-validator</artifactId>
                 <version>${version.json-schema-validator}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger</groupId>
+                <artifactId>swagger-core</artifactId>
+                <version>${version.swagger-core}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-dataformat</artifactId> 
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.swagger</groupId>
@@ -276,6 +302,12 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${version.jackson}</version>
+                <exclusions>
+                   <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-annotations</artifactId>
+                    </exclusion>     
+                </exclusions>                 
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
