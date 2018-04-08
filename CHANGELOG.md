@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.5.12](https://github.com/networknt/light-rest-4j/tree/1.5.12) (2018-04-08)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.11...1.5.12)
+
+**Closed issues:**
+
+- remove consul and zookeeper dependencies [\#35](https://github.com/networknt/light-rest-4j/issues/35)
+- upgrade jackson to 2.9.5 and swagger-parser to 1.0.34 [\#34](https://github.com/networknt/light-rest-4j/issues/34)
+
 ## [1.5.11](https://github.com/networknt/light-rest-4j/tree/1.5.11) (2018-03-31)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.10...1.5.11)
 
