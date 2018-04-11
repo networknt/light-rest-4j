@@ -16,18 +16,17 @@
 
 package com.networknt.openapi;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.networknt.config.Config;
 import com.networknt.oas.model.OpenApi3;
-import com.networknt.oas.model.Schema;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.ValidationMessage;
 import com.networknt.status.Status;
-import com.networknt.utility.Util;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
@@ -40,12 +39,12 @@ import static java.util.Objects.requireNonNull;
  * @author Steve Hu
  */
 public class SchemaValidator {
-    private static final String DEFINITIONS_FIELD = "definitions";
+    private static final String COMPONENTS_FIELD = "components";
     static final String VALIDATOR_SCHEMA_INVALID_JSON = "ERR11003";
     static final String VALIDATOR_SCHEMA = "ERR11004";
 
     private final OpenApi3 api;
-    private JsonNode schemas;
+    private JsonNode jsonNode;
 
     /**
      * Build a new validator with no API specification.
@@ -65,6 +64,7 @@ public class SchemaValidator {
      */
     public SchemaValidator(final OpenApi3 api) {
         this.api = api;
+        this.jsonNode = api.toJson().get("components");
     }
 
     /**
@@ -86,6 +86,9 @@ public class SchemaValidator {
         Status status = null;
         Set<ValidationMessage> processingReport = null;
         try {
+            if(jsonNode != null) {
+                ((ObjectNode)schema).set(COMPONENTS_FIELD, jsonNode);
+            }
             JsonSchema jsonSchema = JsonSchemaFactory.getInstance().getSchema(schema);
             final JsonNode content = Config.getInstance().getMapper().valueToTree(value);
             processingReport = jsonSchema.validate(content);
