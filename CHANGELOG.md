@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.5.13](https://github.com/networknt/light-rest-4j/tree/1.5.13) (2018-04-20)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.12...1.5.13)
+
+**Fixed bugs:**
+
+- openapi schema validator resolves references incorrectly [\#36](https://github.com/networknt/light-rest-4j/issues/36)
+
 ## [1.5.12](https://github.com/networknt/light-rest-4j/tree/1.5.12) (2018-04-08)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.11...1.5.12)
 
