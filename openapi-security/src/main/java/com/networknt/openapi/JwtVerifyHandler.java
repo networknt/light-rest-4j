@@ -86,6 +86,7 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                 }
                 auditInfo.put(Constants.CLIENT_ID_STRING, claims.getStringClaimValue(Constants.CLIENT_ID_STRING));
                 auditInfo.put(Constants.USER_ID_STRING, claims.getStringClaimValue(Constants.USER_ID_STRING));
+                auditInfo.put(Constants.SUBJECT_CLAIMS, claims);
                 if(config != null && (Boolean)config.get(ENABLE_VERIFY_SCOPE) && OpenApiHelper.openApi3 != null) {
                     Operation operation = null;
                     OpenApiOperation openApiOperation = (OpenApiOperation)auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
@@ -129,6 +130,7 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                             JwtClaims scopeClaims = JwtHelper.verifyJwt(scopeJwt);
                             secondaryScopes = scopeClaims.getStringListClaimValue("scope");
                             auditInfo.put(Constants.SCOPE_CLIENT_ID_STRING, scopeClaims.getStringClaimValue(Constants.CLIENT_ID_STRING));
+                            auditInfo.put(Constants.ACCESS_CLAIMS, scopeClaims);
                         } catch (InvalidJwtException | MalformedClaimException e) {
                             logger.error("InvalidJwtException", e);
                             Status status = new Status(STATUS_INVALID_SCOPE_TOKEN);
