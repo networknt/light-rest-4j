@@ -76,6 +76,7 @@ public class ValidatorHandler implements MiddlewareHandler {
         if(status != null) {
             exchange.setStatusCode(status.getStatusCode());
             exchange.getResponseSender().send(status.toString());
+            if(config.isLogError()) logger.error("ValidationError:" + status.toString());
             return;
         }
 

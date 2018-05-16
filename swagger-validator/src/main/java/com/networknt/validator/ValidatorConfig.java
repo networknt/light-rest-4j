@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class ValidatorConfig {
     boolean enabled;
+    boolean logError;
 
     public ValidatorConfig() {
     }
@@ -36,4 +37,8 @@ public class ValidatorConfig {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
+
+    public boolean isLogError() { return logError; }
+
+    public void setLogError(boolean logError) { this.logError = logError; }
 }
