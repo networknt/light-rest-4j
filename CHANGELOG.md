@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.5.14](https://github.com/networknt/light-rest-4j/tree/1.5.14) (2018-05-19)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.13...1.5.14)
+
+**Closed issues:**
+
+- update VerifyJwt signature and security.yml [\#39](https://github.com/networknt/light-rest-4j/issues/39)
+- populate subject claims and access claims in openapi security [\#38](https://github.com/networknt/light-rest-4j/issues/38)
+- Log the validation error in logs In error Level [\#37](https://github.com/networknt/light-rest-4j/issues/37)
+
 ## [1.5.13](https://github.com/networknt/light-rest-4j/tree/1.5.13) (2018-04-20)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.12...1.5.13)
 
