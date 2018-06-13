@@ -54,10 +54,7 @@ public class BasicAuthHandler implements MiddlewareHandler {
         HeaderMap headerMap = exchange.getRequestHeaders();
         String authorization = headerMap.getFirst(Headers.AUTHORIZATION);
         if(authorization == null) {
-            Status status = new Status(MISSING_AUTH_TOKEN);
-            exchange.setStatusCode(status.getStatusCode());
-            logger.error("Missing auth token: " + status.toString());
-            exchange.getResponseSender().send(status.toString());
+            setExchangeStatus(exchange, MISSING_AUTH_TOKEN);
             return;
         } else {
             next.handleRequest(exchange);

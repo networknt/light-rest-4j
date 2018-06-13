@@ -65,9 +65,7 @@ public class ValidatorHandler implements MiddlewareHandler {
             openApiOperation = (OpenApiOperation)auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
         }
         if(openApiOperation == null) {
-            Status status = new Status(STATUS_MISSING_OPENAPI_OPERATION);
-            exchange.setStatusCode(status.getStatusCode());
-            exchange.getResponseSender().send(status.toString());
+            setExchangeStatus(exchange, STATUS_MISSING_OPENAPI_OPERATION);
             return;
         }
 

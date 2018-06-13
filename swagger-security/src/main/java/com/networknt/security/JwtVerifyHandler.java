@@ -95,10 +95,7 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                         final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI());
                         final Optional<NormalisedPath> maybeApiPath = SwaggerHelper.findMatchingApiPath(requestPath);
                         if (!maybeApiPath.isPresent()) {
-                            Status status = new Status(STATUS_INVALID_REQUEST_PATH);
-                            exchange.setStatusCode(status.getStatusCode());
-                            logger.error("Error in JwtVerifyHandler: " + status.toString());
-                            exchange.getResponseSender().send(status.toString());
+                            setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH);
                             return;
                         }
 
@@ -109,10 +106,7 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                         operation = swaggerPath.getOperationMap().get(httpMethod);
 
                         if (operation == null) {
-                            Status status = new Status(STATUS_METHOD_NOT_ALLOWED);
-                            exchange.setStatusCode(status.getStatusCode());
-                            logger.error("Error in JwtVerifyHandler: " + status.toString());
-                            exchange.getResponseSender().send(status.toString());
+                            setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED);
                             return;
                         }
                         swaggerOperation = new SwaggerOperation(swaggerPathString, swaggerPath, httpMethod, operation);
@@ -134,16 +128,11 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                             auditInfo.put(Constants.ACCESS_CLAIMS, scopeClaims);
                         } catch (InvalidJwtException | MalformedClaimException e) {
                             logger.error("InvalidJwtException", e);
-                            Status status = new Status(STATUS_INVALID_SCOPE_TOKEN);
-                            exchange.setStatusCode(status.getStatusCode());
-                            logger.error("Error in JwtVerifyHandler: " + status.toString());
-                            exchange.getResponseSender().send(status.toString());
+                            setExchangeStatus(exchange, STATUS_INVALID_SCOPE_TOKEN);
                             return;
                         } catch (ExpiredTokenException e) {
-                            Status status = new Status(STATUS_SCOPE_TOKEN_EXPIRED);
-                            exchange.setStatusCode(status.getStatusCode());
-                            logger.error("Error in JwtVerifyHandler: " + status.toString());
-                            exchange.getResponseSender().send(status.toString());
+                            logger.error("ExpiredTokenException", e);
+                            setExchangeStatus(exchange, STATUS_SCOPE_TOKEN_EXPIRED);
                             return;
                         }
                     }
@@ -161,10 +150,7 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                     // validate scope
                     if (scopeHeader != null) {
                         if (secondaryScopes == null || !matchedScopes(secondaryScopes, specScopes)) {
-                            Status status = new Status(STATUS_SCOPE_TOKEN_SCOPE_MISMATCH, secondaryScopes, specScopes);
-                            exchange.setStatusCode(status.getStatusCode());
-                            logger.error("Error in JwtVerifyHandler: " + status.toString());
-                            exchange.getResponseSender().send(status.toString());
+                            setExchangeStatus(exchange, STATUS_SCOPE_TOKEN_SCOPE_MISMATCH, secondaryScopes, specScopes);
                             return;
                         }
                     } else {
@@ -174,17 +160,11 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                             primaryScopes = claims.getStringListClaimValue("scope");
                         } catch (MalformedClaimException e) {
                             logger.error("MalformedClaimException", e);
-                            Status status = new Status(STATUS_INVALID_AUTH_TOKEN);
-                            exchange.setStatusCode(status.getStatusCode());
-                            logger.error("Error in JwtVerifyHandler: " + status.toString());
-                            exchange.getResponseSender().send(status.toString());
+                            setExchangeStatus(exchange, STATUS_INVALID_AUTH_TOKEN);
                             return;
                         }
                         if (!matchedScopes(primaryScopes, specScopes)) {
-                            Status status = new Status(STATUS_AUTH_TOKEN_SCOPE_MISMATCH, primaryScopes, specScopes);
-                            exchange.setStatusCode(status.getStatusCode());
-                            logger.error("Error in JwtVerifyHandler: " + status.toString());
-                            exchange.getResponseSender().send(status.toString());
+                            setExchangeStatus(exchange, STATUS_AUTH_TOKEN_SCOPE_MISMATCH, primaryScopes, specScopes);
                             return;
                         }
                     }
@@ -192,22 +172,14 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                 next.handleRequest(exchange);
             } catch (InvalidJwtException e) {
                 // only log it and unauthorized is returned.
-                logger.error("Exception: ", e);
-                Status status = new Status(STATUS_INVALID_AUTH_TOKEN);
-                exchange.setStatusCode(status.getStatusCode());
-                logger.error("Error in JwtVerifyHandler: " + status.toString());
-                exchange.getResponseSender().send(status.toString());
+                logger.error("InvalidJwtException:", e);
+                setExchangeStatus(exchange, STATUS_INVALID_AUTH_TOKEN);
             } catch (ExpiredTokenException e) {
-                Status status = new Status(STATUS_AUTH_TOKEN_EXPIRED);
-                exchange.setStatusCode(status.getStatusCode());
-                logger.error("Error in JwtVerifyHandler: " + status.toString());
-                exchange.getResponseSender().send(status.toString());
+                logger.error("ExpiredTokenException", e);
+                setExchangeStatus(exchange, STATUS_AUTH_TOKEN_EXPIRED);
             }
         } else {
-            Status status = new Status(STATUS_MISSING_AUTH_TOKEN);
-            exchange.setStatusCode(status.getStatusCode());
-            logger.error("Error in JwtVerifyHandler: " + status.toString());
-            exchange.getResponseSender().send(status.toString());
+            setExchangeStatus(exchange, STATUS_MISSING_AUTH_TOKEN);
         }
     }
 

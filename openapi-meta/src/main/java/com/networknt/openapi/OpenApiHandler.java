@@ -61,9 +61,7 @@ public class OpenApiHandler implements MiddlewareHandler {
         final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI());
         final Optional<NormalisedPath> maybeApiPath = OpenApiHelper.findMatchingApiPath(requestPath);
         if (!maybeApiPath.isPresent()) {
-            Status status = new Status(STATUS_INVALID_REQUEST_PATH, requestPath.normalised());
-            exchange.setStatusCode(status.getStatusCode());
-            exchange.getResponseSender().send(status.toString());
+            setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH, requestPath.normalised());
             return;
         }
 
@@ -74,9 +72,7 @@ public class OpenApiHandler implements MiddlewareHandler {
         final Operation operation = path.getOperation(httpMethod);
 
         if (operation == null) {
-            Status status = new Status(STATUS_METHOD_NOT_ALLOWED);
-            exchange.setStatusCode(status.getStatusCode());
-            exchange.getResponseSender().send(status.toString());
+            setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED);
             return;
         }
 

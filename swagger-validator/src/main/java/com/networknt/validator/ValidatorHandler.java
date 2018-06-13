@@ -66,9 +66,7 @@ public class ValidatorHandler implements MiddlewareHandler {
             swaggerOperation = (SwaggerOperation)auditInfo.get(Constants.SWAGGER_OPERATION_STRING);
         }
         if(swaggerOperation == null) {
-            Status status = new Status(STATUS_MISSING_SWAGGER_OPERATION);
-            exchange.setStatusCode(status.getStatusCode());
-            exchange.getResponseSender().send(status.toString());
+            setExchangeStatus(exchange, STATUS_MISSING_SWAGGER_OPERATION);
             return;
         }
 

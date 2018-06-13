@@ -65,9 +65,7 @@ public class SwaggerHandler implements MiddlewareHandler {
         final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI());
         final Optional<NormalisedPath> maybeApiPath = SwaggerHelper.findMatchingApiPath(requestPath);
         if (!maybeApiPath.isPresent()) {
-            Status status = new Status(STATUS_INVALID_REQUEST_PATH, requestPath.normalised());
-            exchange.setStatusCode(status.getStatusCode());
-            exchange.getResponseSender().send(status.toString());
+            setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH, requestPath.normalised());
             return;
         }
 
@@ -78,9 +76,7 @@ public class SwaggerHandler implements MiddlewareHandler {
         final Operation operation = swaggerPath.getOperationMap().get(httpMethod);
 
         if (operation == null) {
-            Status status = new Status(STATUS_METHOD_NOT_ALLOWED);
-            exchange.setStatusCode(status.getStatusCode());
-            exchange.getResponseSender().send(status.toString());
+            setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED);
             return;
         }
 
