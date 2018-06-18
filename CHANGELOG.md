@@ -5,6 +5,7 @@
 
 **Closed issues:**
 
+- remove basic security for this release as it has some issues with Maven Central [\#43](https://github.com/networknt/light-rest-4j/issues/43)
 - switch to default setExchangeStatus method for errors [\#42](https://github.com/networknt/light-rest-4j/issues/42)
 - add basic security module for basic authentication [\#41](https://github.com/networknt/light-rest-4j/issues/41)
 - remove version for jose4j in sub modules [\#40](https://github.com/networknt/light-rest-4j/issues/40)
