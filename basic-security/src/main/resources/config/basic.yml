@@ -1,9 +1,0 @@
-# Basic Authentication Security Configuration for light-rest-4j
----
-# Enable Basic Authentication Handler
-enabled: true
-
-# usernames and passwords
-users:
-  user1: user1pass
-  user2: user2pass
