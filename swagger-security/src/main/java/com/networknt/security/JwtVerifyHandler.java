@@ -18,6 +18,7 @@ package com.networknt.security;
 
 import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
+import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.status.Status;
 import com.networknt.swagger.*;
@@ -169,7 +170,7 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                         }
                     }
                 }
-                next.handleRequest(exchange);
+                Handler.next(exchange, next);
             } catch (InvalidJwtException e) {
                 // only log it and unauthorized is returned.
                 logger.error("InvalidJwtException:", e);

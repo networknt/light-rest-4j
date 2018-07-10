@@ -18,6 +18,7 @@ package com.networknt.openapi;
 
 import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
+import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
@@ -76,8 +77,7 @@ public class ValidatorHandler implements MiddlewareHandler {
             if(config.logError) logger.error("ValidationError:" + status.toString());
             return;
         }
-
-        next.handleRequest(exchange);
+        Handler.next(exchange, next);
     }
 
     @Override

@@ -18,6 +18,7 @@ package com.networknt.openapi;
 
 import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
+import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.oas.model.Operation;
 import com.networknt.oas.model.Path;
@@ -84,7 +85,7 @@ public class OpenApiHandler implements MiddlewareHandler {
         auditInfo.put(Constants.OPENAPI_OPERATION_STRING, openApiOperation);
         exchange.putAttachment(AuditHandler.AUDIT_INFO, auditInfo);
 
-        next.handleRequest(exchange);
+        Handler.next(exchange, next);
     }
 
     @Override

@@ -18,6 +18,7 @@ package com.networknt.swagger;
 
 import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
+import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
@@ -88,7 +89,7 @@ public class SwaggerHandler implements MiddlewareHandler {
         auditInfo.put(Constants.SWAGGER_OPERATION_STRING, swaggerOperation);
         exchange.putAttachment(AuditHandler.AUDIT_INFO, auditInfo);
 
-        next.handleRequest(exchange);
+        Handler.next(exchange, next);
     }
 
     @Override
