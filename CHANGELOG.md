@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.5.16](https://github.com/networknt/light-rest-4j/tree/1.5.16) (2018-06-19)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.15...1.5.16)
+
 ## [1.5.15](https://github.com/networknt/light-rest-4j/tree/1.5.15) (2018-06-18)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.14...1.5.15)
 
