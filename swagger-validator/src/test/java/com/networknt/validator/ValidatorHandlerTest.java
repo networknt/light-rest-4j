@@ -174,6 +174,7 @@ public class ValidatorHandlerTest {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
             ClientRequest request = new ClientRequest().setPath("/api").setMethod(Methods.GET);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
             connection.sendRequest(request, client.createClientCallback(reference, latch));
             latch.await();
         } catch (Exception e) {
@@ -204,6 +205,7 @@ public class ValidatorHandlerTest {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
             ClientRequest request = new ClientRequest().setPath("/v2/pet").setMethod(Methods.GET);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
             connection.sendRequest(request, client.createClientCallback(reference, latch));
             latch.await();
         } catch (Exception e) {
@@ -317,6 +319,7 @@ public class ValidatorHandlerTest {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
             ClientRequest request = new ClientRequest().setPath("/v2/pet/111").setMethod(Methods.GET);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
             connection.sendRequest(request, client.createClientCallback(reference, latch));
             latch.await();
         } catch (Exception e) {
@@ -347,6 +350,7 @@ public class ValidatorHandlerTest {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
             ClientRequest request = new ClientRequest().setPath("/v2/pet/111").setMethod(Methods.DELETE);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
             connection.sendRequest(request, client.createClientCallback(reference, latch));
             latch.await();
         } catch (Exception e) {
@@ -377,6 +381,7 @@ public class ValidatorHandlerTest {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
             ClientRequest request = new ClientRequest().setPath("/v2/pet/111").setMethod(Methods.DELETE);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(new HttpString("api_key"), "key");
             connection.sendRequest(request, client.createClientCallback(reference, latch));
             latch.await();
