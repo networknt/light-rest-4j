@@ -1,7 +1,7 @@
 # Security configuration for openapi-security in light-rest-4j. It is a specific config
 # for OpenAPI framework and it can be used if you have other frameworks running in the
 # same server instance and their security configurations are different then the OpenAPI.
-# If this file cannot be found, the generic security.yml will be loaded as fallbacks
+# If this file cannot be found, the generic security.yml will be loaded as a fallback.
 ---
 # Enable JWT verification flag.
 enableVerifyJwt: true
