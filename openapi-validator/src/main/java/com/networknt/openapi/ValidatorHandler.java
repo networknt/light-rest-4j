@@ -40,13 +40,20 @@ import java.util.Map;
  * @author Steve Hu
  */
 public class ValidatorHandler implements MiddlewareHandler {
+    public static final String OPENAPI_CONFIG_NAME = "openapi-validator";
     public static final String CONFIG_NAME = "validator";
 
     static final String STATUS_MISSING_OPENAPI_OPERATION = "ERR10012";
 
     static final Logger logger = LoggerFactory.getLogger(ValidatorHandler.class);
 
-    static ValidatorConfig config = (ValidatorConfig)Config.getInstance().getJsonObjectConfig(CONFIG_NAME, ValidatorConfig.class);
+    static ValidatorConfig config;
+    static {
+        config = (ValidatorConfig)Config.getInstance().getJsonObjectConfig(OPENAPI_CONFIG_NAME, ValidatorConfig.class);
+        if(config == null) {
+            config = (ValidatorConfig)Config.getInstance().getJsonObjectConfig(CONFIG_NAME, ValidatorConfig.class);
+        }
+    }
 
     private volatile HttpHandler next;
 

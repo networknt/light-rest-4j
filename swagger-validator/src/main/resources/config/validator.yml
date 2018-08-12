@@ -1,3 +1,5 @@
+# A generic light-4j framework validator configuration. If multiple frameworks are used in the
+# same server instance and they have different configurations. You can use swagger-validator.yml
 ---
 # Enable request validation. Response validation is not done on the server but client.
 enabled: true

@@ -1,4 +1,6 @@
-# Security configuration in light framework.
+# Security configuration in light framework. This is a generic security config
+# for all frameworks. In most cases, you should just use this file if you have
+# only one framework in your server instance.
 ---
 # Enable JWT verification flag.
 enableVerifyJwt: true

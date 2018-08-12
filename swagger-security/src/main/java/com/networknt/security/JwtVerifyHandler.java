@@ -53,6 +53,7 @@ import java.util.Optional;
 public class JwtVerifyHandler implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(JwtVerifyHandler.class);
 
+    static final String SWAGGER_SECURITY_CONFIG = "swagger-security";
     static final String ENABLE_VERIFY_SCOPE = "enableVerifyScope";
 
     static final String STATUS_INVALID_AUTH_TOKEN = "ERR10000";
@@ -65,7 +66,13 @@ public class JwtVerifyHandler implements MiddlewareHandler {
     static final String STATUS_INVALID_REQUEST_PATH = "ERR10007";
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
 
-    static final Map<String, Object> config = Config.getInstance().getJsonMapConfig(JwtHelper.SECURITY_CONFIG);
+    static Map<String, Object> config;
+    static {
+        // check if swagger-security.yml exist
+        config = Config.getInstance().getJsonMapConfig(SWAGGER_SECURITY_CONFIG);
+        // fallback to generic security.yml
+        if(config == null) config = Config.getInstance().getJsonMapConfig(JwtHelper.SECURITY_CONFIG);
+    }
 
     private volatile HttpHandler next;
 
