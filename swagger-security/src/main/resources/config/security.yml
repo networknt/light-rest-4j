@@ -1,6 +1,9 @@
-# Security configuration in light framework. This is a generic security config
-# for all frameworks. In most cases, you should just use this file if you have
-# only one framework in your server instance.
+# This is a generic security config for all frameworks. You should use the
+# swagger-security.yml which is specific for Swagger 2.0 framework. The
+# swagger-security.yml is introduced to support multiple frameworks in the
+# same server instance and it is recommended. The security.yml will be loaded
+# if swagger-security.yml cannot be found for backward compatibility and it
+# might be removed in the next major release.
 ---
 # Enable JWT verification flag.
 enableVerifyJwt: true
