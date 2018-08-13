@@ -93,7 +93,7 @@ public class RequestValidator {
         }
 
         if (requestBody == null) {
-            if (specBody != null && specBody.getRequired()) {
+            if (specBody.getRequired() != null && specBody.getRequired()) {
                 if(BodyHandler.config.isEnabled()) {
                     // BodyHandler is enable and there is no error returned, that means the request body is empty. This is an validation error.
                     return new Status(VALIDATOR_REQUEST_BODY_MISSING, openApiOperation.getMethod(), openApiOperation.getPathString().original());
