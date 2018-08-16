@@ -33,11 +33,17 @@ import java.util.Optional;
  * This class load and cache openapi.json in a static block so that it can be
  * shared by security for scope validation and validator for schema validation
  *
+ * This handler supports openapi.yml, openapi.yaml and openapi.json and above
+ * is the loading sequence.
+ *
  * @author Steve Hu
  */
 public class OpenApiHelper {
 
-    static final String OPENAPI_CONFIG = "openapi.json";
+    static final String OPENAPI_YML_CONFIG = "openapi.yml";
+    static final String OPENAPI_YAML_CONFIG = "openapi.yaml";
+    static final String OPENAPI_JSON_CONFIG = "openapi.json";
+
     static final Logger logger = LoggerFactory.getLogger(OpenApiHelper.class);
 
     public static OpenApi3 openApi3;
@@ -46,7 +52,15 @@ public class OpenApiHelper {
 
     static {
         try {
-            openApi3 = (OpenApi3) new OpenApiParser().parse(Config.getInstance().getStringFromFile(OPENAPI_CONFIG), new URL("https://oas.lightapi.net/"));
+            // first try to load the specification into a string regardless it is in YAML or JSON.
+            String spec = Config.getInstance().getStringFromFile(OPENAPI_YML_CONFIG);
+            if(spec == null) {
+                spec = Config.getInstance().getStringFromFile(OPENAPI_YAML_CONFIG);
+                if(spec == null) {
+                    spec = Config.getInstance().getStringFromFile(OPENAPI_JSON_CONFIG);
+                }
+            }
+            openApi3 = (OpenApi3) new OpenApiParser().parse(spec, new URL("https://oas.lightapi.net/"));
         } catch (MalformedURLException e) {
             logger.error("MalformedURLException", e);
         }
