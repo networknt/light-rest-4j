@@ -1,5 +1,23 @@
 # Change Log
 
+## [1.5.18](https://github.com/networknt/light-rest-4j/tree/1.5.18) (2018-08-16)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.17...1.5.18)
+
+**Closed issues:**
+
+- Fix issue causing null pointer exception when `required` field missing from `requestBody` [\#48](https://github.com/networknt/light-rest-4j/issues/48)
+- flatten the config files into the same directory for k8s [\#47](https://github.com/networknt/light-rest-4j/issues/47)
+- support specific swagger or openapi security and validator configuration [\#45](https://github.com/networknt/light-rest-4j/issues/45)
+- upgrade to undertow 2.0.11.Final [\#44](https://github.com/networknt/light-rest-4j/issues/44)
+
+**Merged pull requests:**
+
+- Fixing issue causing required field to be required in requestBody [\#49](https://github.com/networknt/light-rest-4j/pull/49) ([NicholasAzar](https://github.com/NicholasAzar))
+- fixes \#45 support specific swagger or openapi security and validator … [\#46](https://github.com/networknt/light-rest-4j/pull/46) ([stevehu](https://github.com/stevehu))
+
+## [1.5.17](https://github.com/networknt/light-rest-4j/tree/1.5.17) (2018-07-15)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.16...1.5.17)
+
 ## [1.5.16](https://github.com/networknt/light-rest-4j/tree/1.5.16) (2018-06-19)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.15...1.5.16)
 
