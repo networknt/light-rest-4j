@@ -18,20 +18,24 @@ package com.networknt.security;
 
 import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
+import com.networknt.exception.ExpiredTokenException;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
-import com.networknt.status.Status;
-import com.networknt.swagger.*;
+import com.networknt.httpstring.HttpStringConstants;
+import com.networknt.swagger.ApiNormalisedPath;
+import com.networknt.swagger.NormalisedPath;
+import com.networknt.swagger.SwaggerHelper;
+import com.networknt.swagger.SwaggerOperation;
 import com.networknt.utility.Constants;
-import com.networknt.exception.ExpiredTokenException;
 import com.networknt.utility.ModuleRegistry;
-import io.swagger.models.*;
+import io.swagger.models.HttpMethod;
+import io.swagger.models.Operation;
+import io.swagger.models.Path;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderMap;
 import io.undertow.util.Headers;
-import io.undertow.util.HttpString;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.consumer.InvalidJwtException;
@@ -125,7 +129,7 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                     }
 
                     // is there a scope token
-                    String scopeHeader = headerMap.getFirst(Constants.SCOPE_TOKEN);
+                    String scopeHeader = headerMap.getFirst(HttpStringConstants.SCOPE_TOKEN);
                     String scopeJwt = JwtHelper.getJwtFromAuthorization(scopeHeader);
                     List<String> secondaryScopes = null;
                     if(scopeJwt != null) {

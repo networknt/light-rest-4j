@@ -18,16 +18,16 @@ package com.networknt.openapi;
 
 import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
+import com.networknt.exception.ExpiredTokenException;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
+import com.networknt.httpstring.HttpStringConstants;
 import com.networknt.oas.model.Operation;
 import com.networknt.oas.model.Path;
 import com.networknt.oas.model.SecurityParameter;
 import com.networknt.oas.model.SecurityRequirement;
 import com.networknt.security.JwtHelper;
-import com.networknt.status.Status;
 import com.networknt.utility.Constants;
-import com.networknt.exception.ExpiredTokenException;
 import com.networknt.utility.ModuleRegistry;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
@@ -124,7 +124,7 @@ public class JwtVerifyHandler implements MiddlewareHandler {
                     }
 
                     // is there a scope token
-                    String scopeHeader = headerMap.getFirst(Constants.SCOPE_TOKEN);
+                    String scopeHeader = headerMap.getFirst(HttpStringConstants.SCOPE_TOKEN);
                     String scopeJwt = JwtHelper.getJwtFromAuthorization(scopeHeader);
                     List<String> secondaryScopes = null;
                     if(scopeJwt != null) {
