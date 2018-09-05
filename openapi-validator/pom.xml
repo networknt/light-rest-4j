@@ -36,6 +36,14 @@
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
+            <artifactId>json-overlay</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>openapi-parser</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
             <artifactId>openapi-meta</artifactId>
         </dependency>
         <dependency>
