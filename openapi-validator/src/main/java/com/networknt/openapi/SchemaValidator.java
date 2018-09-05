@@ -19,7 +19,9 @@ package com.networknt.openapi;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.networknt.config.Config;
+import com.networknt.jsonoverlay.Overlay;
 import com.networknt.oas.model.OpenApi3;
+import com.networknt.oas.model.impl.OpenApi3Impl;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.ValidationMessage;
@@ -64,7 +66,7 @@ public class SchemaValidator {
      */
     public SchemaValidator(final OpenApi3 api) {
         this.api = api;
-        this.jsonNode = api.toJson().get("components");
+        this.jsonNode = Overlay.toJson((OpenApi3Impl)api).get("components");
     }
 
     /**

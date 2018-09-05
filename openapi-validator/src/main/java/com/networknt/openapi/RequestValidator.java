@@ -17,8 +17,12 @@
 package com.networknt.openapi;
 
 import com.networknt.body.BodyHandler;
+import com.networknt.jsonoverlay.Overlay;
 import com.networknt.oas.model.Parameter;
 import com.networknt.oas.model.RequestBody;
+import com.networknt.oas.model.impl.ParameterImpl;
+import com.networknt.oas.model.impl.RequestBodyImpl;
+import com.networknt.oas.model.impl.SchemaImpl;
 import com.networknt.status.Status;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderValues;
@@ -88,7 +92,7 @@ public class RequestValidator {
             return new Status(VALIDATOR_REQUEST_BODY_UNEXPECTED, openApiOperation.getMethod(), openApiOperation.getPathString().original());
         }
 
-        if (specBody == null || !specBody.isPresent()) {
+        if (specBody == null || !Overlay.isPresent((RequestBodyImpl)specBody)) {
             return null;
         }
 
@@ -105,7 +109,7 @@ public class RequestValidator {
             }
             return null;
         }
-        return schemaValidator.validate(requestBody, specBody.getContentMediaType("application/json").getSchema().toJson());
+        return schemaValidator.validate(requestBody, Overlay.toJson((SchemaImpl)specBody.getContentMediaType("application/json").getSchema()));
     }
 
     private Status validatePathParameters(final NormalisedPath requestPath, final OpenApiOperation openApiOperation) {
@@ -125,7 +129,7 @@ public class RequestValidator {
                     .findFirst();
 
             if (parameter.isPresent()) {
-                return schemaValidator.validate(paramValue, parameter.get().toJson());
+                return schemaValidator.validate(paramValue, Overlay.toJson((ParameterImpl)parameter.get()));
             }
         }
         return status;
@@ -163,7 +167,7 @@ public class RequestValidator {
 
             Optional<Status> optional = queryParameterValues
                     .stream()
-                    .map((v) -> schemaValidator.validate(v, queryParameter.toJson()))
+                    .map((v) -> schemaValidator.validate(v, Overlay.toJson((ParameterImpl)queryParameter)))
                     .filter(s -> s != null)
                     .findFirst();
             if(optional.isPresent()) {
@@ -218,7 +222,7 @@ public class RequestValidator {
 
             Optional<Status> optional = headerValues
                     .stream()
-                    .map((v) -> schemaValidator.validate(v, headerParameter.toJson()))
+                    .map((v) -> schemaValidator.validate(v, Overlay.toJson((ParameterImpl)headerParameter)))
                     .filter(s -> s != null)
                     .findFirst();
             if(optional.isPresent()) {
