@@ -129,7 +129,7 @@ public class RequestValidator {
                     .findFirst();
 
             if (parameter.isPresent()) {
-                return schemaValidator.validate(paramValue, Overlay.toJson((ParameterImpl)parameter.get()));
+                return schemaValidator.validate(paramValue, Overlay.toJson((SchemaImpl)(parameter.get().getSchema())));
             }
         }
         return status;
@@ -167,7 +167,7 @@ public class RequestValidator {
 
             Optional<Status> optional = queryParameterValues
                     .stream()
-                    .map((v) -> schemaValidator.validate(v, Overlay.toJson((ParameterImpl)queryParameter)))
+                    .map((v) -> schemaValidator.validate(v, Overlay.toJson((SchemaImpl)queryParameter.getSchema())))
                     .filter(s -> s != null)
                     .findFirst();
             if(optional.isPresent()) {
@@ -222,7 +222,7 @@ public class RequestValidator {
 
             Optional<Status> optional = headerValues
                     .stream()
-                    .map((v) -> schemaValidator.validate(v, Overlay.toJson((ParameterImpl)headerParameter)))
+                    .map((v) -> schemaValidator.validate(v, Overlay.toJson((SchemaImpl)headerParameter.getSchema())))
                     .filter(s -> s != null)
                     .findFirst();
             if(optional.isPresent()) {
