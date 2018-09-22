@@ -5,7 +5,7 @@
 
 **Closed issues:**
 
-- openapi-validator doesn't validate enum values from the specification [\#56](https://github.com/networknt/light-rest-4j/issues/56)
+- openapi-validator doesnot validate enum values from the specification [\#56](https://github.com/networknt/light-rest-4j/issues/56)
 - upgrade to the new open-parser api for openapi-validator [\#54](https://github.com/networknt/light-rest-4j/issues/54)
 - switch to http-string module for HttpString headers constants [\#53](https://github.com/networknt/light-rest-4j/issues/53)
 - Error parsing openapi spec when objects depend on eachother [\#52](https://github.com/networknt/light-rest-4j/issues/52)
@@ -20,7 +20,7 @@
 
 **Closed issues:**
 
-- Fix issue causing null pointer exception when `required` field missing from `requestBody` [\#48](https://github.com/networknt/light-rest-4j/issues/48)
+- Fix issue causing null pointer exception when required field missing from requestBody [\#48](https://github.com/networknt/light-rest-4j/issues/48)
 - flatten the config files into the same directory for k8s [\#47](https://github.com/networknt/light-rest-4j/issues/47)
 - support specific swagger or openapi security and validator configuration [\#45](https://github.com/networknt/light-rest-4j/issues/45)
 - upgrade to undertow 2.0.11.Final [\#44](https://github.com/networknt/light-rest-4j/issues/44)
