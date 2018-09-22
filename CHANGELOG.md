@@ -1,5 +1,20 @@
 # Change Log
 
+## [1.5.19](https://github.com/networknt/light-rest-4j/tree/1.5.19) (2018-09-22)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.18...1.5.19)
+
+**Closed issues:**
+
+- openapi-validator doesn't validate enum values from the specification [\#56](https://github.com/networknt/light-rest-4j/issues/56)
+- upgrade to the new open-parser api for openapi-validator [\#54](https://github.com/networknt/light-rest-4j/issues/54)
+- switch to http-string module for HttpString headers constants [\#53](https://github.com/networknt/light-rest-4j/issues/53)
+- Error parsing openapi spec when objects depend on eachother [\#52](https://github.com/networknt/light-rest-4j/issues/52)
+- support YAML format for the specification in OpenAPI framework [\#51](https://github.com/networknt/light-rest-4j/issues/51)
+
+**Merged pull requests:**
+
+- Implements `OpenApiEndpointSource` and `SwaggerEndpointSource` which … [\#55](https://github.com/networknt/light-rest-4j/pull/55) ([logi](https://github.com/logi))
+
 ## [1.5.18](https://github.com/networknt/light-rest-4j/tree/1.5.18) (2018-08-16)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.17...1.5.18)
 
