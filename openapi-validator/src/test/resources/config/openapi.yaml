@@ -128,10 +128,7 @@ paths:
           required: true
           description: The id of the pet to delete oneOf test issue 58
           schema:
-            oneOf:
-            - type: integer
-              format: int64
-            - type: string
+            type: string
         - name: key
           in: header
           required: true
