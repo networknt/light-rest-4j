@@ -82,6 +82,7 @@ public class ValidatorHandler implements MiddlewareHandler {
         Status status = requestValidator.validateRequest(requestPath, exchange, swaggerOperation);
         if(status != null) {
             exchange.setStatusCode(status.getStatusCode());
+            status.setDescription(status.getDescription().replaceAll("\\\\", "\\\\\\\\"));
             exchange.getResponseSender().send(status.toString());
             if(config.isLogError()) logger.error("ValidationError:" + status.toString());
             return;
