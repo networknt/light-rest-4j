@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.5.20](https://github.com/networknt/light-rest-4j/tree/1.5.20) (2018-10-05)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.19...1.5.20)
+
+**Closed issues:**
+
+- Handler needs to properly escape characters in the Status description [\#60](https://github.com/networknt/light-rest-4j/issues/60)
+- update default validator.yml and security.yml to framework specific [\#59](https://github.com/networknt/light-rest-4j/issues/59)
+- schema validation does not work for boolean query parameter [\#57](https://github.com/networknt/light-rest-4j/issues/57)
+
 ## [1.5.19](https://github.com/networknt/light-rest-4j/tree/1.5.19) (2018-09-22)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.18...1.5.19)
 
