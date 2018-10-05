@@ -82,6 +82,7 @@ public class ValidatorHandler implements MiddlewareHandler {
         Status status = requestValidator.validateRequest(requestPath, exchange, swaggerOperation);
         if(status != null) {
             exchange.setStatusCode(status.getStatusCode());
+            status.setDescription(status.getDescription().replaceAll("\\\\", "\\\\\\\\"));
             exchange.getResponseSender().send(status.toString());
             if(config.isLogError()) logger.error("ValidationError:" + status.toString());
             return;
@@ -108,7 +109,7 @@ public class ValidatorHandler implements MiddlewareHandler {
 
     @Override
     public void register() {
-        ModuleRegistry.registerModule(ValidatorHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(CONFIG_NAME), null);
+        ModuleRegistry.registerModule(ValidatorHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(SWAGGER_CONFIG_NAME), null);
     }
 
 
