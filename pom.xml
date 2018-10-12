@@ -64,7 +64,9 @@
     </distributionManagement>
 
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>11</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <version.light-4j>1.5.21</version.light-4j>
         <version.json-overlay>1.5.21</version.json-overlay>
@@ -76,7 +78,7 @@
         <version.encoder>1.2.1</version.encoder>
         <version.logback>1.2.3</version.logback>
         <version.junit>4.12</version.junit>
-        <version.mockito>2.10.0</version.mockito>
+        <version.mockito>2.23.0</version.mockito>
         <version.undertow>2.0.11.Final</version.undertow>
         <version.swagger-parser>1.0.34</version.swagger-parser>
         <version.swagger-core>1.5.18</version.swagger-core>
@@ -440,7 +442,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.4</version>
+                <version>3.0.1</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
@@ -495,34 +497,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.6.1</version>
+                <version>3.8.0</version>
                 <configuration>
-                    <compilerId>javac-with-errorprone</compilerId>
-                    <showWarnings>true</showWarnings>
-                    <showDeprecation>true</showDeprecation>
-                    <compilerArgs>
-                        <!-- add command line validation here -->
-                    </compilerArgs>
-                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                    <!-- maven-compiler-plugin defaults to targeting Java 5, but our javac
-                         only supports >=6 -->
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <release>11</release>
                 </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.codehaus.plexus</groupId>
-                        <artifactId>plexus-compiler-javac-errorprone</artifactId>
-                        <version>2.8</version>
-                    </dependency>
-                    <!-- override plexus-compiler-javac-errorprone's dependency on
-                         Error Prone with the latest version -->
-                    <dependency>
-                        <groupId>com.google.errorprone</groupId>
-                        <artifactId>error_prone_core</artifactId>
-                        <version>2.0.15</version>
-                    </dependency>
-                </dependencies>
             </plugin>
         </plugins>
         <pluginManagement>
