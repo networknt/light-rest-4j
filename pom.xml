@@ -93,6 +93,7 @@
         <module>openapi-meta</module>
         <module>openapi-validator</module>
         <module>openapi-security</module>
+        <module>specification</module>
     </modules>
 
     <dependencyManagement>
