@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.5.21](https://github.com/networknt/light-rest-4j/tree/1.5.21) (2018-10-26)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.20...1.5.21)
+
+**Implemented enhancements:**
+
+- add an endpoint to serve swagger-ui for manual testing [\#30](https://github.com/networknt/light-rest-4j/issues/30)
+
 ## [1.5.20](https://github.com/networknt/light-rest-4j/tree/1.5.20) (2018-10-05)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.19...1.5.20)
 
