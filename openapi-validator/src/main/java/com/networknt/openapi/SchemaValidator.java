@@ -25,7 +25,7 @@ import com.networknt.oas.model.impl.OpenApi3Impl;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.ValidationMessage;
-import com.networknt.schema.url.ValidatorConfig;
+import com.networknt.schema.ValidatorConfig;
 import com.networknt.status.Status;
 
 import java.util.Set;

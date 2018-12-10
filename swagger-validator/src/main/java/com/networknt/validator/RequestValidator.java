@@ -17,6 +17,7 @@
 package com.networknt.validator;
 
 import com.networknt.body.BodyHandler;
+import com.networknt.schema.ValidatorConfig;
 import com.networknt.status.Status;
 import com.networknt.swagger.NormalisedPath;
 import com.networknt.swagger.SwaggerOperation;
@@ -28,7 +29,8 @@ import io.undertow.util.HeaderValues;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
@@ -111,6 +113,8 @@ public class RequestValidator {
             }
             return null;
         }
+        ValidatorConfig config = new ValidatorConfig();
+        config.setTypeLoose(false);
         return schemaValidator.validate(requestBody, ((BodyParameter)bodyParameter.get()).getSchema());
     }
 

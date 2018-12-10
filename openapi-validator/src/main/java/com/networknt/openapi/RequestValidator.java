@@ -22,7 +22,7 @@ import com.networknt.oas.model.Parameter;
 import com.networknt.oas.model.RequestBody;
 import com.networknt.oas.model.impl.RequestBodyImpl;
 import com.networknt.oas.model.impl.SchemaImpl;
-import com.networknt.schema.url.ValidatorConfig;
+import com.networknt.schema.ValidatorConfig;
 import com.networknt.status.Status;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderValues;
