@@ -87,6 +87,7 @@ public class SchemaValidator {
      *
      * @param value The value to validate
      * @param schema The model schema to validate the value against
+     * @param config The config model for some validator
      *
      * @return A status containing error code and description
      */
