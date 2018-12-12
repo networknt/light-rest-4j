@@ -19,10 +19,10 @@ package com.networknt.validator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.networknt.config.Config;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.ValidatorConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.Util;
 import io.swagger.models.Model;
@@ -79,7 +79,7 @@ public class SchemaValidator {
      * @return A status containing error code and description
      */
     public Status validate(final Object value, final Property schema) {
-        return doValidate(value, schema);
+        return doValidate(value, schema, null);
     }
 
     /**
@@ -87,14 +87,19 @@ public class SchemaValidator {
      *
      * @param value The value to validate
      * @param schema The model schema to validate the value against
+     * @param config The config model for some validator
      *
      * @return A status containing error code and description
      */
-    public Status validate(final Object value, final Model schema) {
-        return doValidate(value, schema);
+    public Status validate(final Object value, final Model schema, ValidatorConfig config) {
+        return doValidate(value, schema, config);
     }
 
-    private Status doValidate(final Object value, final Object schema) {
+    public Status validate(final Object value, final Model schema) {
+        return doValidate(value, schema, null);
+    }
+
+    private Status doValidate(final Object value, final Object schema, ValidatorConfig config) {
         requireNonNull(schema, "A schema is required");
 
         Status status = null;
@@ -109,7 +114,7 @@ public class SchemaValidator {
                 ((ObjectNode)schemaObject).set(DEFINITIONS_FIELD, this.definitions);
             }
 
-            JsonSchema jsonSchema = JsonSchemaFactory.getInstance().getSchema(schemaObject);
+            JsonSchema jsonSchema = JsonSchemaFactory.getInstance().getSchema(schemaObject, config);
 
             final JsonNode content = Json.mapper().valueToTree(value);
             processingReport = jsonSchema.validate(content);

@@ -21,11 +21,11 @@ package com.networknt.openapi;
  *
  * @author Steve Hu
  */
-public class ValidatorConfig {
+public class ValidatorHandlerConfig {
     boolean enabled;
     boolean logError;
 
-    public ValidatorConfig() {
+    public ValidatorHandlerConfig() {
     }
 
     public boolean isEnabled() {
