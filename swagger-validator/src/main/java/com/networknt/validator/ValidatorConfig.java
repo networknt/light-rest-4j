@@ -16,16 +16,18 @@
 
 package com.networknt.validator;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Validator configuration class that maps to validator.yml properties
  *
  * @author Steve Hu
  */
-public class ValidatorHandlerConfig {
+public class ValidatorConfig {
     boolean enabled;
     boolean logError;
 
-    public ValidatorHandlerConfig() {
+    public ValidatorConfig() {
     }
 
     public boolean isEnabled() {

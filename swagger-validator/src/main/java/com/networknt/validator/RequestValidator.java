@@ -17,7 +17,7 @@
 package com.networknt.validator;
 
 import com.networknt.body.BodyHandler;
-import com.networknt.schema.ValidatorConfig;
+import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.status.Status;
 import com.networknt.swagger.NormalisedPath;
 import com.networknt.swagger.SwaggerOperation;
@@ -113,7 +113,7 @@ public class RequestValidator {
             }
             return null;
         }
-        ValidatorConfig config = new ValidatorConfig();
+        SchemaValidatorsConfig config = new SchemaValidatorsConfig();
         config.setTypeLoose(false);
         return schemaValidator.validate(requestBody, ((BodyParameter)bodyParameter.get()).getSchema());
     }

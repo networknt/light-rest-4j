@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.ValidationMessage;
-import com.networknt.schema.ValidatorConfig;
+import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.Util;
 import io.swagger.models.Model;
@@ -91,7 +91,7 @@ public class SchemaValidator {
      *
      * @return A status containing error code and description
      */
-    public Status validate(final Object value, final Model schema, ValidatorConfig config) {
+    public Status validate(final Object value, final Model schema, SchemaValidatorsConfig config) {
         return doValidate(value, schema, config);
     }
 
@@ -99,7 +99,7 @@ public class SchemaValidator {
         return doValidate(value, schema, null);
     }
 
-    private Status doValidate(final Object value, final Object schema, ValidatorConfig config) {
+    private Status doValidate(final Object value, final Object schema, SchemaValidatorsConfig config) {
         requireNonNull(schema, "A schema is required");
 
         Status status = null;
