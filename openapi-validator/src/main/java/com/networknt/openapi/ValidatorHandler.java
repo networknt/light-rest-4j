@@ -47,11 +47,11 @@ public class ValidatorHandler implements MiddlewareHandler {
 
     static final Logger logger = LoggerFactory.getLogger(ValidatorHandler.class);
 
-    static ValidatorHandlerConfig config;
+    static ValidatorConfig config;
     static {
-        config = (ValidatorHandlerConfig)Config.getInstance().getJsonObjectConfig(OPENAPI_CONFIG_NAME, ValidatorHandlerConfig.class);
+        config = (ValidatorConfig)Config.getInstance().getJsonObjectConfig(OPENAPI_CONFIG_NAME, ValidatorConfig.class);
         if(config == null) {
-            config = (ValidatorHandlerConfig)Config.getInstance().getJsonObjectConfig(CONFIG_NAME, ValidatorHandlerConfig.class);
+            config = (ValidatorConfig)Config.getInstance().getJsonObjectConfig(CONFIG_NAME, ValidatorConfig.class);
         }
     }
 
