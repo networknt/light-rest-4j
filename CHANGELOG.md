@@ -1,5 +1,17 @@
 # Change Log
 
+## [1.5.24](https://github.com/networknt/light-rest-4j/tree/1.5.24) (2018-12-15)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.23...1.5.24)
+
+**Fixed bugs:**
+
+- OpenAPI validation does not fail when incorrect types are passed in the Request Body [\#64](https://github.com/networknt/light-rest-4j/issues/64)
+
+**Merged pull requests:**
+
+- made changes based on comments of https://github.com/networknt/light-rest-4j/pull/65 [\#66](https://github.com/networknt/light-rest-4j/pull/66) ([BalloonWen](https://github.com/BalloonWen))
+- Fixed \#64 [\#65](https://github.com/networknt/light-rest-4j/pull/65) ([BalloonWen](https://github.com/BalloonWen))
+
 ## [1.5.23](https://github.com/networknt/light-rest-4j/tree/1.5.23) (2018-12-01)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.22...1.5.23)
 
