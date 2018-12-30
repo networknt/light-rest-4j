@@ -24,11 +24,10 @@ import com.networknt.oas.model.OpenApi3;
 import com.networknt.oas.model.impl.OpenApi3Impl;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.schema.ValidationMessage;
 import com.networknt.status.Status;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
@@ -74,15 +73,19 @@ public class SchemaValidator {
      *
      * @param value The value to validate
      * @param schema The property schema to validate the value against
+     * @param config The config model for some validator
      *
      * @return A status containing error code and description
      */
-    public Status validate(final Object value, final JsonNode schema) {
-        return doValidate(value, schema);
+    public Status validate(final Object value, final JsonNode schema, SchemaValidatorsConfig config) {
+        return doValidate(value, schema, config);
     }
 
+    public Status validate(final Object value, final JsonNode schema) {
+        return doValidate(value, schema, null);
+    }
 
-    private Status doValidate(final Object value, final JsonNode schema) {
+    private Status doValidate(final Object value, final JsonNode schema, SchemaValidatorsConfig config) {
         requireNonNull(schema, "A schema is required");
 
         Status status = null;
@@ -91,7 +94,7 @@ public class SchemaValidator {
             if(jsonNode != null) {
                 ((ObjectNode)schema).set(COMPONENTS_FIELD, jsonNode);
             }
-            JsonSchema jsonSchema = JsonSchemaFactory.getInstance().getSchema(schema);
+            JsonSchema jsonSchema = JsonSchemaFactory.getInstance().getSchema(schema, config);
             final JsonNode content = Config.getInstance().getMapper().valueToTree(value);
             processingReport = jsonSchema.validate(content);
         } catch (Exception e) {

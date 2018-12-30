@@ -18,7 +18,6 @@ package com.networknt.openapi;
 
 import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
-import com.networknt.exception.ExpiredTokenException;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.httpstring.HttpStringConstants;
@@ -27,6 +26,7 @@ import com.networknt.oas.model.Path;
 import com.networknt.oas.model.SecurityParameter;
 import com.networknt.oas.model.SecurityRequirement;
 import com.networknt.security.JwtHelper;
+import com.networknt.status.exception.ExpiredTokenException;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
 import io.undertow.Handlers;

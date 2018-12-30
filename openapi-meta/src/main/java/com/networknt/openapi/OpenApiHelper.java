@@ -100,14 +100,18 @@ public class OpenApiHelper {
     }
 
     private static String getBasePath() {
+
         String basePath = "";
-        Server server = openApi3.getServer(0);
-        String url = server.getUrl();
-        if(url != null) {
+        String url = null;
+        if (openApi3.getServers().size() > 0) {
+            Server server = openApi3.getServer(0);
+            url = server.getUrl();
+        }
+        if (url != null) {
             // find "://" index
             int protocolIndex = url.indexOf("://");
             int pathIndex = url.indexOf('/', protocolIndex + 3);
-            if(pathIndex > 0) {
+            if (pathIndex > 0) {
                 basePath = url.substring(pathIndex);
             }
         }

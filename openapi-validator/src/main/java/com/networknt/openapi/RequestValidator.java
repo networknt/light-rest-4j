@@ -20,16 +20,17 @@ import com.networknt.body.BodyHandler;
 import com.networknt.jsonoverlay.Overlay;
 import com.networknt.oas.model.Parameter;
 import com.networknt.oas.model.RequestBody;
-import com.networknt.oas.model.impl.ParameterImpl;
 import com.networknt.oas.model.impl.RequestBodyImpl;
 import com.networknt.oas.model.impl.SchemaImpl;
+import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.status.Status;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderValues;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
@@ -109,7 +110,9 @@ public class RequestValidator {
             }
             return null;
         }
-        return schemaValidator.validate(requestBody, Overlay.toJson((SchemaImpl)specBody.getContentMediaType("application/json").getSchema()));
+        SchemaValidatorsConfig config = new SchemaValidatorsConfig();
+        config.setTypeLoose(false);
+        return schemaValidator.validate(requestBody, Overlay.toJson((SchemaImpl)specBody.getContentMediaType("application/json").getSchema()), config);
     }
 
     private Status validatePathParameters(final NormalisedPath requestPath, final OpenApiOperation openApiOperation) {

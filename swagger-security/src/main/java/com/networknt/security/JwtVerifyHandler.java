@@ -18,10 +18,10 @@ package com.networknt.security;
 
 import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
-import com.networknt.exception.ExpiredTokenException;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.httpstring.HttpStringConstants;
+import com.networknt.status.exception.ExpiredTokenException;
 import com.networknt.swagger.ApiNormalisedPath;
 import com.networknt.swagger.NormalisedPath;
 import com.networknt.swagger.SwaggerHelper;

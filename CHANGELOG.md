@@ -1,5 +1,38 @@
 # Change Log
 
+## [1.5.24](https://github.com/networknt/light-rest-4j/tree/1.5.24) (2018-12-15)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.23...1.5.24)
+
+**Fixed bugs:**
+
+- OpenAPI validation does not fail when incorrect types are passed in the Request Body [\#64](https://github.com/networknt/light-rest-4j/issues/64)
+
+**Merged pull requests:**
+
+- made changes based on comments of https://github.com/networknt/light-rest-4j/pull/65 [\#66](https://github.com/networknt/light-rest-4j/pull/66) ([BalloonWen](https://github.com/BalloonWen))
+- Fixed \#64 [\#65](https://github.com/networknt/light-rest-4j/pull/65) ([BalloonWen](https://github.com/BalloonWen))
+
+## [1.5.23](https://github.com/networknt/light-rest-4j/tree/1.5.23) (2018-12-01)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.22...1.5.23)
+
+**Merged pull requests:**
+
+- OpenApiHelper class will not fail when the optional servers section is not provided [\#63](https://github.com/networknt/light-rest-4j/pull/63) ([zabooma](https://github.com/zabooma))
+
+## [1.5.22](https://github.com/networknt/light-rest-4j/tree/1.5.22) (2018-11-10)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.21...1.5.22)
+
+**Closed issues:**
+
+- Configured class: com.foo.reportListener.handler.SpecYamlGetHandler has not been found [\#61](https://github.com/networknt/light-rest-4j/issues/61)
+
+## [1.5.21](https://github.com/networknt/light-rest-4j/tree/1.5.21) (2018-10-26)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.20...1.5.21)
+
+**Implemented enhancements:**
+
+- add an endpoint to serve swagger-ui for manual testing [\#30](https://github.com/networknt/light-rest-4j/issues/30)
+
 ## [1.5.20](https://github.com/networknt/light-rest-4j/tree/1.5.20) (2018-10-05)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.19...1.5.20)
 
