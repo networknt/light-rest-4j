@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.0.0-BETA2](https://github.com/networknt/light-rest-4j/tree/2.0.0-BETA2) (2018-12-30)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.25...2.0.0-BETA2)
+
+## [1.5.25](https://github.com/networknt/light-rest-4j/tree/1.5.25) (2018-12-24)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.24...1.5.25)
+
 ## [1.5.24](https://github.com/networknt/light-rest-4j/tree/1.5.24) (2018-12-15)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.23...1.5.24)
 
