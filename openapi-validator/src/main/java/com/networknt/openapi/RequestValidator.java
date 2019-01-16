@@ -29,6 +29,7 @@ import io.undertow.util.HeaderValues;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URLDecoder;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -123,7 +124,16 @@ public class RequestValidator {
             }
 
             final String paramName = openApiOperation.getPathString().paramName(i);
-            final String paramValue = requestPath.part(i);
+
+            String decodeParamValue = null;
+
+            try {
+                decodeParamValue = URLDecoder.decode(requestPath.part(i), "UTF-8");
+            } catch (Exception e) {
+                logger.info("Path parameter cannot be decoded, it will be used directly");
+            }
+
+            final String paramValue = (decodeParamValue == null) ? requestPath.part(i) : decodeParamValue;
 
             final Optional<Parameter> parameter = openApiOperation.getOperation().getParameters()
                     .stream()
@@ -166,13 +176,19 @@ public class RequestValidator {
             if(queryParameter.getRequired()) {
                 return new Status(VALIDATOR_REQUEST_PARAMETER_QUERY_MISSING, queryParameter.getName(), openApiOperation.getPathString().original());
             }
-        } else {
+        } else if (queryParameterValues.size() < 2) {
 
             Optional<Status> optional = queryParameterValues
                     .stream()
                     .map((v) -> schemaValidator.validate(v, Overlay.toJson((SchemaImpl)queryParameter.getSchema())))
                     .filter(s -> s != null)
                     .findFirst();
+            if(optional.isPresent()) {
+                return optional.get();
+            }
+        } else {
+            Status status = schemaValidator.validate(queryParameterValues, Overlay.toJson((SchemaImpl)queryParameter.getSchema()));
+            Optional<Status> optional = Optional.ofNullable(status);
             if(optional.isPresent()) {
                 return optional.get();
             }
