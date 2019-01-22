@@ -29,6 +29,7 @@ import io.undertow.util.HeaderValues;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URLDecoder;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -123,7 +124,13 @@ public class RequestValidator {
             }
 
             final String paramName = openApiOperation.getPathString().paramName(i);
-            final String paramValue = requestPath.part(i);
+
+            String paramValue = requestPath.part(i); // If it can't be UTF-8 decoded, use directly.
+            try {
+                paramValue = URLDecoder.decode(requestPath.part(i), "UTF-8");
+            } catch (Exception e) {
+                logger.info("Path parameter cannot be decoded, it will be used directly");
+            }
 
             final Optional<Parameter> parameter = openApiOperation.getOperation().getParameters()
                     .stream()
@@ -166,13 +173,25 @@ public class RequestValidator {
             if(queryParameter.getRequired()) {
                 return new Status(VALIDATOR_REQUEST_PARAMETER_QUERY_MISSING, queryParameter.getName(), openApiOperation.getPathString().original());
             }
-        } else {
+        // Validate the value contains by queryParameterValue, if it is the only elements inside the array deque.
+        // Since if the queryParameterValue's length smaller than 2, it means the query parameter is not an array,
+        // thus not necessary to apply array validation to this value.
+        } else if (queryParameterValues.size() < 2) {
 
             Optional<Status> optional = queryParameterValues
                     .stream()
                     .map((v) -> schemaValidator.validate(v, Overlay.toJson((SchemaImpl)queryParameter.getSchema())))
                     .filter(s -> s != null)
                     .findFirst();
+            if(optional.isPresent()) {
+                return optional.get();
+            }
+        // Validate the queryParameterValue directly instead of validating its elements, if the length of this array deque larger than 2.
+        // Since if the queryParameterValue's length larger than 2, it means the query parameter is an array.
+        // thus array validation should be applied, for example, validate the length of the array.
+        } else {
+            Status status = schemaValidator.validate(queryParameterValues, Overlay.toJson((SchemaImpl)queryParameter.getSchema()));
+            Optional<Status> optional = Optional.ofNullable(status);
             if(optional.isPresent()) {
                 return optional.get();
             }
