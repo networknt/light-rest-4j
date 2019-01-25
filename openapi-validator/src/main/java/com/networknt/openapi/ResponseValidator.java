@@ -21,7 +21,7 @@ import java.util.Optional;
 public class ResponseValidator {
     private final SchemaValidator schemaValidator;
     private final SchemaValidatorsConfig config;
-    private static final String VALIDATOR_RESPONSE_CONTENT_UNEXPECTED = "ERR12108";
+    private static final String VALIDATOR_RESPONSE_CONTENT_UNEXPECTED = "ERR11018";
     private static final String JSON_MEDIA_TYPE = "application/json";
     private static final String GOOD_STATUS_CODE = "200";
     private static final String DEFAULT_STATUS_CODE = "default";
