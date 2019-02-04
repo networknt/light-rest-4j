@@ -230,7 +230,7 @@ public class ValidatorHandlerTest {
                     request.getRequestHeaders().put(Headers.CONTENT_TYPE, "application/json");
                     request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
                     request.getRequestHeaders().put(new HttpString("accessId"), "001");
-                    request.getRequestHeaders().put(new HttpString("requestId"), "100");
+                    request.getRequestHeaders().put(new HttpString("requestId"), "64");
                     connection.sendRequest(request, client.createClientCallback(reference, latch, post));
                 }
             });
