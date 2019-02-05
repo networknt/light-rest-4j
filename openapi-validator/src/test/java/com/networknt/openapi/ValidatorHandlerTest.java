@@ -230,7 +230,7 @@ public class ValidatorHandlerTest {
                     request.getRequestHeaders().put(Headers.CONTENT_TYPE, "application/json");
                     request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
                     request.getRequestHeaders().put(new HttpString("accessId"), "001");
-                    request.getRequestHeaders().put(new HttpString("requestId"), "100");
+                    request.getRequestHeaders().put(new HttpString("requestId"), "64");
                     connection.sendRequest(request, client.createClientCallback(reference, latch, post));
                 }
             });
@@ -248,6 +248,50 @@ public class ValidatorHandlerTest {
         if(statusCode == 200) {
             Assert.assertNotNull(body);
             Assert.assertEquals("addPet", body);
+        }
+    }
+
+    @Test
+    public void testInvalidMaximumHeaders() throws Exception {
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:8080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+
+        try {
+            String post = "{\"id\":0,\"category\":{\"id\":0,\"name\":\"string\"},\"name\":\"doggie\",\"photoUrls\":[\"string\"],\"tags\":[{\"id\":0,\"name\":\"string\"}],\"status\":\"available\"}";
+            connection.getIoThread().execute(new Runnable() {
+                @Override
+                public void run() {
+                    final ClientRequest request = new ClientRequest().setMethod(Methods.POST).setPath("/v1/pets");
+                    request.getRequestHeaders().put(Headers.HOST, "localhost");
+                    request.getRequestHeaders().put(Headers.CONTENT_TYPE, "application/json");
+                    request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
+                    request.getRequestHeaders().put(new HttpString("accessId"), "001");
+                    request.getRequestHeaders().put(new HttpString("requestId"), "65");  // the maximum for the request is 64 in the spec.
+                    connection.sendRequest(request, client.createClientCallback(reference, latch, post));
+                }
+            });
+
+            latch.await(10, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            logger.error("IOException: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
+        Assert.assertEquals(400, statusCode);
+        if(statusCode == 400) {
+            Status status = Config.getInstance().getMapper().readValue(body, Status.class);
+            Assert.assertNotNull(status);
+            Assert.assertEquals("ERR11004", status.getCode());
         }
     }
 
