@@ -1,5 +1,16 @@
 # Change Log
 
+## [1.5.30](https://github.com/networknt/light-rest-4j/tree/1.5.30) (2019-02-21)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.29...1.5.30)
+
+**Implemented enhancements:**
+
+- Validate a REST API response against the Swagger/OpenAPI spec [\#27](https://github.com/networknt/light-rest-4j/issues/27)
+
+**Closed issues:**
+
+- openapi helper throws an exception when servers not defined [\#62](https://github.com/networknt/light-rest-4j/issues/62)
+
 ## [1.5.29](https://github.com/networknt/light-rest-4j/tree/1.5.29) (2019-02-16)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.28...1.5.29)
 
