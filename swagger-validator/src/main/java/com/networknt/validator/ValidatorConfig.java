@@ -13,10 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.networknt.validator;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Validator configuration class that maps to validator.yml properties
@@ -26,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class ValidatorConfig {
     boolean enabled;
     boolean logError;
+    boolean skipBodyValidation = false;
 
     public ValidatorConfig() {
     }
@@ -41,4 +39,12 @@ public class ValidatorConfig {
     public boolean isLogError() { return logError; }
 
     public void setLogError(boolean logError) { this.logError = logError; }
+
+    public boolean isSkipBodyValidation() {
+        return skipBodyValidation;
+    }
+
+    public void setSkipBodyValidation(boolean skipBodyValidation) {
+        this.skipBodyValidation = skipBodyValidation;
+    }
 }
