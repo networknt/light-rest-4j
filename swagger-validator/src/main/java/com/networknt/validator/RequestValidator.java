@@ -82,6 +82,8 @@ public class RequestValidator {
         if(status != null) return status;
 
         Object body = exchange.getAttachment(BodyHandler.REQUEST_BODY);
+        // skip the body validation if body parser is not in the request chain.
+        if(body == null && ValidatorHandler.config.skipBodyValidation) return null;
         status = validateRequestBody(body, swaggerOperation);
 
         return status;
