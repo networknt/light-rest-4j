@@ -6,4 +6,4 @@ A RESTful API or service framework built on top of light-4j
 [Documentation](https://doc.networknt.com/style/light-rest-4j/) |
 [Contribution Guide](https://doc.networknt.com/contribute/) |
 
-[![Build Status](https://travis-ci.org/networknt/light-rest-4j.svg?branch=master)](https://travis-ci.org/networknt/light-rest-4j)
+[![Build Status](https://travis-ci.org/networknt/light-rest-4j.svg?branch=master)](https://travis-ci.org/networknt/light-rest-4j) [![codecov.io](https://codecov.io/github/networknt/light-rest-4j/coverage.svg?branch=master)](https://codecov.io/github/networknt/light-rest-4j?branch=master)
