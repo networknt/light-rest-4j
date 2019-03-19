@@ -1,5 +1,19 @@
 # Change Log
 
+## [1.5.32](https://github.com/networknt/light-rest-4j/tree/1.5.32) (2019-03-19)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.31...1.5.32)
+
+**Closed issues:**
+
+- skip body validation if body parser is not wired in the request chain [\#74](https://github.com/networknt/light-rest-4j/issues/74)
+
+**Merged pull requests:**
+
+- fixes \#74 skip body validation if body parser is not wired in the req… [\#75](https://github.com/networknt/light-rest-4j/pull/75) ([stevehu](https://github.com/stevehu))
+
+## [1.5.31](https://github.com/networknt/light-rest-4j/tree/1.5.31) (2019-02-21)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.30...1.5.31)
+
 ## [1.5.30](https://github.com/networknt/light-rest-4j/tree/1.5.30) (2019-02-21)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.29...1.5.30)
 
