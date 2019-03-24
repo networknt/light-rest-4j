@@ -1,5 +1,57 @@
 # Change Log
 
+## [1.5.32](https://github.com/networknt/light-rest-4j/tree/1.5.32) (2019-03-19)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.31...1.5.32)
+
+**Closed issues:**
+
+- skip body validation if body parser is not wired in the request chain [\#74](https://github.com/networknt/light-rest-4j/issues/74)
+
+**Merged pull requests:**
+
+- fixes \#74 skip body validation if body parser is not wired in the req… [\#75](https://github.com/networknt/light-rest-4j/pull/75) ([stevehu](https://github.com/stevehu))
+
+## [1.5.31](https://github.com/networknt/light-rest-4j/tree/1.5.31) (2019-02-21)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.30...1.5.31)
+
+## [1.5.30](https://github.com/networknt/light-rest-4j/tree/1.5.30) (2019-02-21)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.29...1.5.30)
+
+**Implemented enhancements:**
+
+- Validate a REST API response against the Swagger/OpenAPI spec [\#27](https://github.com/networknt/light-rest-4j/issues/27)
+
+**Closed issues:**
+
+- openapi helper throws an exception when servers not defined [\#62](https://github.com/networknt/light-rest-4j/issues/62)
+
+## [1.5.29](https://github.com/networknt/light-rest-4j/tree/1.5.29) (2019-02-16)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.28...1.5.29)
+
+**Closed issues:**
+
+- JwtVerifyHandler needs to handle properly the value returned by the Config module [\#70](https://github.com/networknt/light-rest-4j/issues/70)
+
+**Merged pull requests:**
+
+- Including some dependencies that are failing the build when executed in a build server [\#73](https://github.com/networknt/light-rest-4j/pull/73) ([NicholasAzar](https://github.com/NicholasAzar))
+- fixes the wrong test as the header maximum validation is working [\#72](https://github.com/networknt/light-rest-4j/pull/72) ([stevehu](https://github.com/stevehu))
+- JwtVerifyHandler fix - fixes \#70 [\#71](https://github.com/networknt/light-rest-4j/pull/71) ([ddobrin](https://github.com/ddobrin))
+- added Response Validator to validate response content [\#69](https://github.com/networknt/light-rest-4j/pull/69) ([BalloonWen](https://github.com/BalloonWen))
+- Fixed validation of path parameters and query parameters [\#68](https://github.com/networknt/light-rest-4j/pull/68) ([jiachen1120](https://github.com/jiachen1120))
+
+## [1.5.28](https://github.com/networknt/light-rest-4j/tree/1.5.28) (2019-01-13)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.27...1.5.28)
+
+## [1.5.27](https://github.com/networknt/light-rest-4j/tree/1.5.27) (2019-01-12)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/2.0.0-BETA2...1.5.27)
+
+## [2.0.0-BETA2](https://github.com/networknt/light-rest-4j/tree/2.0.0-BETA2) (2018-12-30)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.25...2.0.0-BETA2)
+
+## [1.5.25](https://github.com/networknt/light-rest-4j/tree/1.5.25) (2018-12-24)
+[Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.24...1.5.25)
+
 ## [1.5.24](https://github.com/networknt/light-rest-4j/tree/1.5.24) (2018-12-15)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.23...1.5.24)
 
