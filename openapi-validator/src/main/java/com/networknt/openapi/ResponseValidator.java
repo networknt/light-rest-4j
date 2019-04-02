@@ -119,8 +119,14 @@ public class ResponseValidator {
         }
         JsonNode schema = getContentSchema(openApiOperation, statusCode, mediaTypeName);
         //if cannot find schema based on status code, try to get from "default"
-        if(schema == null) {
+        if(schema == null || schema.isMissingNode()) {
+            // if corresponding response exist but also does not contain any schema, pass validation
+            if (openApiOperation.getOperation().getResponses().containsKey(String.valueOf(statusCode))) {
+                return null;
+            }
             schema = getContentSchema(openApiOperation, DEFAULT_STATUS_CODE, mediaTypeName);
+            // if default also does not contain any schema, pass validation
+            if (schema == null || schema.isMissingNode()) return null;
         }
         if ((responseContent != null && schema == null) ||
                 (responseContent == null && schema != null)) {
