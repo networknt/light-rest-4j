@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.6.0](https://github.com/networknt/light-rest-4j/tree/1.6.0) (2019-04-05)
+
+
+**Merged pull requests:**
+
+
+- Pass response validation when no necessary to valid [\#77](https://github.com/networknt/light-rest-4j/pull/77) ([jiachen1120](https://github.com/jiachen1120))
+- Issue81 [\#82](https://github.com/networknt/light-rest-4j/pull/82) ([stevehu](https://github.com/stevehu))
+- fixes \#79 add NOTICE for license and copyright of dependencies [\#80](https://github.com/networknt/light-rest-4j/pull/80) ([stevehu](https://github.com/stevehu))
 ## [1.5.32](https://github.com/networknt/light-rest-4j/tree/1.5.32) (2019-03-19)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.31...1.5.32)
 
