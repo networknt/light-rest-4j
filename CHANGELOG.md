@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.5.34](https://github.com/networknt/light-rest-4j/tree/1.5.34) (2019-04-07)
+
+
+**Merged pull requests:**
+
+
+- Issue81 [\#82](https://github.com/networknt/light-rest-4j/pull/82) ([stevehu](https://github.com/stevehu))
+- fixes \#79 add NOTICE for license and copyright of dependencies [\#80](https://github.com/networknt/light-rest-4j/pull/80) ([stevehu](https://github.com/stevehu))
 ## [2.0.0](https://github.com/networknt/light-rest-4j/tree/2.0.0) (2019-03-20)
 [Full Changelog](https://github.com/networknt/light-rest-4j/compare/1.5.32...2.0.0)
 
