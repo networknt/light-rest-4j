@@ -44,6 +44,7 @@ public class ResponseValidator {
 
     /**
      * Construct a new request validator with the given schema validator.
+     * @param config schema validator configuration
      */
     public ResponseValidator(SchemaValidatorsConfig config) {
         this.schemaValidator = new SchemaValidator(OpenApiHelper.openApi3);
