@@ -67,8 +67,6 @@
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <version.light-4j>1.6.0</version.light-4j>
-        <version.json-overlay>1.6.0</version.json-overlay>
-        <version.openapi-parser>1.6.0</version.openapi-parser>
         <version.jackson>2.9.8</version.jackson>
         <version.slf4j>1.7.25</version.slf4j>
         <version.jose4j>0.6.3</version.jose4j>
@@ -248,12 +246,12 @@
             <dependency>
                 <groupId>com.networknt</groupId>
                 <artifactId>json-overlay</artifactId>
-                <version>${version.json-overlay}</version>
+                <version>${version.light-4j}</version>
             </dependency>
             <dependency>
                 <groupId>com.networknt</groupId>
                 <artifactId>openapi-parser</artifactId>
-                <version>${version.openapi-parser}</version>
+                <version>${version.light-4j}</version>
             </dependency>
 
             <!-- External dependencies -->
