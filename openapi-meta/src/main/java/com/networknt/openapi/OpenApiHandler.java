@@ -16,24 +16,26 @@
 
 package com.networknt.openapi;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.oas.model.Operation;
 import com.networknt.oas.model.Path;
-import com.networknt.status.Status;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
+
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import io.undertow.util.AttachmentKey;
 
 /**
  * This is the handler that parses the OpenApi object based on uri and method
@@ -46,6 +48,9 @@ public class OpenApiHandler implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(OpenApiHandler.class);
 
     public static final String CONFIG_NAME = "openapi";
+    
+	public static final AttachmentKey<Map<String, Object>> DESERIALIZED_QUERY_PARAMETERS = AttachmentKey.create(Map.class);
+	public static final AttachmentKey<Map<String, Object>> DESERIALIZED_PATH_PARAMETERS = AttachmentKey.create(Map.class);
 
     static final String STATUS_INVALID_REQUEST_PATH = "ERR10007";
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";

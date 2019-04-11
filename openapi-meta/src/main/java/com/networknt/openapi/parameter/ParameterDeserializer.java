@@ -1,10 +1,6 @@
 package com.networknt.openapi.parameter;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Deque;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.networknt.oas.model.Parameter;
@@ -12,65 +8,32 @@ import com.networknt.oas.model.Schema;
 import com.networknt.openapi.OpenApiOperation;
 
 import io.undertow.server.HttpServerExchange;
+import io.undertow.util.AttachmentKey;
 
-public class ParameterDeserializer {
-	private static final String COMMA=",";
-	private static final String SPACE=" ";
-	private static final String PIPE="|";
-	private static final String DOT="|";
-	private static final String SEMICOLON=";";
+public interface ParameterDeserializer {
+	static final String COMMA=",";
+	static final String SPACE=" ";
+	static final String PIPE="|";
+	static final String DOT=".";
+	static final String SEMICOLON=";";
 	
+	void deserialize(HttpServerExchange exchange, Parameter parameter);
 	
-	public static void deserialize(HttpServerExchange exchange, OpenApiOperation openApiOperation) {
-		openApiOperation.getOperation().getParameters().forEach(p->deserializeParameter(exchange, p));
+	default AttachmentKey<Map<String, Object>> getAttachmentKey(){
+		return null;
 	}
 	
-	public static void deserializeParameter(HttpServerExchange exchange, Parameter parameter) {
-		ParameterType type = ParameterType.of(parameter.getIn());
-		
-		switch (type) {
-		case PATH:
-			deserializePathParameter(exchange, parameter);
-			break;
-		case QUERY:
-			deserializeQueryParameter(exchange, parameter);
-			break;			
-		}
-	}
-	
-	public static void deserializeQueryParameter(HttpServerExchange exchange, Parameter parameter) {
-		ValueType valueType = getValueType(parameter);
-		
-		if (null == valueType || ValueType.PRIMITIVE == valueType) {
-			return;
-		}
-		
-		if (ValueType.ARRAY == valueType && Boolean.TRUE.equals(parameter.getExplode())) {
-			return;
-		}
-		
-		QueryParameterStyle style = QueryParameterStyle.of(parameter.getStyle());
-		
-		if (null==style) {
-			return;
-		}
-		
-		switch(style){
-		case FORM:
-			Collection<String> values = exchange.getQueryParameters().get(parameter.getName());
+	static void deserialize(HttpServerExchange exchange, OpenApiOperation openApiOperation) {
+		openApiOperation.getOperation().getParameters().forEach(p->{
+			ParameterType type = ParameterType.of(p.getIn());
 			
-			
-		case SPACEDELIMITED:
-		case PIPEDELIMITED:
-		case DEEPOBJECT:
-		}
+			if (null!=type) {
+				type.getDeserializer().deserialize(exchange, p);
+			}
+		});
 	}
 	
-	public static void deserializePathParameter(HttpServerExchange exchange, Parameter parameter) {
-		
-	}
-	
-	public static ValueType getValueType(Parameter parameter) {
+	default ValueType getValueType(Parameter parameter) {
 		Schema schema = parameter.getSchema();
 		
 		if (null!=schema) {
@@ -80,4 +43,21 @@ public class ParameterDeserializer {
 		return null;
 	}
 	
+	default void attach(HttpServerExchange exchange, String key, Object value) {
+		AttachmentKey<Map<String, Object>> paramType = getAttachmentKey();
+		
+		if (null!=paramType) {
+			attach(exchange, paramType, key, value);
+		}
+	}
+	
+	default void attach(HttpServerExchange exchange, AttachmentKey<Map<String, Object>> paramType, String key, Object value) {
+		Map<String, Object> paramMap = exchange.getAttachment(paramType);
+		
+		if (null == paramMap) {
+			exchange.putAttachment(paramType, paramMap=new HashMap<>());
+		}
+		
+		paramMap.put(key, value);
+	}
 }

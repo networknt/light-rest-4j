@@ -6,12 +6,17 @@ import java.util.Map;
 import com.networknt.utility.StringUtils;
 
 public enum QueryParameterStyle {
-	FORM,
-	SPACEDELIMITED,
-	PIPEDELIMITED,
-	DEEPOBJECT;
+	FORM(new FormStyleDeserializer()),
+	SPACEDELIMITED(new SpaceDelimitedStyleDeserializer()),
+	PIPEDELIMITED(new PipeDelimitedStyleDeserializer()),
+	DEEPOBJECT(new DeepObjectStyleDeserializer());
 	
 	private static Map<String, QueryParameterStyle> lookup = new HashMap<>();
+	private final ParameterDeserializer deserializer;
+	
+	private QueryParameterStyle(ParameterDeserializer deserializer) {
+		this.deserializer = deserializer;
+	}
 	
 	static {
 		for (QueryParameterStyle style: QueryParameterStyle.values()) {
@@ -25,5 +30,9 @@ public enum QueryParameterStyle {
 	
 	public static boolean is(String styleStr, QueryParameterStyle style) {
 		return style == of(styleStr);
+	}
+	
+	public ParameterDeserializer getDeserializer() {
+		return this.deserializer;
 	}
 }
