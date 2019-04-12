@@ -12,9 +12,9 @@ public enum QueryParameterStyle {
 	DEEPOBJECT(new DeepObjectStyleDeserializer());
 	
 	private static Map<String, QueryParameterStyle> lookup = new HashMap<>();
-	private final ParameterDeserializer deserializer;
+	private final StyleParameterDeserializer deserializer;
 	
-	private QueryParameterStyle(ParameterDeserializer deserializer) {
+	private QueryParameterStyle(StyleParameterDeserializer deserializer) {
 		this.deserializer = deserializer;
 	}
 	
@@ -32,7 +32,7 @@ public enum QueryParameterStyle {
 		return style == of(styleStr);
 	}
 	
-	public ParameterDeserializer getDeserializer() {
+	public StyleParameterDeserializer getDeserializer() {
 		return this.deserializer;
 	}
 }

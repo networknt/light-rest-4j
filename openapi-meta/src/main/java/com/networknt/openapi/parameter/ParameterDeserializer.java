@@ -4,20 +4,27 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.networknt.oas.model.Parameter;
-import com.networknt.oas.model.Schema;
 import com.networknt.openapi.OpenApiOperation;
 
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.AttachmentKey;
 
 public interface ParameterDeserializer {
-	static final String COMMA=",";
-	static final String SPACE=" ";
-	static final String PIPE="|";
-	static final String DOT=".";
-	static final String SEMICOLON=";";
+	default void deserialize(HttpServerExchange exchange, Parameter parameter) {
+		StyleParameterDeserializer deserializer = getStyleDeserializer(parameter.getStyle());
+		
+		if (null==deserializer) {
+			return;
+		}
+		
+		Object valueObj = deserializer.deserialize(exchange, parameter);	
+		
+		if (null!=valueObj) {
+			attach(exchange, parameter.getName(), valueObj);
+		}
+	}
 	
-	void deserialize(HttpServerExchange exchange, Parameter parameter);
+	StyleParameterDeserializer getStyleDeserializer(String style);
 	
 	default AttachmentKey<Map<String, Object>> getAttachmentKey(){
 		return null;
@@ -31,16 +38,6 @@ public interface ParameterDeserializer {
 				type.getDeserializer().deserialize(exchange, p);
 			}
 		});
-	}
-	
-	default ValueType getValueType(Parameter parameter) {
-		Schema schema = parameter.getSchema();
-		
-		if (null!=schema) {
-			return ValueType.of(schema.getType());
-		}
-		
-		return null;
 	}
 	
 	default void attach(HttpServerExchange exchange, String key, Object value) {

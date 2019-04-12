@@ -11,9 +11,9 @@ public enum PathParameterStyle {
 	MATRIX(new MatrixStyleDeserializer());
 	
 	private static Map<String, PathParameterStyle> lookup = new HashMap<>();
-	private final ParameterDeserializer deserializer;
+	private final StyleParameterDeserializer deserializer;
 	
-	private PathParameterStyle(ParameterDeserializer deserializer) {
+	private PathParameterStyle(StyleParameterDeserializer deserializer) {
 		this.deserializer = deserializer;
 	}
 	
@@ -31,7 +31,7 @@ public enum PathParameterStyle {
 		return style == of(styleStr);
 	}
 	
-	public ParameterDeserializer getDeserializer() {
+	public StyleParameterDeserializer getDeserializer() {
 		return this.deserializer;
 	}
 }

@@ -1,13 +1,5 @@
 package com.networknt.openapi.parameter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.networknt.oas.model.Parameter;
@@ -16,25 +8,7 @@ import com.networknt.openapi.OpenApiHandler;
 
 import io.undertow.server.HttpServerExchange;
 
-@SuppressWarnings("rawtypes")
-public class QueryParameterDeserializerTest {
-	private static final String PARAM_NAME="id";
-	private static final String ROLE="role";
-	private static final String FIRST_NAME="firstName";
-	private static final String ADMIN="admin";
-	private static final String ALEX="Alex";
-	private static final String[] VALUES = {"3", "4", "5"};
-	@SuppressWarnings("unused")
-	private static final String LAST_NAME="lastName";
-	private static final Map<String, Schema> PROPS=new HashMap<>();
-	
-	@BeforeClass
-	public static void setup() {
-		PROPS.put("role", new PojoSchema());
-		PROPS.put("firstName", new PojoSchema());
-		PROPS.put("lastName", new PojoSchema());
-	}
-	
+public class QueryParameterDeserializerTest extends ParameterDeserializerTest{
 	@Test
 	public void test_form_array() {
 		Schema schema = new PojoSchema();
@@ -50,9 +24,7 @@ public class QueryParameterDeserializerTest {
 		
 		exchange.addQueryParam(PARAM_NAME, "3,4,5");
 		
-		ParameterType.QUERY.getDeserializer().deserialize(exchange, parameter);
-		
-		checkArray(exchange.getAttachment(OpenApiHandler.DESERIALIZED_QUERY_PARAMETERS));
+		checkArray(exchange, parameter);
 	}
 	
 	@Test
@@ -72,9 +44,7 @@ public class QueryParameterDeserializerTest {
 		exchange.addQueryParam(ROLE, "admin");
 		exchange.addQueryParam(FIRST_NAME, "Alex");
 		
-		ParameterType.QUERY.getDeserializer().deserialize(exchange, parameter);
-		
-		checkMap(exchange.getAttachment(OpenApiHandler.DESERIALIZED_QUERY_PARAMETERS), 3);
+		checkMap(exchange, parameter, 3);
 	}
 	
 	@Test
@@ -93,9 +63,7 @@ public class QueryParameterDeserializerTest {
 		
 		exchange.addQueryParam(PARAM_NAME, "role,admin,firstName,Alex");
 		
-		ParameterType.QUERY.getDeserializer().deserialize(exchange, parameter);
-		
-		checkMap(exchange.getAttachment(OpenApiHandler.DESERIALIZED_QUERY_PARAMETERS), 2);
+		checkMap(exchange, parameter, 2);
 	}
 	
 	@Test
@@ -113,9 +81,7 @@ public class QueryParameterDeserializerTest {
 		
 		exchange.addQueryParam(PARAM_NAME, "3 4 5");
 		
-		ParameterType.QUERY.getDeserializer().deserialize(exchange, parameter);
-		
-		checkArray(exchange.getAttachment(OpenApiHandler.DESERIALIZED_QUERY_PARAMETERS));
+		checkArray(exchange, parameter);
 	}
 	
 	@Test
@@ -133,9 +99,7 @@ public class QueryParameterDeserializerTest {
 		
 		exchange.addQueryParam(PARAM_NAME, "3|4|5");
 		
-		ParameterType.QUERY.getDeserializer().deserialize(exchange, parameter);
-		
-		checkArray(exchange.getAttachment(OpenApiHandler.DESERIALIZED_QUERY_PARAMETERS));
+		checkArray(exchange, parameter);
 	}
 	
 	@Test
@@ -155,39 +119,17 @@ public class QueryParameterDeserializerTest {
 		exchange.addQueryParam(String.format("%s[%s]", PARAM_NAME, ROLE), ADMIN);
 		exchange.addQueryParam(String.format("%s[%s]", PARAM_NAME, FIRST_NAME), ALEX);
 		
+		checkMap(exchange, parameter, 3);
+	}
+	
+	protected void checkArray(HttpServerExchange exchange, Parameter parameter) {
 		ParameterType.QUERY.getDeserializer().deserialize(exchange, parameter);
 		
-		
-		checkMap(exchange.getAttachment(OpenApiHandler.DESERIALIZED_QUERY_PARAMETERS), 3);
+		checkArray(exchange.getAttachment(OpenApiHandler.DESERIALIZED_QUERY_PARAMETERS));
 	}
 	
-	public void checkMap(Map<String, Object> result, int expectedSize) {
-		assertTrue(null!=result && !result.isEmpty());
-		assertTrue(result.containsKey(PARAM_NAME));
-		assertTrue(result.get(PARAM_NAME) instanceof Map);
-		
-		assertTrue(null!=result && !result.isEmpty());
-		assertTrue(result.containsKey(PARAM_NAME));
-		assertTrue(result.get(PARAM_NAME) instanceof Map);
-		
-		Map valueMap = ((Map)result.get(PARAM_NAME));
-		
-		assertTrue(valueMap.size() == expectedSize);
-		assertEquals(valueMap.get(ROLE), ADMIN);
-		assertEquals(valueMap.get(FIRST_NAME), ALEX);		
-	}
-	
-	public void checkArray(Map<String, Object> result) {
-		assertTrue(null!=result && !result.isEmpty());
-		assertTrue(result.containsKey(PARAM_NAME));
-		assertTrue(result.get(PARAM_NAME) instanceof List);
-		
-		List valueList = ((List)result.get(PARAM_NAME));
-		
-		assertTrue(valueList.size() == 3);
-		
-		for (String v: VALUES) {
-			assertTrue(valueList.contains(v));
-		}
+	protected void checkMap(HttpServerExchange exchange, Parameter parameter, int expectedSize) {
+		ParameterType.QUERY.getDeserializer().deserialize(exchange, parameter);
+		checkMap(exchange.getAttachment(OpenApiHandler.DESERIALIZED_QUERY_PARAMETERS), expectedSize);
 	}
 }
