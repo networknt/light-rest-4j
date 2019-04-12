@@ -96,22 +96,6 @@ public class QueryParameterDeserializer implements ParameterDeserializer{
 	}
 }
 
-abstract class StyledDeserializer extends QueryParameterDeserializer{
-	@Override
-	public void deserialize(HttpServerExchange exchange, Parameter parameter) {
-		ValueType valueType = getValueType(parameter);
-		boolean exploade = parameter.isExplode();
-		
-		if (!isApplicable(valueType, exploade)) {
-			return;
-		}
-		
-		deserialize(exchange, parameter, valueType, exploade);
-	}
-	
-	protected abstract void deserialize(HttpServerExchange exchange, Parameter parameter, ValueType valueType, boolean exploade);
-}
-
 class FormStyleDeserializer extends StyledDeserializer{
 	@Override
 	public void deserialize(HttpServerExchange exchange, Parameter parameter, ValueType valueType, boolean exploade) {

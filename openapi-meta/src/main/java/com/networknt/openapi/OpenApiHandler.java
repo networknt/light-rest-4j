@@ -115,4 +115,12 @@ public class OpenApiHandler implements MiddlewareHandler {
     public void register() {
         ModuleRegistry.registerModule(OpenApiHandler.class.getName(), Config.getInstance().getJsonMapConfig(CONFIG_NAME), null);
     }
+    
+    public static Map<String, Object> getQueryParameters(final HttpServerExchange exchange){
+    	return exchange.getAttachment(DESERIALIZED_QUERY_PARAMETERS);
+    }
+    
+    public static Map<String, Object> getPathParameters(final HttpServerExchange exchange){
+    	return exchange.getAttachment(DESERIALIZED_PATH_PARAMETERS);
+    }
 }
