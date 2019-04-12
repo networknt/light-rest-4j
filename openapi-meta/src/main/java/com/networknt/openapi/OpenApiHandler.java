@@ -16,6 +16,7 @@
 
 package com.networknt.openapi;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +30,7 @@ import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.oas.model.Operation;
 import com.networknt.oas.model.Path;
+import com.networknt.openapi.parameter.ParameterDeserializer;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
 
@@ -84,6 +86,9 @@ public class OpenApiHandler implements MiddlewareHandler {
 
         // This handler can identify the openApiOperation and endpoint only. Other info will be added by JwtVerifyHandler.
         final OpenApiOperation openApiOperation = new OpenApiOperation(openApiPathString, path, httpMethod, operation);
+        
+        ParameterDeserializer.deserialize(exchange, openApiOperation);
+        
         String endpoint = openApiPathString.normalised() + "@" + httpMethod.toString().toLowerCase();
         Map<String, Object> auditInfo = new HashMap<>();
         auditInfo.put(Constants.ENDPOINT_STRING, endpoint);
@@ -117,10 +122,12 @@ public class OpenApiHandler implements MiddlewareHandler {
     }
     
     public static Map<String, Object> getQueryParameters(final HttpServerExchange exchange){
-    	return exchange.getAttachment(DESERIALIZED_QUERY_PARAMETERS);
+    	Map<String, Object> deserializedQueryParamters = exchange.getAttachment(DESERIALIZED_QUERY_PARAMETERS);
+    	return null==deserializedQueryParamters?Collections.emptyMap():deserializedQueryParamters;
     }
     
     public static Map<String, Object> getPathParameters(final HttpServerExchange exchange){
-    	return exchange.getAttachment(DESERIALIZED_PATH_PARAMETERS);
+    	Map<String, Object> deserializedPathParamters = exchange.getAttachment(DESERIALIZED_PATH_PARAMETERS);
+    	return null==deserializedPathParamters?Collections.emptyMap():deserializedPathParamters;
     }
 }

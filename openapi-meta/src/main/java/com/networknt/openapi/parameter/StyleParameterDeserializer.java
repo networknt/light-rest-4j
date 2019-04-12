@@ -13,12 +13,15 @@ import com.networknt.utility.StringUtils;
 import io.undertow.server.HttpServerExchange;
 
 public interface StyleParameterDeserializer {
-	static final String COMMA=",";
-	static final String SPACE=" ";
-	static final String PIPE="|";
-	static final String DOT=".";
-	static final String SEMICOLON=";";
-	static final String EQUAL="=";
+	static ValueType getValueType(Parameter parameter) {
+		Schema schema = parameter.getSchema();
+		
+		if (null!=schema) {
+			return ValueType.of(schema.getType());
+		}
+		
+		return null;
+	}
 	
 	default Object deserialize(HttpServerExchange exchange, Parameter parameter) {
 		ValueType valueType = getValueType(parameter);
@@ -39,16 +42,6 @@ public interface StyleParameterDeserializer {
 		}
 		
 		return true;
-	}
-	
-	default ValueType getValueType(Parameter parameter) {
-		Schema schema = parameter.getSchema();
-		
-		if (null!=schema) {
-			return ValueType.of(schema.getType());
-		}
-		
-		return null;
 	}
 	
 	default String getFirst(Deque<String> values, String key) {
@@ -80,7 +73,7 @@ public interface StyleParameterDeserializer {
 		String[] items = str.split("\\"+delimiter);
 		
 		for (String item: items) {
-			String[] tokens = item.split(EQUAL);
+			String[] tokens = item.split(Delimiters.EQUAL);
 			
 			String key=null;
 			String value=null;

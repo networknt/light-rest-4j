@@ -123,13 +123,13 @@ public class QueryParameterDeserializerTest extends ParameterDeserializerTest{
 	}
 	
 	protected void checkArray(HttpServerExchange exchange, Parameter parameter) {
-		ParameterType.QUERY.getDeserializer().deserialize(exchange, parameter);
+		ParameterType.QUERY.getDeserializer().deserialize(exchange, parameter, ParameterDeserializer.getCandidateQueryParams(exchange));
 		
 		checkArray(exchange.getAttachment(OpenApiHandler.DESERIALIZED_QUERY_PARAMETERS));
 	}
 	
 	protected void checkMap(HttpServerExchange exchange, Parameter parameter, int expectedSize) {
-		ParameterType.QUERY.getDeserializer().deserialize(exchange, parameter);
+		ParameterType.QUERY.getDeserializer().deserialize(exchange, parameter, ParameterDeserializer.getCandidateQueryParams(exchange));
 		checkMap(exchange.getAttachment(OpenApiHandler.DESERIALIZED_QUERY_PARAMETERS), expectedSize);
 	}
 }

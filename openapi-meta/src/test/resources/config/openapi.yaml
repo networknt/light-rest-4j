@@ -21,6 +21,55 @@ paths:
           schema:
             type: integer
             format: int32
+        - name: id_form
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: id_sd
+          in: query
+          required: false
+          style: spaceDelimited
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: id_pd
+          in: query
+          required: false
+          style: pipeDelimited
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string              
+        - name: id_do
+          in: query
+          required: false
+          style: deepObject
+          explode: true
+          schema:
+            $ref: '#/components/schemas/Pet'  
+        - name: id_fo
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            $ref: '#/components/schemas/Pet'   
+        - name: id_fno
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            $ref: '#/components/schemas/Pet'                         
+                            
       security:
         - petstore_auth:
             - 'read:pets'
@@ -156,6 +205,7 @@ components:
             'read:pets': read your pets
   schemas:
     Pet:
+      type: object
       required:
         - id
         - name

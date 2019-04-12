@@ -226,18 +226,18 @@ public class PathParameterDeserializerTest extends ParameterDeserializerTest{
 	}
 	
 	protected void checkArray(HttpServerExchange exchange, Parameter parameter) {
-		ParameterType.PATH.getDeserializer().deserialize(exchange, parameter);
+		ParameterType.PATH.getDeserializer().deserialize(exchange, parameter, exchange.getPathParameters().keySet());
 		
 		checkArray(exchange.getAttachment(OpenApiHandler.DESERIALIZED_PATH_PARAMETERS));
 	}
 	
 	protected void checkMap(HttpServerExchange exchange, Parameter parameter, int expectedSize) {
-		ParameterType.PATH.getDeserializer().deserialize(exchange, parameter);
+		ParameterType.PATH.getDeserializer().deserialize(exchange, parameter, exchange.getPathParameters().keySet());
 		checkMap(exchange.getAttachment(OpenApiHandler.DESERIALIZED_PATH_PARAMETERS), expectedSize);
 	}
 	
 	protected void checkString(HttpServerExchange exchange, Parameter parameter, String expectedValue) {
-		ParameterType.PATH.getDeserializer().deserialize(exchange, parameter);
+		ParameterType.PATH.getDeserializer().deserialize(exchange, parameter, exchange.getPathParameters().keySet());
 		
 		checkString(exchange.getAttachment(OpenApiHandler.DESERIALIZED_PATH_PARAMETERS), expectedValue);
 	}

@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.networknt.oas.model.Parameter;
 import com.networknt.oas.model.Schema;
@@ -32,6 +33,23 @@ public class QueryParameterDeserializer implements ParameterDeserializer{
 		
 		return styleDef.getDeserializer();
 	}
+
+	@Override
+	public boolean isApplicable(HttpServerExchange exchange, Parameter parameter, Set<String> candidateParams) {
+		if (!candidateParams.contains(parameter.getName())) {
+			QueryParameterStyle style = QueryParameterStyle.of(parameter.getStyle());
+			ValueType valueType = StyleParameterDeserializer.getValueType(parameter);
+			
+			return ValueType.OBJECT == valueType
+					&& parameter.isExplode()
+					&& QueryParameterStyle.FORM == style
+					&& null!=parameter.getSchema().getProperties()
+					&& parameter.getSchema().getProperties().keySet().stream().filter(prop->candidateParams.contains(prop)).findAny().isPresent();
+		}
+		
+		return true;
+		
+	}
 }
 
 class FormStyleDeserializer implements StyleParameterDeserializer{
@@ -42,7 +60,7 @@ class FormStyleDeserializer implements StyleParameterDeserializer{
 		if (valueType == ValueType.ARRAY) {
 			List<String> valueList = new ArrayList<>();
 			
-			values.forEach(v->valueList.addAll(asList(v, COMMA)));
+			values.forEach(v->valueList.addAll(asList(v, Delimiters.COMMA)));
 			
 			return valueList;
 		}else {
@@ -52,7 +70,7 @@ class FormStyleDeserializer implements StyleParameterDeserializer{
 			if (exploade) {
 				schema.getProperties().keySet().forEach(k->valueMap.put(k, getFirst(exchange.getQueryParameters().get(k), k)));
 			}else {
-				values.forEach(v->valueMap.putAll(asMap(v, COMMA)));
+				values.forEach(v->valueMap.putAll(asMap(v, Delimiters.COMMA)));
 			}
 			
 			return valueMap;
@@ -72,7 +90,7 @@ class SpaceDelimitedStyleDeserializer implements StyleParameterDeserializer{
 		
 		List<String> valueList = new ArrayList<>();
 		
-		values.forEach(v->valueList.addAll(asList(v, SPACE)));
+		values.forEach(v->valueList.addAll(asList(v, Delimiters.SPACE)));
 		
 		return valueList;
 	}
@@ -90,7 +108,7 @@ class PipeDelimitedStyleDeserializer implements StyleParameterDeserializer{
 		
 		List<String> valueList = new ArrayList<>();
 		
-		values.forEach(v->valueList.addAll(asList(v, PIPE)));
+		values.forEach(v->valueList.addAll(asList(v, Delimiters.PIPE)));
 		
 		return valueList;
 	}
