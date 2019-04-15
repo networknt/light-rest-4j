@@ -123,7 +123,7 @@ class MatrixStyleDeserializer implements StyleParameterDeserializer{
 			Map<String, String> valueMap = new HashMap<>();
 			
 			if (!exploade) {
-				values.forEach(v->valueMap.putAll(asMap(trimStart(v, start), delimiter)));
+				values.forEach(v->valueMap.putAll(asMap(v, delimiter)));
 			}else {
 				Schema schema = parameter.getSchema();
 				String requestURI = exchange.getRequestURI();

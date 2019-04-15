@@ -210,9 +210,8 @@ public class PathParameterDeserializerTest extends ParameterDeserializerTest{
 				schema);
 		
 		HttpServerExchange exchange = new HttpServerExchange(null);
-		
-		exchange.addPathParam(PARAM_NAME, "role,admin,firstName,Alex");
 		exchange.addPathParam(PARAM_NAME, "");
+		exchange.addPathParam(PARAM_NAME, "role,admin,firstName,Alex");
 		
 		checkMap(exchange, parameter, 2);
 	}
