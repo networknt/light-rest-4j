@@ -136,7 +136,11 @@ public class PathParameterDeserializerTest extends ParameterDeserializerTest{
 		
 		checkMap(exchange, parameter, 2);
 	}
-	
+
+/**
+ * undertow consider path parts following ';' as path parameters and tries to parse them too.
+ * the below code simulates the parsing results in light-4j handler chains.	
+ */
 	@Test
 	public void test_matrix_primitive() {
 		Schema schema = new PojoSchema();
@@ -150,7 +154,8 @@ public class PathParameterDeserializerTest extends ParameterDeserializerTest{
 		
 		HttpServerExchange exchange = new HttpServerExchange(null);
 		
-		exchange.addPathParam(PARAM_NAME, ";id=5");
+		exchange.addPathParam(PARAM_NAME, "5");
+		exchange.addPathParam(PARAM_NAME, "");
 		
 		checkString(exchange, parameter, "5");
 	}
@@ -168,7 +173,8 @@ public class PathParameterDeserializerTest extends ParameterDeserializerTest{
 		
 		HttpServerExchange exchange = new HttpServerExchange(null);
 		
-		exchange.addPathParam(PARAM_NAME, ";id=3,4,5");
+		exchange.addPathParam(PARAM_NAME, "3,4,5");
+		exchange.addPathParam(PARAM_NAME, "");
 		
 		checkArray(exchange, parameter);
 	}
@@ -186,7 +192,8 @@ public class PathParameterDeserializerTest extends ParameterDeserializerTest{
 		
 		HttpServerExchange exchange = new HttpServerExchange(null);
 		
-		exchange.addPathParam(PARAM_NAME, ";id=3;id=4;id=5");
+		exchange.addPathParam(PARAM_NAME, "3;id=4;id=5");
+		exchange.addPathParam(PARAM_NAME, "");
 		
 		checkArray(exchange, parameter);
 	}
@@ -204,7 +211,8 @@ public class PathParameterDeserializerTest extends ParameterDeserializerTest{
 		
 		HttpServerExchange exchange = new HttpServerExchange(null);
 		
-		exchange.addPathParam(PARAM_NAME, ";id=role,admin,firstName,Alex");
+		exchange.addPathParam(PARAM_NAME, "role,admin,firstName,Alex");
+		exchange.addPathParam(PARAM_NAME, "");
 		
 		checkMap(exchange, parameter, 2);
 	}
@@ -213,6 +221,7 @@ public class PathParameterDeserializerTest extends ParameterDeserializerTest{
 	public void test_matrix_object_exploade() {
 		Schema schema = new PojoSchema();
 		schema.setType(ValueType.OBJECT.name().toLowerCase());
+		schema.setProperties(PROPS);
 		
 		Parameter parameter = new PoJoParameter(PARAM_NAME,
 				ParameterType.PATH.name().toLowerCase(),
@@ -222,9 +231,13 @@ public class PathParameterDeserializerTest extends ParameterDeserializerTest{
 		
 		HttpServerExchange exchange = new HttpServerExchange(null);
 		
-		exchange.addPathParam(PARAM_NAME, ";role=admin;firstName=Alex");
+		exchange.addPathParam(PARAM_NAME, "");
 		
-		checkMap(exchange, parameter, 2);
+		// we cannot rely on the parsing result at call in this scenario
+		// so, we use requestURI which has the original request path
+		exchange.setRequestURI(";role=admin;firstName=Alex");
+		
+		checkMap(exchange, parameter, 3);
 	}
 	
 	@Test
