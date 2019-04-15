@@ -25,6 +25,10 @@ public enum QueryParameterStyle {
 	}
 	
 	public static QueryParameterStyle of(String styleStr) {
+		if (StringUtils.isBlank(styleStr)) {
+			return FORM;
+		}
+		
 		return lookup.get(StringUtils.trimToEmpty(styleStr).toUpperCase());
 	}
 	

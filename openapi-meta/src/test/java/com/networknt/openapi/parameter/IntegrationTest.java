@@ -37,20 +37,28 @@ import io.undertow.util.Headers;
 import io.undertow.util.Methods;
 
 public class IntegrationTest {
-    static final Logger logger = LoggerFactory.getLogger(OpenApiHandlerTest.class);
-    static final String EXPECTED_ARRAY_RESULT="3-4-5";
-    static final String EXPECTED_MAP_RESULT="id-name-001-Dog";
+    private static final Logger logger = LoggerFactory.getLogger(OpenApiHandlerTest.class);
+    private static final String EXPECTED_ARRAY_RESULT="3-4-5";
+    private static final String EXPECTED_MAP_RESULT="id-name-001-Dog";
 
-    static Undertow server = null;
+    private static Undertow server = null;
+    
+    
 
     @BeforeClass
     public static void setUp() {
         if(server == null) {
             logger.info("starting server");
             HttpHandler handler = setupRoutings();
+            
             OpenApiHandler openApiHandler = new OpenApiHandler();
             openApiHandler.setNext(handler);
-            handler = openApiHandler;
+            
+            ParameterHandler parameterHandler = new ParameterHandler();
+            parameterHandler.setNext(openApiHandler);
+            
+            handler = parameterHandler;
+            
             server = Undertow.builder()
                     .addHttpListener(8080, "localhost")
                     .setHandler(handler)
@@ -115,11 +123,127 @@ public class IntegrationTest {
                 		send(exchange, null);
                 	}
                 	
+                }).add(Methods.GET, "/pets_simple_array/{petId}", exchange -> {
+                	List<String> resultList = new ArrayList<>();
+                	
+                	addToList(resultList, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	
+                	if (!resultList.isEmpty()) {
+                		send(exchange, String.join(valueDelimiter, resultList));
+                	}else {
+                		send(exchange, null);
+                	}
+                }).add(Methods.GET, "/pets_label_array_ep/{petId}", exchange -> {
+                	List<String> resultList = new ArrayList<>();
+                	
+                	addToList(resultList, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	
+                	if (!resultList.isEmpty()) {
+                		send(exchange, String.join(valueDelimiter, resultList));
+                	}else {
+                		send(exchange, null);
+                	}
+                }).add(Methods.GET, "/pets_label_array_no_ep/{petId}", exchange -> {
+                	List<String> resultList = new ArrayList<>();
+                	
+                	addToList(resultList, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	
+                	if (!resultList.isEmpty()) {
+                		send(exchange, String.join(valueDelimiter, resultList));
+                	}else {
+                		send(exchange, null);
+                	}
+                }).add(Methods.GET, "/pets_matrix_array_ep/{petId}", exchange -> {
+                	List<String> resultList = new ArrayList<>();
+                	
+                	addToList(resultList, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	
+                	if (!resultList.isEmpty()) {
+                		send(exchange, String.join(valueDelimiter, resultList));
+                	}else {
+                		send(exchange, null);
+                	}
+                }).add(Methods.GET, "/pets_matrix_array_no_ep/{petId}", exchange -> {
+                	List<String> resultList = new ArrayList<>();
+                	
+                	addToList(resultList, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	
+                	if (!resultList.isEmpty()) {
+                		send(exchange, String.join(valueDelimiter, resultList));
+                	}else {
+                		send(exchange, null);
+                	}
+                }).add(Methods.GET, "/pets_simple_obj_ep/{petId}", exchange -> {
+                	Map<String, String> resultMap = new HashMap<>();
+                	
+                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	
+                	if (!resultMap.isEmpty()) {
+                		send(exchange, String.format("id-name-%s-%s", resultMap.get("id"), resultMap.get("name")));
+                	}else {
+                		send(exchange, null);
+                	}
+                }).add(Methods.GET, "/pets_simple_obj_no_ep/{petId}", exchange -> {
+                	Map<String, String> resultMap = new HashMap<>();
+                	
+                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	
+                	if (!resultMap.isEmpty()) {
+                		send(exchange, String.format("id-name-%s-%s", resultMap.get("id"), resultMap.get("name")));
+                	}else {
+                		send(exchange, null);
+                	}
+                }).add(Methods.GET, "/pets_label_obj_ep/{petId}", exchange -> {
+                	Map<String, String> resultMap = new HashMap<>();
+                	
+                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	
+                	if (!resultMap.isEmpty()) {
+                		send(exchange, String.format("id-name-%s-%s", resultMap.get("id"), resultMap.get("name")));
+                	}else {
+                		send(exchange, null);
+                	}
+                }).add(Methods.GET, "/pets_label_obj_no_ep/{petId}", exchange -> {
+                	Map<String, String> resultMap = new HashMap<>();
+                	
+                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	
+                	if (!resultMap.isEmpty()) {
+                		send(exchange, String.format("id-name-%s-%s", resultMap.get("id"), resultMap.get("name")));
+                	}else {
+                		send(exchange, null);
+                	}
+                }).add(Methods.GET, "/pets_matrix_obj_ep/{petId}", exchange -> {
+                	Map<String, String> resultMap = new HashMap<>();
+                	
+                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	
+                	if (!resultMap.isEmpty()) {
+                		send(exchange, String.format("id-name-%s-%s", resultMap.get("id"), resultMap.get("name")));
+                	}else {
+                		send(exchange, null);
+                	}
+                }).add(Methods.GET, "/pets_matrix_obj_no_ep/{petId}", exchange -> {
+                	Map<String, String> resultMap = new HashMap<>();
+                	
+                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	
+                	if (!resultMap.isEmpty()) {
+                		send(exchange, String.format("id-name-%s-%s", resultMap.get("id"), resultMap.get("name")));
+                	}else {
+                		send(exchange, null);
+                	}
+                }).add(Methods.GET, "/pets_matrix_pm/{petId}", exchange -> {
+                	Map<String, String> resultMap = new HashMap<>();
+                	
+                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	
+                	send(exchange, (String)OpenApiHandler.getPathParameters(exchange).get("petId"));
                 });
     }
     
     @Test
-    public void test_default_query_param_deserialization() throws Exception {
+    public void test_array_default_query_param_deserialization() throws Exception {
     	runTest("/pets?limit=3&limit=4&limit=5", EXPECTED_ARRAY_RESULT);
     }
     
@@ -151,7 +275,67 @@ public class IntegrationTest {
     @Test
     public void test_object_form_no_explode_query_param_deserialization() throws Exception {
     	runTest("/pets?id_fno=id,001,name,Dog", EXPECTED_MAP_RESULT);
-    }     
+    }   
+    
+    @Test
+    public void test_array_path_param_deserialization() throws Exception {
+    	runTest("/pets_simple_array/3,4,5", EXPECTED_ARRAY_RESULT);
+    }
+    
+    @Test
+    public void test_object_simple_explode_path_param_deserialization() throws Exception {
+    	runTest("/pets_simple_obj_ep/id=001,name=Dog", EXPECTED_MAP_RESULT);
+    }
+    
+    @Test
+    public void test_object_simple_no_explode_path_param_deserialization() throws Exception {
+    	runTest("/pets_simple_obj_no_ep/id,001,name,Dog", EXPECTED_MAP_RESULT);
+    }
+    
+    @Test
+    public void test_array_label_explode_path_param_deserialization() throws Exception {
+    	runTest("/pets_label_array_ep/.3.4.5", EXPECTED_ARRAY_RESULT);
+    }
+    
+    @Test
+    public void test_array_label_no_explode_path_param_deserialization() throws Exception {
+    	runTest("/pets_label_array_no_ep/.3,4,5", EXPECTED_ARRAY_RESULT);
+    }
+    
+    @Test
+    public void test_object_label_explode_path_param_deserialization() throws Exception {
+    	runTest("/pets_label_obj_ep/.id=001.name=Dog", EXPECTED_MAP_RESULT);
+    }
+    
+    @Test
+    public void test_object_label_no_explode_path_param_deserialization() throws Exception {
+    	runTest("/pets_label_obj_no_ep/.id,001,name,Dog", EXPECTED_MAP_RESULT);
+    }
+    
+    @Test
+    public void test_primitive_matrix_path_param_deserialization() throws Exception {
+    	runTest("/pets_matrix_pm/;petId=5", "5");
+    }
+    
+    @Test
+    public void test_array_matrix_explode_path_param_deserialization() throws Exception {
+    	runTest("/pets_matrix_array_ep/;petId=3;petId=4;petId=5", EXPECTED_ARRAY_RESULT);
+    }
+    
+    @Test
+    public void test_array_matrix_no_explode_path_param_deserialization() throws Exception {
+    	runTest("/pets_matrix_array_no_ep/;petId=3,4,5", EXPECTED_ARRAY_RESULT);
+    }  
+    
+    @Test
+    public void test_object_matrix_explode_path_param_deserialization() throws Exception {
+    	runTest("/pets_matrix_obj_ep/;id=001;name=Dog", EXPECTED_MAP_RESULT);
+    }
+    
+    @Test
+    public void test_object_matrix_no_explode_path_param_deserialization() throws Exception {
+    	runTest("/pets_matrix_obj_no_ep/;petId=id,001,name,Dog", EXPECTED_MAP_RESULT);
+    }    
     
     public void runTest(String requestPath, String expectedValue) throws Exception {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();

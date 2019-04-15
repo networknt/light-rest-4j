@@ -27,7 +27,7 @@ public interface ParameterDeserializer {
 	}
 	
 	static Set<String> getCandidatePathParams(HttpServerExchange exchange){
-		return exchange.getQueryParameters().keySet();
+		return exchange.getPathParameters().keySet();
 	}
 	
 	static void deserialize(HttpServerExchange exchange, OpenApiOperation openApiOperation) {

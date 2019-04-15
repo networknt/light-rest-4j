@@ -24,6 +24,10 @@ public enum PathParameterStyle {
 	}
 	
 	public static PathParameterStyle of(String styleStr) {
+		if (StringUtils.isBlank(styleStr)) {
+			return SIMPLE;
+		}
+		
 		return lookup.get(StringUtils.trimToEmpty(styleStr).toUpperCase());
 	}
 	

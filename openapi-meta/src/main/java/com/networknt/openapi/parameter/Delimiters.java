@@ -8,4 +8,5 @@ public class Delimiters {
 	static final String SEMICOLON=";";
 	static final String EQUAL="=";
 	static final String LEFT_BRACKET="[";
+	static final String SLASH="/";
 }

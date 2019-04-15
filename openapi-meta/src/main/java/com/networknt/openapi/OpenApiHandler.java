@@ -87,7 +87,11 @@ public class OpenApiHandler implements MiddlewareHandler {
         // This handler can identify the openApiOperation and endpoint only. Other info will be added by JwtVerifyHandler.
         final OpenApiOperation openApiOperation = new OpenApiOperation(openApiPathString, path, httpMethod, operation);
         
-        ParameterDeserializer.deserialize(exchange, openApiOperation);
+        try {
+        	ParameterDeserializer.deserialize(exchange, openApiOperation);
+        }catch (Throwable t) {// do not crash the handler
+        	logger.error(t.getMessage(), t);
+        }
         
         String endpoint = openApiPathString.normalised() + "@" + httpMethod.toString().toLowerCase();
         Map<String, Object> auditInfo = new HashMap<>();

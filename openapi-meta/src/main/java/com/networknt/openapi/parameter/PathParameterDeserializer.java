@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.networknt.oas.model.Parameter;
+import com.networknt.oas.model.Schema;
 import com.networknt.openapi.OpenApiHandler;
 import com.networknt.utility.StringUtils;
 
@@ -109,15 +110,54 @@ class MatrixStyleDeserializer implements StyleParameterDeserializer{
 				values.forEach(v->valueList.addAll(asList(replace(trimStart(v, Delimiters.SEMICOLON), prefix,StringUtils.EMPTY), delimiter)));
 			}
 			
+			if (StringUtils.isBlank(valueList.get(valueList.size()-1))) {
+				// this is a undertow-specific trick.
+				// undertow parses matrix style path parameters and removes path parameters from request path
+				// as a result, a space is added by com.networknt.handler.Handler.start()
+				
+				valueList.remove(valueList.size()-1);
+			}
+			
 			return valueList;			
 		}else if (ValueType.OBJECT == valueType) {
 			Map<String, String> valueMap = new HashMap<>();
-			values.forEach(v->valueMap.putAll(exploade?asExploadeMap(trimStart(v, Delimiters.SEMICOLON), delimiter):asMap(trimStart(v, start), delimiter)));
+			
+			if (!exploade) {
+				values.forEach(v->valueMap.putAll(asMap(trimStart(v, start), delimiter)));
+			}else {
+				Schema schema = parameter.getSchema();
+				String requestURI = exchange.getRequestURI();
+				
+				schema.getProperties().keySet().forEach(k->valueMap.put(k, getValue(k, requestURI)));
+			}
 			
 			return valueMap;
 		}
 		
 		return null;
+	}
+	
+	private String getValue(String prop, String uri) {
+		String key = String.format(";%s=", prop);
+		
+		if (StringUtils.containsIgnoreCase(uri,  key)) {
+			String value = uri.substring(uri.indexOf(key) + key.length());
+			int nextSemiColon = value.indexOf(Delimiters.SEMICOLON);
+			int nextSlash = value.indexOf(Delimiters.SLASH);
+			int end = Math.min(nextSemiColon, nextSlash);
+			
+			if (nextSemiColon>=0 && nextSlash>=0) {
+				value = value.substring(0, end);
+			}else if (nextSemiColon>=0) {
+				value = value.substring(0, nextSemiColon);
+			}else if (nextSlash>=0) {
+				value = value.substring(0, nextSlash);
+			}
+			
+			return value;
+		}
+		
+		return StringUtils.EMPTY;
 	}
 	
 	@Override

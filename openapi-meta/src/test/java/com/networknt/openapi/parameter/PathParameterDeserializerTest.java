@@ -1,5 +1,7 @@
 package com.networknt.openapi.parameter;
 
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 
 import com.networknt.oas.model.Parameter;
@@ -223,6 +225,15 @@ public class PathParameterDeserializerTest extends ParameterDeserializerTest{
 		exchange.addPathParam(PARAM_NAME, ";role=admin;firstName=Alex");
 		
 		checkMap(exchange, parameter, 2);
+	}
+	
+	@Test
+	public void test_sub_string() {
+		String s = "/a/b/c";
+		
+		int pos = s.indexOf(Delimiters.SLASH);
+		
+		assertTrue(pos>=0);
 	}
 	
 	protected void checkArray(HttpServerExchange exchange, Parameter parameter) {
