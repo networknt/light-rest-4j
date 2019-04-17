@@ -16,6 +16,16 @@
 
 package com.networknt.openapi;
 
+import static java.util.Objects.requireNonNull;
+
+import java.net.URLDecoder;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.networknt.body.BodyHandler;
 import com.networknt.jsonoverlay.Overlay;
 import com.networknt.oas.model.Parameter;
@@ -24,16 +34,9 @@ import com.networknt.oas.model.impl.RequestBodyImpl;
 import com.networknt.oas.model.impl.SchemaImpl;
 import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.status.Status;
+
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderValues;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.net.URLDecoder;
-import java.util.Collection;
-import java.util.Optional;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * Validate a request data against a given API operation defined in the OpenAPI Spec.
@@ -236,7 +239,8 @@ public class RequestValidator {
     private Status validateHeader(final HttpServerExchange exchange,
                                   final OpenApiOperation openApiOperation,
                                   final Parameter headerParameter) {
-
+    	Map cookies = exchange.getRequestCookies();
+    	
         final HeaderValues headerValues = exchange.getRequestHeaders().get(headerParameter.getName());
         if ((headerValues == null || headerValues.isEmpty())) {
             if(headerParameter.getRequired()) {

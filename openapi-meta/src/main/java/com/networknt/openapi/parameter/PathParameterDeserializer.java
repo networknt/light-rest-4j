@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.networknt.oas.model.Parameter;
 import com.networknt.oas.model.Schema;
@@ -30,11 +29,6 @@ public class PathParameterDeserializer implements ParameterDeserializer{
 		}
 		
 		return styleDef.getDeserializer();
-	}
-
-	@Override
-	public boolean isApplicable(HttpServerExchange exchange, Parameter parameter, Set<String> candidateParams) {
-		return candidateParams.contains(parameter.getName());
 	}
 }
 

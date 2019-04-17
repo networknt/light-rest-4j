@@ -7,7 +7,9 @@ import com.networknt.utility.StringUtils;
 
 public enum ParameterType {
 	PATH(new PathParameterDeserializer()),
-	QUERY(new QueryParameterDeserializer());
+	QUERY(new QueryParameterDeserializer()),
+	HEADER(new HeaderParameterDeserializer()),
+	COOKIE(new CookieParameterDeserializer());
 	
 	private static Map<String, ParameterType> lookup = new HashMap<>();
 	

@@ -3,6 +3,7 @@ package com.networknt.openapi.parameter;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.RoutingHandler;
 import io.undertow.util.Headers;
+import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
 
 public class IntegrationTest {
@@ -239,6 +241,56 @@ public class IntegrationTest {
                 	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange).get("petId"));
                 	
                 	send(exchange, (String)OpenApiHandler.getPathParameters(exchange).get("petId"));
+                }).add(Methods.GET, "/pets_header_array", exchange -> {
+                	List<String> resultList = new ArrayList<>();
+                	
+                	addToList(resultList, OpenApiHandler.getHeaderParameters(exchange).get("petId"));
+                	
+                	if (!resultList.isEmpty()) {
+                		send(exchange, String.join(valueDelimiter, resultList));
+                	}else {
+                		send(exchange, null);
+                	}
+                }).add(Methods.GET, "/pets_header_obj_ep", exchange -> {
+                	Map<String, String> resultMap = new HashMap<>();
+                	
+                	addToMap(resultMap, OpenApiHandler.getHeaderParameters(exchange).get("petId"));
+                	
+                	if (!resultMap.isEmpty()) {
+                		send(exchange, String.format("id-name-%s-%s", resultMap.get("id"), resultMap.get("name")));
+                	}else {
+                		send(exchange, null);
+                	}
+                }).add(Methods.GET, "/pets_header_obj_no_ep", exchange -> {
+                	Map<String, String> resultMap = new HashMap<>();
+                	
+                	addToMap(resultMap, OpenApiHandler.getHeaderParameters(exchange).get("petId"));
+                	
+                	if (!resultMap.isEmpty()) {
+                		send(exchange, String.format("id-name-%s-%s", resultMap.get("id"), resultMap.get("name")));
+                	}else {
+                		send(exchange, null);
+                	}
+                }).add(Methods.GET, "/pets_cookie_array", exchange -> {
+                	List<String> resultList = new ArrayList<>();
+                	
+                	addToList(resultList, OpenApiHandler.getCookieParameters(exchange).get("petId"));
+                	
+                	if (!resultList.isEmpty()) {
+                		send(exchange, String.join(valueDelimiter, resultList));
+                	}else {
+                		send(exchange, null);
+                	}
+                }).add(Methods.GET, "/pets_cookie_obj_no_ep", exchange -> {
+                	Map<String, String> resultMap = new HashMap<>();
+                	
+                	addToMap(resultMap, OpenApiHandler.getCookieParameters(exchange).get("petId"));
+                	
+                	if (!resultMap.isEmpty()) {
+                		send(exchange, String.format("id-name-%s-%s", resultMap.get("id"), resultMap.get("name")));
+                	}else {
+                		send(exchange, null);
+                	}
                 });
     }
     
@@ -335,9 +387,47 @@ public class IntegrationTest {
     @Test
     public void test_object_matrix_no_explode_path_param_deserialization() throws Exception {
     	runTest("/pets_matrix_obj_no_ep/;petId=id,001,name,Dog", EXPECTED_MAP_RESULT);
+    } 
+    
+    @Test
+    public void test_array_header_param_deserialization() throws Exception {
+    	Map<String, String> headers = new HashMap<>();
+    	headers.put("petId", "3,4,5");
+    	
+    	runTest("/pets_header_array", EXPECTED_ARRAY_RESULT, headers, Collections.emptyMap());
+    }
+    
+    @Test
+    public void test_object_simple_explode_header_param_deserialization() throws Exception {
+    	Map<String, String> headers = new HashMap<>();
+    	headers.put("petId", "id=001,name=Dog");
+    	
+    	runTest("/pets_header_obj_ep", EXPECTED_MAP_RESULT, headers, Collections.emptyMap());
+    }
+    
+    @Test
+    public void test_object_simple_no_explode_header_param_deserialization() throws Exception {
+    	Map<String, String> headers = new HashMap<>();
+    	headers.put("petId", "id,001,name,Dog");
+    	runTest("/pets_header_obj_no_ep", EXPECTED_MAP_RESULT, headers, Collections.emptyMap());
+    } 
+    
+    @Test
+    public void test_array_cookie_param_deserialization() throws Exception {
+    	Map<String, String> cookies = new HashMap<>();
+    	cookies.put("petId", "3,4,5");
+    	
+    	runTest("/pets_cookie_array", EXPECTED_ARRAY_RESULT, Collections.emptyMap(), cookies);
+    }
+    
+    @Test
+    public void test_object_simple_no_explode_cookie_param_deserialization() throws Exception {
+    	Map<String, String> cookies = new HashMap<>();
+    	cookies.put("petId", "id,001,name,Dog");
+    	runTest("/pets_cookie_obj_no_ep", EXPECTED_MAP_RESULT, Collections.emptyMap(), cookies);
     }    
     
-    public void runTest(String requestPath, String expectedValue) throws Exception {
+    public void runTest(String requestPath, String expectedValue, Map<String, String> headers, Map<String, String> cookies) throws Exception {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -354,6 +444,18 @@ public class IntegrationTest {
                 public void run() {
                     final ClientRequest request = new ClientRequest().setMethod(Methods.GET).setPath(requestPath);
                     request.getRequestHeaders().put(Headers.HOST, "localhost");
+                    
+                    if (!headers.isEmpty()) {
+                    	headers.entrySet().forEach(entry->request.getRequestHeaders().put(new HttpString(entry.getKey()), entry.getValue()));
+                    }
+                    
+                    if (!cookies.isEmpty()) {
+                    	List<String> cookieItems = new ArrayList<>();
+                    	cookies.entrySet().forEach(entry->cookieItems.add(String.format("%s=%s", entry.getKey(), entry.getValue())));
+                    	
+                    	 request.getRequestHeaders().put(Headers.COOKIE, String.join(";", cookieItems));
+                    }
+                    
                     connection.sendRequest(request, client.createClientCallback(reference, latch, ""));
                 }
             });
@@ -370,6 +472,10 @@ public class IntegrationTest {
             String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
             Assert.assertNotNull(body);
             Assert.assertEquals(expectedValue, body);
-        }
+        }    	
+    }
+    
+    public void runTest(String requestPath, String expectedValue) throws Exception {
+    	runTest(requestPath, expectedValue, Collections.emptyMap(), Collections.emptyMap());
     }    
 }

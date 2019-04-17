@@ -414,7 +414,8 @@ public class ValidatorHandlerTest {
         try {
             ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.DELETE);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
-            request.getRequestHeaders().put(new HttpString("key"), "key");
+            request.getRequestHeaders().put(new HttpString("key"), "3,4,5");
+            request.getRequestHeaders().put(Headers.COOKIE, "id=1,2,3");
             connection.sendRequest(request, client.createClientCallback(reference, latch));
             latch.await();
         } catch (Exception e) {

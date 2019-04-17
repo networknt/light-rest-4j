@@ -53,6 +53,8 @@ public class OpenApiHandler implements MiddlewareHandler {
     
 	public static final AttachmentKey<Map<String, Object>> DESERIALIZED_QUERY_PARAMETERS = AttachmentKey.create(Map.class);
 	public static final AttachmentKey<Map<String, Object>> DESERIALIZED_PATH_PARAMETERS = AttachmentKey.create(Map.class);
+	public static final AttachmentKey<Map<String, Object>> DESERIALIZED_HEADER_PARAMETERS = AttachmentKey.create(Map.class);
+	public static final AttachmentKey<Map<String, Object>> DESERIALIZED_COOKIE_PARAMETERS = AttachmentKey.create(Map.class);
 
     static final String STATUS_INVALID_REQUEST_PATH = "ERR10007";
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
@@ -134,4 +136,14 @@ public class OpenApiHandler implements MiddlewareHandler {
     	Map<String, Object> deserializedPathParamters = exchange.getAttachment(DESERIALIZED_PATH_PARAMETERS);
     	return null==deserializedPathParamters?Collections.emptyMap():deserializedPathParamters;
     }
+    
+    public static Map<String, Object> getHeaderParameters(final HttpServerExchange exchange){
+    	Map<String, Object> deserializedHeaderParamters = exchange.getAttachment(DESERIALIZED_HEADER_PARAMETERS);
+    	return null==deserializedHeaderParamters?Collections.emptyMap():deserializedHeaderParamters;
+    }
+    
+    public static Map<String, Object> getCookieParameters(final HttpServerExchange exchange){
+    	Map<String, Object> deserializedCookieParamters = exchange.getAttachment(DESERIALIZED_COOKIE_PARAMETERS);
+    	return null==deserializedCookieParamters?Collections.emptyMap():deserializedCookieParamters;
+    }    
 }

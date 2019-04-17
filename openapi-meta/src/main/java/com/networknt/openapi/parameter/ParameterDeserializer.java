@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.networknt.oas.model.Parameter;
 import com.networknt.openapi.OpenApiOperation;
@@ -26,26 +27,39 @@ public interface ParameterDeserializer {
 		return candidateQueryParams;
 	}
 	
-	static Set<String> getCandidatePathParams(HttpServerExchange exchange){
-		return exchange.getPathParameters().keySet();
-	}
-	
 	static void deserialize(HttpServerExchange exchange, OpenApiOperation openApiOperation) {
 		Set<String> candidateQueryParams = getCandidateQueryParams(exchange);
-		Set<String> candidatePathParams = getCandidatePathParams(exchange);
+		Set<String> candidatePathParams = exchange.getPathParameters().keySet();
+		Set<String> candidateHeaderParams = exchange.getRequestHeaders().getHeaderNames().stream().map(name->name.toString()).collect(Collectors.toSet());
+		Set<String> candidateCookieParams = exchange.getRequestCookies().keySet();
 		
 		openApiOperation.getOperation().getParameters().forEach(p->{
 			ParameterType type = ParameterType.of(p.getIn());
 			
-			if (ParameterType.QUERY==type) {
-				ParameterType.QUERY.getDeserializer().deserialize(exchange, p, candidateQueryParams);
-			}else if (ParameterType.PATH==type) {
-				ParameterType.PATH.getDeserializer().deserialize(exchange, p, candidatePathParams);
+			if (null!=type) {
+				ParameterDeserializer deserializer = type.getDeserializer();
+				
+				switch(type){
+				case QUERY:
+					deserializer.deserialize(exchange, p, candidateQueryParams);
+					break;
+				case PATH:
+					deserializer.deserialize(exchange, p, candidatePathParams);
+					break;
+				case HEADER:
+					deserializer.deserialize(exchange, p, candidateHeaderParams);
+					break;
+				case COOKIE:
+					deserializer.deserialize(exchange, p, candidateCookieParams);
+					break;
+				}
 			}
 		});
 	}
 	
-	boolean isApplicable(HttpServerExchange exchange, Parameter parameter, Set<String> candidateParams);
+	default boolean isApplicable(HttpServerExchange exchange, Parameter parameter, Set<String> candidateParams) {
+		return candidateParams.contains(parameter.getName());
+	}
 	
 	default void deserialize(HttpServerExchange exchange, Parameter parameter, Set<String> candidateParams) {
 		if (!isApplicable(exchange, parameter, candidateParams)) {
