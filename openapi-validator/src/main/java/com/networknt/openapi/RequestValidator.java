@@ -39,6 +39,7 @@ import com.networknt.oas.model.impl.SchemaImpl;
 import com.networknt.openapi.parameter.ParameterType;
 import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.status.Status;
+import com.networknt.utility.StringUtils;
 
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderValues;
@@ -331,17 +332,33 @@ public class RequestValidator {
     	parameters.stream()
 		        .filter(p -> ParameterType.is(p.getIn(), type))
 		        .forEach(p->{
-		        	Object deserializedValue = OpenApiHandler.getQueryParameters(exchange).get(p.getName());
+		        	Object deserializedValue = getDeserializedValue(exchange, p.getName(), type);
 		        	if (null==deserializedValue) {
 		        		validationResult.addSkipped(p);
+		        	}else {
+		        		Status s = schemaValidator.validate(deserializedValue, Overlay.toJson((SchemaImpl)(p.getSchema())));
+		        		validationResult.addStatus(s);
 		        	}
-		        	
-		        	Status s = schemaValidator.validate(deserializedValue, Overlay.toJson((SchemaImpl)(p.getSchema())));
-		        	
-		        	validationResult.addStatus(s);
 		        });
     	
     	return validationResult;
+    }
+    
+    private Object getDeserializedValue(final HttpServerExchange exchange, final String name, final ParameterType type) {
+    	if (null!=type && StringUtils.isNotBlank(name)) {
+			switch(type){
+			case QUERY:
+				return OpenApiHandler.getQueryParameters(exchange).get(name);
+			case PATH:
+				return OpenApiHandler.getPathParameters(exchange).get(name);
+			case HEADER:
+				return OpenApiHandler.getHeaderParameters(exchange).get(name);
+			case COOKIE:
+				return OpenApiHandler.getCookieParameters(exchange).get(name);
+			}   		
+    	}
+    	
+    	return null;
     }
     
     

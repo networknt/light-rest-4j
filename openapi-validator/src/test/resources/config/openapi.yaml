@@ -8,9 +8,6 @@ servers:
   - url: 'http://petstore.swagger.io/v1'
 paths:
   /pets:
-    parameters:
-      - $ref: '#/components/parameters/accessId'
-      - $ref: '#/components/parameters/requestId'
     get:
       summary: List all pets
       operationId: listPets
@@ -24,11 +21,55 @@ paths:
           schema:
             type: integer
             format: int32
-        - name: all
+        - name: id_form
           in: query
-          description: Retrieve all for defect 57
+          required: false
+          style: form
+          explode: false
           schema:
-            type: boolean
+            type: array
+            items:
+              type: string
+        - name: id_sd
+          in: query
+          required: false
+          style: spaceDelimited
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: id_pd
+          in: query
+          required: false
+          style: pipeDelimited
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string              
+        - name: id_do
+          in: query
+          required: false
+          style: deepObject
+          explode: true
+          schema:
+            $ref: '#/components/schemas/Pet'  
+        - name: id_fo
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            $ref: '#/components/schemas/Pet'   
+        - name: id_fno
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            $ref: '#/components/schemas/Pet'                         
+                            
       security:
         - petstore_auth:
             - 'read:pets'
@@ -84,6 +125,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
+
   '/pets/{petId}':
     get:
       summary: Info for a specific pet
@@ -97,6 +140,7 @@ paths:
           description: The id of the pet to retrieve
           schema:
             type: string
+                         
       security:
         - petstore_auth:
             - 'read:pets'
@@ -126,7 +170,7 @@ paths:
         - name: petId
           in: path
           required: true
-          description: The id of the pet to delete oneOf test issue 58
+          description: The id of the pet to delete
           schema:
             type: string
         - name: key
@@ -145,12 +189,614 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Pet'
-              examples:
-                response:
-                  value:
-                    id: 1
-                    name: Jessica Right
-                    tag: pet
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/pets_simple_array/{petId}':
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          schema:
+            type: array
+            items:
+              type: string  
+                         
+      security:
+        - petstore_auth:
+            - 'read:pets'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: 1
+                name: Jessica Right
+                tag: pet
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/pets_simple_obj_ep/{petId}':
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          explode: true
+          schema:
+            $ref: '#/components/schemas/Pet'
+                         
+      security:
+        - petstore_auth:
+            - 'read:pets'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: 1
+                name: Jessica Right
+                tag: pet
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/pets_simple_obj_no_ep/{petId}':
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          schema:
+            $ref: '#/components/schemas/Pet'
+                         
+      security:
+        - petstore_auth:
+            - 'read:pets'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: 1
+                name: Jessica Right
+                tag: pet
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/pets_label_array_ep/{petId}':
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          style: label
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string  
+                         
+      security:
+        - petstore_auth:
+            - 'read:pets'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: 1
+                name: Jessica Right
+                tag: pet
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'                
+  '/pets_label_array_no_ep/{petId}':
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          style: label
+          schema:
+            type: array
+            items:
+              type: string  
+                         
+      security:
+        - petstore_auth:
+            - 'read:pets'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: 1
+                name: Jessica Right
+                tag: pet
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'  
+  '/pets_label_obj_ep/{petId}':
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          style: label
+          explode: true
+          schema:
+            $ref: '#/components/schemas/Pet'
+                         
+      security:
+        - petstore_auth:
+            - 'read:pets'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: 1
+                name: Jessica Right
+                tag: pet
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'                
+  '/pets_label_obj_no_ep/{petId}':
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          style: label
+          schema:
+            $ref: '#/components/schemas/Pet'
+                         
+      security:
+        - petstore_auth:
+            - 'read:pets'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: 1
+                name: Jessica Right
+                tag: pet
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'                  
+  '/pets_matrix_pm/{petId}':
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          style: matrix
+          explode: true
+          schema:
+            type: string
+                         
+      security:
+        - petstore_auth:
+            - 'read:pets'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: 1
+                name: Jessica Right
+                tag: pet
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'  
+  '/pets_matrix_array_ep/{petId}':
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          style: matrix
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string  
+                         
+      security:
+        - petstore_auth:
+            - 'read:pets'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: 1
+                name: Jessica Right
+                tag: pet
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'                
+  '/pets_matrix_array_no_ep/{petId}':
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          style: matrix
+          schema:
+            type: array
+            items:
+              type: string  
+                         
+      security:
+        - petstore_auth:
+            - 'read:pets'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: 1
+                name: Jessica Right
+                tag: pet
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'  
+  '/pets_matrix_obj_ep/{petId}':
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          style: matrix
+          explode: true
+          schema:
+            $ref: '#/components/schemas/Pet'
+                         
+      security:
+        - petstore_auth:
+            - 'read:pets'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: 1
+                name: Jessica Right
+                tag: pet
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'                
+  '/pets_matrix_obj_no_ep/{petId}':
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          style: matrix
+          schema:
+            $ref: '#/components/schemas/Pet'
+                         
+      security:
+        - petstore_auth:
+            - 'read:pets'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: 1
+                name: Jessica Right
+                tag: pet
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'  
+  '/pets_header_array':
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: header
+          required: true
+          description: The id of the pet to retrieve
+          schema:
+            type: array
+            items:
+              type: string  
+                         
+      security:
+        - petstore_auth:
+            - 'read:pets'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: 1
+                name: Jessica Right
+                tag: pet
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/pets_header_obj_ep':
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: header
+          required: true
+          description: The id of the pet to retrieve
+          explode: true
+          schema:
+            $ref: '#/components/schemas/Pet'
+                         
+      security:
+        - petstore_auth:
+            - 'read:pets'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: 1
+                name: Jessica Right
+                tag: pet
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/pets_header_obj_no_ep':
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: header
+          required: true
+          description: The id of the pet to retrieve
+          schema:
+            $ref: '#/components/schemas/Pet'
+                         
+      security:
+        - petstore_auth:
+            - 'read:pets'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: 1
+                name: Jessica Right
+                tag: pet
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/pets_cookie_array':
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: cookie
+          required: true
+          description: The id of the pet to retrieve
+          schema:
+            type: array
+            items:
+              type: string  
+                         
+      security:
+        - petstore_auth:
+            - 'read:pets'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: 1
+                name: Jessica Right
+                tag: pet
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/pets_cookie_obj_no_ep':
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: cookie
+          required: true
+          description: The id of the pet to retrieve
+          schema:
+            $ref: '#/components/schemas/Pet'
+                         
+      security:
+        - petstore_auth:
+            - 'read:pets'
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              example:
+                id: 1
+                name: Jessica Right
+                tag: pet
         default:
           description: unexpected error
           content:
@@ -158,24 +804,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 components:
-  parameters:
-    accessId:
-      name: accessId
-      in: header
-      description: unique id that identifies a partner
-      required: true
-      schema:
-        type: string
-        maximum: 50
-    requestId:
-      name: requestId
-      in: header
-      description: partner generated unique id for each request used for message tracking purposes
-      required: true
-      schema:
-        type: string
-        minimum: 1
-        maximum: 64
   securitySchemes:
     petstore_auth:
       type: oauth2
@@ -188,6 +816,7 @@ components:
             'read:pets': read your pets
   schemas:
     Pet:
+      type: object
       required:
         - id
         - name
