@@ -38,9 +38,10 @@ import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
 
 public class RequestValidatorTest {
-    private static final Logger logger = LoggerFactory.getLogger(OpenApiHandlerTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(RequestValidatorTest.class);
     private static final String EXPECTED_ARRAY_RESULT="3-4-5";
     private static final String EXPECTED_MAP_RESULT="id-name-001-Dog";
+    private static final Map<String, String> PETS_HEADERS = new HashMap<>();
 
     private static Undertow server = null;
 
@@ -72,6 +73,9 @@ public class RequestValidatorTest {
                     .build();
             server.start();
         }
+        
+        PETS_HEADERS.put("accessId", "001");
+        PETS_HEADERS.put("requestId", "1");
     }
 
     @AfterClass
@@ -301,37 +305,37 @@ public class RequestValidatorTest {
     
     @Test
     public void test_array_default_query_param_deserialization() throws Exception {
-    	runTest("/pets?limit=3", "3");
+    	runTest("/pets?limit=3", "3", PETS_HEADERS, Collections.emptyMap());
     }
     
     @Test
     public void test_array_no_explode_query_param_deserialization() throws Exception {
-    	runTest("/pets?id_form=3,4,5", EXPECTED_ARRAY_RESULT);
+    	runTest("/pets?id_form=3,4,5", EXPECTED_ARRAY_RESULT, PETS_HEADERS, Collections.emptyMap());
     }
     
     @Test
     public void test_array_spaceDelimited_no_explode_query_param_deserialization() throws Exception {
-    	runTest("/pets?id_sd=3%204%205", EXPECTED_ARRAY_RESULT);
+    	runTest("/pets?id_sd=3%204%205", EXPECTED_ARRAY_RESULT, PETS_HEADERS, Collections.emptyMap());
     } 
     
     @Test
     public void test_array_pipeDelimited_no_explode_query_param_deserialization() throws Exception {
-    	runTest("/pets?id_pd=3%7C4%7C5", EXPECTED_ARRAY_RESULT);
+    	runTest("/pets?id_pd=3%7C4%7C5", EXPECTED_ARRAY_RESULT, PETS_HEADERS, Collections.emptyMap());
     } 
     
     @Test
     public void test_object_deepObject_explode_query_param_deserialization() throws Exception {
-    	runTest("/pets?id_do[id]=001&id_do[name]=Dog", EXPECTED_MAP_RESULT);
+    	runTest("/pets?id_do[id]=001&id_do[name]=Dog", EXPECTED_MAP_RESULT, PETS_HEADERS, Collections.emptyMap());
     }   
     
     @Test
     public void test_object_form_explode_query_param_deserialization() throws Exception {
-    	runTest("/pets?id=001&name=Dog", EXPECTED_MAP_RESULT);
+    	runTest("/pets?id=001&name=Dog", EXPECTED_MAP_RESULT, PETS_HEADERS, Collections.emptyMap());
     }  
     
     @Test
     public void test_object_form_no_explode_query_param_deserialization() throws Exception {
-    	runTest("/pets?id_fno=id,001,name,Dog", EXPECTED_MAP_RESULT);
+    	runTest("/pets?id_fno=id,001,name,Dog", EXPECTED_MAP_RESULT, PETS_HEADERS, Collections.emptyMap());
     }   
     
     @Test
