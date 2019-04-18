@@ -348,13 +348,13 @@ public class RequestValidator {
     	if (null!=type && StringUtils.isNotBlank(name)) {
 			switch(type){
 			case QUERY:
-				return OpenApiHandler.getQueryParameters(exchange).get(name);
+				return OpenApiHandler.getQueryParameters(exchange,true).get(name);
 			case PATH:
-				return OpenApiHandler.getPathParameters(exchange).get(name);
+				return OpenApiHandler.getPathParameters(exchange,true).get(name);
 			case HEADER:
-				return OpenApiHandler.getHeaderParameters(exchange).get(name);
+				return OpenApiHandler.getHeaderParameters(exchange,true).get(name);
 			case COOKIE:
-				return OpenApiHandler.getCookieParameters(exchange).get(name);
+				return OpenApiHandler.getCookieParameters(exchange,true).get(name);
 			}   		
     	}
     	

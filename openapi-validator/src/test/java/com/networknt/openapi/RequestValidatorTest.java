@@ -118,13 +118,13 @@ public class RequestValidatorTest {
                 	Map<String, String> resultMap = new HashMap<>();
                 	
                 	addToList(resultList, exchange.getQueryParameters().get("limit"));
-                	addToList(resultList, OpenApiHandler.getQueryParameters(exchange).get("id_form"));
-                	addToList(resultList, OpenApiHandler.getQueryParameters(exchange).get("id_sd"));
-                	addToList(resultList, OpenApiHandler.getQueryParameters(exchange).get("id_pd"));
+                	addToList(resultList, OpenApiHandler.getQueryParameters(exchange,true).get("id_form"));
+                	addToList(resultList, OpenApiHandler.getQueryParameters(exchange,true).get("id_sd"));
+                	addToList(resultList, OpenApiHandler.getQueryParameters(exchange,true).get("id_pd"));
                 	
-                	addToMap(resultMap, OpenApiHandler.getQueryParameters(exchange).get("id_do"));
-                	addToMap(resultMap, OpenApiHandler.getQueryParameters(exchange).get("id_fo"));
-                	addToMap(resultMap, OpenApiHandler.getQueryParameters(exchange).get("id_fno"));
+                	addToMap(resultMap, OpenApiHandler.getQueryParameters(exchange,true).get("id_do"));
+                	addToMap(resultMap, OpenApiHandler.getQueryParameters(exchange,true).get("id_fo"));
+                	addToMap(resultMap, OpenApiHandler.getQueryParameters(exchange,true).get("id_fno"));
                 	
                 	if (!resultList.isEmpty()) {
                 		send(exchange, String.join(valueDelimiter, resultList));
@@ -137,7 +137,7 @@ public class RequestValidatorTest {
                 }).add(Methods.GET, "/pets_simple_array/{petId}", exchange -> {
                 	List<String> resultList = new ArrayList<>();
                 	
-                	addToList(resultList, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	addToList(resultList, OpenApiHandler.getPathParameters(exchange,true).get("petId"));
                 	
                 	if (!resultList.isEmpty()) {
                 		send(exchange, String.join(valueDelimiter, resultList));
@@ -147,7 +147,7 @@ public class RequestValidatorTest {
                 }).add(Methods.GET, "/pets_label_array_ep/{petId}", exchange -> {
                 	List<String> resultList = new ArrayList<>();
                 	
-                	addToList(resultList, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	addToList(resultList, OpenApiHandler.getPathParameters(exchange,true).get("petId"));
                 	
                 	if (!resultList.isEmpty()) {
                 		send(exchange, String.join(valueDelimiter, resultList));
@@ -157,7 +157,7 @@ public class RequestValidatorTest {
                 }).add(Methods.GET, "/pets_label_array_no_ep/{petId}", exchange -> {
                 	List<String> resultList = new ArrayList<>();
                 	
-                	addToList(resultList, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	addToList(resultList, OpenApiHandler.getPathParameters(exchange,true).get("petId"));
                 	
                 	if (!resultList.isEmpty()) {
                 		send(exchange, String.join(valueDelimiter, resultList));
@@ -167,7 +167,7 @@ public class RequestValidatorTest {
                 }).add(Methods.GET, "/pets_matrix_array_ep/{petId}", exchange -> {
                 	List<String> resultList = new ArrayList<>();
                 	
-                	addToList(resultList, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	addToList(resultList, OpenApiHandler.getPathParameters(exchange,true).get("petId"));
                 	
                 	if (!resultList.isEmpty()) {
                 		send(exchange, String.join(valueDelimiter, resultList));
@@ -177,7 +177,7 @@ public class RequestValidatorTest {
                 }).add(Methods.GET, "/pets_matrix_array_no_ep/{petId}", exchange -> {
                 	List<String> resultList = new ArrayList<>();
                 	
-                	addToList(resultList, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	addToList(resultList, OpenApiHandler.getPathParameters(exchange,true).get("petId"));
                 	
                 	if (!resultList.isEmpty()) {
                 		send(exchange, String.join(valueDelimiter, resultList));
@@ -187,7 +187,7 @@ public class RequestValidatorTest {
                 }).add(Methods.GET, "/pets_simple_obj_ep/{petId}", exchange -> {
                 	Map<String, String> resultMap = new HashMap<>();
                 	
-                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange,true).get("petId"));
                 	
                 	if (!resultMap.isEmpty()) {
                 		send(exchange, String.format("id-name-%s-%s", resultMap.get("id"), resultMap.get("name")));
@@ -197,7 +197,7 @@ public class RequestValidatorTest {
                 }).add(Methods.GET, "/pets_simple_obj_no_ep/{petId}", exchange -> {
                 	Map<String, String> resultMap = new HashMap<>();
                 	
-                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange,true).get("petId"));
                 	
                 	if (!resultMap.isEmpty()) {
                 		send(exchange, String.format("id-name-%s-%s", resultMap.get("id"), resultMap.get("name")));
@@ -207,7 +207,7 @@ public class RequestValidatorTest {
                 }).add(Methods.GET, "/pets_label_obj_ep/{petId}", exchange -> {
                 	Map<String, String> resultMap = new HashMap<>();
                 	
-                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange,true).get("petId"));
                 	
                 	if (!resultMap.isEmpty()) {
                 		send(exchange, String.format("id-name-%s-%s", resultMap.get("id"), resultMap.get("name")));
@@ -217,7 +217,7 @@ public class RequestValidatorTest {
                 }).add(Methods.GET, "/pets_label_obj_no_ep/{petId}", exchange -> {
                 	Map<String, String> resultMap = new HashMap<>();
                 	
-                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange,true).get("petId"));
                 	
                 	if (!resultMap.isEmpty()) {
                 		send(exchange, String.format("id-name-%s-%s", resultMap.get("id"), resultMap.get("name")));
@@ -227,7 +227,7 @@ public class RequestValidatorTest {
                 }).add(Methods.GET, "/pets_matrix_obj_ep/{petId}", exchange -> {
                 	Map<String, String> resultMap = new HashMap<>();
                 	
-                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange,true).get("petId"));
                 	
                 	if (!resultMap.isEmpty()) {
                 		send(exchange, String.format("id-name-%s-%s", resultMap.get("id"), resultMap.get("name")));
@@ -237,7 +237,7 @@ public class RequestValidatorTest {
                 }).add(Methods.GET, "/pets_matrix_obj_no_ep/{petId}", exchange -> {
                 	Map<String, String> resultMap = new HashMap<>();
                 	
-                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange,true).get("petId"));
                 	
                 	if (!resultMap.isEmpty()) {
                 		send(exchange, String.format("id-name-%s-%s", resultMap.get("id"), resultMap.get("name")));
@@ -245,15 +245,11 @@ public class RequestValidatorTest {
                 		send(exchange, null);
                 	}
                 }).add(Methods.GET, "/pets_matrix_pm/{petId}", exchange -> {
-                	Map<String, String> resultMap = new HashMap<>();
-                	
-                	addToMap(resultMap, OpenApiHandler.getPathParameters(exchange).get("petId"));
-                	
-                	send(exchange, (String)OpenApiHandler.getPathParameters(exchange).get("petId"));
+                	send(exchange, (String)OpenApiHandler.getPathParameters(exchange,true).get("petId"));
                 }).add(Methods.GET, "/pets_header_array", exchange -> {
                 	List<String> resultList = new ArrayList<>();
                 	
-                	addToList(resultList, OpenApiHandler.getHeaderParameters(exchange).get("petId"));
+                	addToList(resultList, OpenApiHandler.getHeaderParameters(exchange,true).get("petId"));
                 	
                 	if (!resultList.isEmpty()) {
                 		send(exchange, String.join(valueDelimiter, resultList));
@@ -263,7 +259,7 @@ public class RequestValidatorTest {
                 }).add(Methods.GET, "/pets_header_obj_ep", exchange -> {
                 	Map<String, String> resultMap = new HashMap<>();
                 	
-                	addToMap(resultMap, OpenApiHandler.getHeaderParameters(exchange).get("petId"));
+                	addToMap(resultMap, OpenApiHandler.getHeaderParameters(exchange,true).get("petId"));
                 	
                 	if (!resultMap.isEmpty()) {
                 		send(exchange, String.format("id-name-%s-%s", resultMap.get("id"), resultMap.get("name")));
@@ -273,7 +269,7 @@ public class RequestValidatorTest {
                 }).add(Methods.GET, "/pets_header_obj_no_ep", exchange -> {
                 	Map<String, String> resultMap = new HashMap<>();
                 	
-                	addToMap(resultMap, OpenApiHandler.getHeaderParameters(exchange).get("petId"));
+                	addToMap(resultMap, OpenApiHandler.getHeaderParameters(exchange,true).get("petId"));
                 	
                 	if (!resultMap.isEmpty()) {
                 		send(exchange, String.format("id-name-%s-%s", resultMap.get("id"), resultMap.get("name")));
@@ -283,7 +279,7 @@ public class RequestValidatorTest {
                 }).add(Methods.GET, "/pets_cookie_array", exchange -> {
                 	List<String> resultList = new ArrayList<>();
                 	
-                	addToList(resultList, OpenApiHandler.getCookieParameters(exchange).get("petId"));
+                	addToList(resultList, OpenApiHandler.getCookieParameters(exchange,true).get("petId"));
                 	
                 	if (!resultList.isEmpty()) {
                 		send(exchange, String.join(valueDelimiter, resultList));
@@ -293,7 +289,7 @@ public class RequestValidatorTest {
                 }).add(Methods.GET, "/pets_cookie_obj_no_ep", exchange -> {
                 	Map<String, String> resultMap = new HashMap<>();
                 	
-                	addToMap(resultMap, OpenApiHandler.getCookieParameters(exchange).get("petId"));
+                	addToMap(resultMap, OpenApiHandler.getCookieParameters(exchange,true).get("petId"));
                 	
                 	if (!resultMap.isEmpty()) {
                 		send(exchange, String.format("id-name-%s-%s", resultMap.get("id"), resultMap.get("name")));
