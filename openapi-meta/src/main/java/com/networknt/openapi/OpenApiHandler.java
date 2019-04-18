@@ -130,6 +130,30 @@ public class OpenApiHandler implements MiddlewareHandler {
         ModuleRegistry.registerModule(OpenApiHandler.class.getName(), Config.getInstance().getJsonMapConfig(CONFIG_NAME), null);
     }
     
+    /**
+     * merge two maps. The values in preferredMap take priority.
+     * 
+     * @param preferredMap
+     * @param alternativeMap
+     * @return
+     */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+	protected static Map<String, ?> mergeMaps(Map preferredMap, Map alternativeMap){
+    	Map mergedMap = new HashMap<>();
+    	
+    	if (null!=alternativeMap)
+    		mergedMap.putAll(alternativeMap);
+    	
+    	if (null!=preferredMap)
+    		mergedMap.putAll(preferredMap);
+    	
+    	return Collections.unmodifiableMap(mergedMap);
+    }
+    
+    protected static Map<String, Object> nonNullMap(Map<String, Object> map){
+    	return null==map?Collections.emptyMap():Collections.unmodifiableMap(map);
+    }
+    
     public static Map<String, ?> getQueryParameters(final HttpServerExchange exchange){
     	return getQueryParameters(exchange, false);
     }
@@ -137,15 +161,8 @@ public class OpenApiHandler implements MiddlewareHandler {
     public static Map<String, ?> getQueryParameters(final HttpServerExchange exchange, final boolean deserializedValueOnly){
     	Map<String, Object> deserializedQueryParamters = exchange.getAttachment(DESERIALIZED_QUERY_PARAMETERS);
     	
-    	if (null!=deserializedQueryParamters) {
-    		return deserializedQueryParamters;
-    	}
-    	
-    	if (!deserializedValueOnly) {
-    		return exchange.getQueryParameters();
-    	}
-    	
-    	return Collections.emptyMap();
+    	return deserializedValueOnly?nonNullMap(deserializedQueryParamters)
+    			:mergeMaps(deserializedQueryParamters, exchange.getQueryParameters());
     }
     
     public static Map<String, ?> getPathParameters(final HttpServerExchange exchange){
@@ -155,15 +172,8 @@ public class OpenApiHandler implements MiddlewareHandler {
     public static Map<String, ?> getPathParameters(final HttpServerExchange exchange, final boolean deserializedValueOnly){
     	Map<String, Object> deserializedPathParamters = exchange.getAttachment(DESERIALIZED_PATH_PARAMETERS);
     	
-    	if (null!=deserializedPathParamters) {
-    		return deserializedPathParamters;
-    	}
-    	
-    	if (!deserializedValueOnly) {
-    		return exchange.getPathParameters();
-    	}
-    	
-    	return Collections.emptyMap();
+    	return deserializedValueOnly?nonNullMap(deserializedPathParamters)
+    			:mergeMaps(deserializedPathParamters, exchange.getPathParameters());
     }
     
     public static Map<String, ?> getHeaderParameters(final HttpServerExchange exchange){
@@ -172,10 +182,6 @@ public class OpenApiHandler implements MiddlewareHandler {
     
     public static Map<String, ?> getHeaderParameters(final HttpServerExchange exchange, final boolean deserializedValueOnly){
     	Map<String, Object> deserializedHeaderParamters = exchange.getAttachment(DESERIALIZED_HEADER_PARAMETERS);
-    	
-    	if (null!=deserializedHeaderParamters) {
-    		return deserializedHeaderParamters;
-    	}
     	
     	if (!deserializedValueOnly) {
     		HeaderMap headers = exchange.getRequestHeaders();
@@ -190,10 +196,10 @@ public class OpenApiHandler implements MiddlewareHandler {
     			headerMap.put(headerName.toString(), headers.get(headerName));
     		}
     		
-    		return Collections.emptyMap();
+    		return mergeMaps(deserializedHeaderParamters, headerMap);
     	}
     	
-    	return Collections.emptyMap();
+    	return nonNullMap(deserializedHeaderParamters);
     }
     
     public static Map<String, ?> getCookieParameters(final HttpServerExchange exchange){
@@ -203,14 +209,7 @@ public class OpenApiHandler implements MiddlewareHandler {
     public static Map<String, ?> getCookieParameters(final HttpServerExchange exchange, final boolean deserializedValueOnly){
     	Map<String, Object> deserializedCookieParamters = exchange.getAttachment(DESERIALIZED_COOKIE_PARAMETERS);
     	
-    	if (null!=deserializedCookieParamters) {
-    		return deserializedCookieParamters;
-    	}
-    	
-    	if (!deserializedValueOnly) {
-    		return exchange.getRequestCookies();
-    	}
-    	
-    	return Collections.emptyMap();
+    	return deserializedValueOnly?nonNullMap(deserializedCookieParamters)
+    			:mergeMaps(deserializedCookieParamters, exchange.getRequestCookies());
     } 
 }
