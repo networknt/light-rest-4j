@@ -107,6 +107,10 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>dump</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
