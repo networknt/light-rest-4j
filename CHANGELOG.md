@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.6.1](https://github.com/networknt/light-rest-4j/tree/1.6.1) (2019-05-03)
+
+
+**Merged pull requests:**
+
+
+- fixes \#86 A java doc issue in the ResponseValidator [\#87](https://github.com/networknt/light-rest-4j/pull/87) ([stevehu](https://github.com/stevehu))
+- fixes \#84 change light-4j modules version to version.light-4j [\#85](https://github.com/networknt/light-rest-4j/pull/85) ([stevehu](https://github.com/stevehu))
 ## [1.6.0](https://github.com/networknt/light-rest-4j/tree/1.6.0) (2019-04-05)
 
 
