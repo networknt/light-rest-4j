@@ -473,4 +473,9 @@ public class ValidatorHandlerTest {
         int statusCode = reference.get().getResponseCode();
         Assert.assertEquals(200, statusCode);
     }
+
+    @Test
+    public void testResponseValidation(){
+    }
+
 }
