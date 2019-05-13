@@ -431,7 +431,31 @@ public class RequestValidatorTest {
     	cookies.put("petId", "id,001,name,Dog");
     	runTest("/pets_cookie_obj_no_ep", EXPECTED_MAP_RESULT, Collections.emptyMap(), cookies);
     }    
-    
+
+    @Test(expected = NullPointerException.class)
+    public void test_boolean_value_null() {
+        Boolean required = null;
+        if(required) {
+            System.out.println("The required is null");
+        }
+    }
+
+    @Test
+    public void test_boolean_value() {
+        Boolean required = false;
+        boolean result = false;
+        if(required) {
+            result = true;
+        }
+        Assert.assertFalse(result);
+
+        result = false;
+        if(required == Boolean.TRUE) {
+            result = true;
+        }
+        Assert.assertFalse(result);
+    }
+
     public void runTest(String requestPath, String expectedValue, Map<String, String> headers, Map<String, String> cookies) throws Exception {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         final Http2Client client = Http2Client.getInstance();

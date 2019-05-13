@@ -198,7 +198,7 @@ public class RequestValidator {
         final Collection<String> queryParameterValues = exchange.getQueryParameters().get(queryParameter.getName());
 
         if ((queryParameterValues == null || queryParameterValues.isEmpty())) {
-            if(queryParameter.getRequired()) {
+            if(queryParameter.getRequired() != null && queryParameter.getRequired()) {
                 return new Status(VALIDATOR_REQUEST_PARAMETER_QUERY_MISSING, queryParameter.getName(), openApiOperation.getPathString().original());
             }
         // Validate the value contains by queryParameterValue, if it is the only elements inside the array deque.
