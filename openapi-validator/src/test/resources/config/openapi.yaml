@@ -157,6 +157,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /todoItems:
+    get:
+      description: return all to-do items
+      operationId: getTodoItemList
+      responses:
+        '200':
+          description: all todo items response
+          headers:
+            customHeader1:
+              schema:
+                type: string
+            customHeader2:
+              schema:
+                type: integer
+            Accept-Encoding:
+              schema:
+                enum:
+                  - "*"
+            Content-Type:
+              schema:
+                enum:
+                  - application/json
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoItems'
+
 components:
   parameters:
     accessId:
@@ -209,3 +236,20 @@ components:
           format: int32
         message:
           type: string
+    TodoItems:
+        type: array
+        items:
+          $ref: '#/components/schemas/TodoItem'
+    TodoItem:
+      type: object
+      required:
+        - id
+        - content
+      properties:
+        id:
+          type: string
+        content:
+          type: string
+        date:
+          type: string
+          format: date

@@ -41,12 +41,16 @@ import org.slf4j.LoggerFactory;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 
-import java.io.IOException;
+import java.io.*;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.Optional;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * Created by steve on 01/09/16.
@@ -56,6 +60,10 @@ public class ValidatorHandlerTest {
     static final Logger logger = LoggerFactory.getLogger(ValidatorHandlerTest.class);
 
     static Undertow server = null;
+
+    static Map<String, Object> responses = Config.getInstance().getJsonMapConfig("responses");
+
+    static String logFile = "target/test.log";
 
     @Before
     public void setUp() {
@@ -80,6 +88,19 @@ public class ValidatorHandlerTest {
                     .setHandler(handler)
                     .build();
             server.start();
+            clearLogFile();
+        }
+    }
+
+//    @Before
+    public void clearLogFile() {
+        File f = new File(logFile);
+        try {
+            FileWriter fw = new FileWriter(f, false);
+            fw.write("");
+            fw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -97,11 +118,13 @@ public class ValidatorHandlerTest {
     }
 
     RoutingHandler getPetStoreHandler() {
+        ForwardRequestHandler forwardHandler = new ForwardRequestHandler();
         return Handlers.routing()
                 .add(Methods.POST, "/v1/pets", exchange -> exchange.getResponseSender().send("addPet"))
                 .add(Methods.GET, "/v1/pets/{petId}", exchange -> exchange.getResponseSender().send("getPetById"))
                 .add(Methods.DELETE, "/v1/pets/{petId}", exchange -> exchange.getResponseSender().send("deletePetById"))
-                .add(Methods.GET, "/v1/pets", exchange -> exchange.getResponseSender().send("getPets"));
+                .add(Methods.GET, "/v1/pets", exchange -> exchange.getResponseSender().send("getPets"))
+                .add(Methods.GET, "/v1/todoItems", forwardHandler);
     }
 
     @Test
@@ -179,7 +202,7 @@ public class ValidatorHandlerTest {
         }
 
         try {
-            String post = "{\"name\":\"Pinky\", \"photoUrl\": \"http://www.photo.com/1.jpg\"}";
+            String post = "{\"name\"x:\"Pinky\", \"photoUrl\": \"http://www.photo.com/1.jpg\"}";
             connection.getIoThread().execute(new Runnable() {
                 @Override
                 public void run() {
@@ -475,7 +498,75 @@ public class ValidatorHandlerTest {
     }
 
     @Test
-    public void testResponseValidation(){
+    public void testResponseValidationWithError() throws ClientException, URISyntaxException, ExecutionException, InterruptedException, TimeoutException {
+        CompletableFuture<ClientResponse> future = sendResponse("response2");
+        String statusCode = future.get().getStatus();
+        Assert.assertEquals("OK", statusCode);
+        List<String> errorLines = getErrorLinesFromLogFile();
+        Assert.assertTrue(errorLines.size() > 0);
+
+    }
+    @Test
+    public void testResponseValidationWithNoError() throws ClientException, URISyntaxException, ExecutionException, InterruptedException {
+        CompletableFuture<ClientResponse> future = sendResponse("response1");
+        String statusCode = future.get().getStatus();
+        Assert.assertEquals("OK", statusCode);
+        List<String> errorLines = getErrorLinesFromLogFile();
+        Assert.assertTrue(errorLines.size() == 0);
+
     }
 
+    private CompletableFuture<ClientResponse> sendResponse(String response) throws ClientException, URISyntaxException, InterruptedException {
+        final Http2Client client = Http2Client.getInstance();
+        final ClientConnection connection;
+        URI uri = new URI("http://localhost:8080");
+        try {
+            connection = client.connect(uri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+        CompletableFuture<ClientResponse> future;
+        try {
+            ClientRequest request = new ClientRequest().setPath("/v1/todoItems").setMethod(Methods.GET);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
+            request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
+            request.getRequestHeaders().put(Headers.CONTENT_TYPE, "application/json");
+            String requestBody = Config.getInstance().getMapper().writeValueAsString(responses.get(response));
+            future = client.callService(uri, request, Optional.ofNullable(requestBody));
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        Thread.sleep(3000);
+        return future;
+    }
+
+
+
+    private List<String> readLogFile() {
+        File file = new File(logFile);
+        List<String> result = new ArrayList<>();
+        try {
+            FileInputStream fileInputStream = new FileInputStream(file);
+            BufferedReader br = new BufferedReader(new InputStreamReader(fileInputStream));
+            String strLine;
+            while (true)   {
+                if (!((strLine = br.readLine()) != null)) break;
+                result.add(strLine);
+            }
+            fileInputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    private List<String> getErrorLinesFromLogFile() {
+        List<String> lines = readLogFile();
+        return lines.stream()
+                .filter( s -> s.contains("Response validation error"))
+                .collect(Collectors.toList());
+    }
 }

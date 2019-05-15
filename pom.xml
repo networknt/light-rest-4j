@@ -75,6 +75,7 @@
         <version.logback>1.2.3</version.logback>
         <version.junit>4.12</version.junit>
         <version.mockito>2.10.0</version.mockito>
+        <version.powermock>2.0.0</version.powermock>
         <version.undertow>2.0.16.Final</version.undertow>
         <version.swagger-parser>1.0.34</version.swagger-parser>
         <version.swagger-core>1.5.18</version.swagger-core>

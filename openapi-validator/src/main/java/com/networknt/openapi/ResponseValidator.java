@@ -214,9 +214,9 @@ public class ResponseValidator {
         Status status = validateHeaders(exchange, openApiOperation, statusCode);
         if(status != null) return status;
 
-        Object body = exchange.getAttachment(StoreResponseStreamSinkConduit.RESPONSE);
+        byte[] responseBody = exchange.getAttachment(StoreResponseStreamSinkConduit.RESPONSE);
         String mediaType = exchange.getResponseHeaders().get(Headers.CONTENT_TYPE) == null ? "" : exchange.getResponseHeaders().get(Headers.CONTENT_TYPE).getFirst();
-
+        String body = responseBody == null ? null : new String(responseBody);
         status = validateResponseContent(body, openApiOperation, statusCode, mediaType);
 
         return status;
