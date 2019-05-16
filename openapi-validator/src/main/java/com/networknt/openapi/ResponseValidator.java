@@ -72,7 +72,7 @@ public class ResponseValidator {
      * @return Status return null if no validation errors
      */
     public Status validateResponseContent(Object responseContent, HttpServerExchange exchange) {
-        return validateResponseContent(responseContent, exchange.getRequestURI(), exchange.getRequestMethod().toString().toLowerCase(), GOOD_STATUS_CODE);
+        return validateResponseContent(responseContent, exchange.getRequestURI(), exchange.getRequestMethod().toString().toLowerCase(), String.valueOf(exchange.getStatusCode()));
     }
 
     /**

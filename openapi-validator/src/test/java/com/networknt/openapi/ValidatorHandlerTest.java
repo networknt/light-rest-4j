@@ -588,7 +588,7 @@ public class ValidatorHandlerTest {
         } finally {
             IoUtils.safeClose(connection);
         }
-        Thread.sleep(2000);
+        Thread.sleep(1200);
         return future;
     }
 
