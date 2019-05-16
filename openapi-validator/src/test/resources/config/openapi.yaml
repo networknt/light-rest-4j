@@ -165,10 +165,11 @@ paths:
         '200':
           description: all todo items response
           headers:
-            customHeader1:
+            todo_Header1:
+              required: true
               schema:
                 type: string
-            customHeader2:
+            todo_Header2:
               schema:
                 type: integer
             Accept-Encoding:

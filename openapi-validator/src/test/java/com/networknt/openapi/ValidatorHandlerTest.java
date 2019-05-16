@@ -65,6 +65,8 @@ public class ValidatorHandlerTest {
 
     static String logFile = "target/test.log";
 
+    File f = new File(logFile);
+
     @Before
     public void setUp() {
         if(server == null) {
@@ -92,15 +94,16 @@ public class ValidatorHandlerTest {
         }
     }
 
-//    @Before
+    @Before
     public void clearLogFile() {
-        File f = new File(logFile);
-        try {
-            FileWriter fw = new FileWriter(f, false);
-            fw.write("");
-            fw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        synchronized (f) {
+            try {
+                FileWriter fw = new FileWriter(f, false);
+                fw.write("");
+                fw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -498,25 +501,71 @@ public class ValidatorHandlerTest {
     }
 
     @Test
-    public void testResponseValidationWithError() throws ClientException, URISyntaxException, ExecutionException, InterruptedException, TimeoutException {
-        CompletableFuture<ClientResponse> future = sendResponse("response2");
+    public void testResponseContentValidationWithError() throws ClientException, URISyntaxException, ExecutionException, InterruptedException, TimeoutException {
+        ClientRequest clientRequest = new ClientRequest();
+        clientRequest.getRequestHeaders().put(new HttpString("todo_Header1"), "header_1");
+        CompletableFuture<ClientResponse> future = sendResponse(clientRequest, "response2");
         String statusCode = future.get().getStatus();
         Assert.assertEquals("OK", statusCode);
         List<String> errorLines = getErrorLinesFromLogFile();
         Assert.assertTrue(errorLines.size() > 0);
-
     }
+
     @Test
-    public void testResponseValidationWithNoError() throws ClientException, URISyntaxException, ExecutionException, InterruptedException {
-        CompletableFuture<ClientResponse> future = sendResponse("response1");
+    public void testNoResponseContentValidation() throws ClientException, URISyntaxException, ExecutionException, InterruptedException, TimeoutException {
+        ClientRequest clientRequest = new ClientRequest();
+        clientRequest.getRequestHeaders().put(new HttpString("todo_Header1"), "header_1");
+        CompletableFuture<ClientResponse> future = sendResponse(clientRequest, "");
+        String statusCode = future.get().getStatus();
+        Assert.assertNotEquals("OK", statusCode);
+    }
+
+    @Test
+    public void testResponseContentValidationWithNoError() throws ClientException, URISyntaxException, ExecutionException, InterruptedException {
+        ClientRequest clientRequest = new ClientRequest();
+        clientRequest.getRequestHeaders().put(new HttpString("todo_Header1"), "header_1");
+        CompletableFuture<ClientResponse> future = sendResponse(clientRequest, "response1");
         String statusCode = future.get().getStatus();
         Assert.assertEquals("OK", statusCode);
         List<String> errorLines = getErrorLinesFromLogFile();
         Assert.assertTrue(errorLines.size() == 0);
-
     }
 
-    private CompletableFuture<ClientResponse> sendResponse(String response) throws ClientException, URISyntaxException, InterruptedException {
+    @Test
+    public void testResponseHeaderValidationWithNoError() throws ClientException, URISyntaxException, ExecutionException, InterruptedException {
+        ClientRequest clientRequest = new ClientRequest();
+        clientRequest.getRequestHeaders().put(new HttpString("todo_Header1"), "header_1");
+        clientRequest.getRequestHeaders().put(new HttpString("todo_Header2"), "123");
+        CompletableFuture<ClientResponse> future = sendResponse(clientRequest, "response1");
+        String statusCode = future.get().getStatus();
+        Assert.assertEquals("OK", statusCode);
+        List<String> errorLines = getErrorLinesFromLogFile();
+        Assert.assertTrue(errorLines.size() == 0);
+    }
+
+    @Test
+    public void testResponseHeaderValidationWithError() throws ClientException, URISyntaxException, ExecutionException, InterruptedException {
+        ClientRequest clientRequest = new ClientRequest();
+        clientRequest.getRequestHeaders().put(new HttpString("todo_Header1"), "header_1");
+        clientRequest.getRequestHeaders().put(new HttpString("todo_Header2"), "header_2");
+        CompletableFuture<ClientResponse> future = sendResponse(clientRequest, "response1");
+        String statusCode = future.get().getStatus();
+        Assert.assertEquals("OK", statusCode);
+        List<String> errorLines = getErrorLinesFromLogFile();
+        Assert.assertTrue(errorLines.size() > 0);
+    }
+
+    @Test
+    public void testResponseHeaderRequiredValidationWithError() throws ClientException, URISyntaxException, ExecutionException, InterruptedException {
+        ClientRequest clientRequest = new ClientRequest();
+        CompletableFuture<ClientResponse> future = sendResponse(clientRequest, "response1");
+        String statusCode = future.get().getStatus();
+        Assert.assertEquals("OK", statusCode);
+        List<String> errorLines = getErrorLinesFromLogFile();
+        Assert.assertTrue(errorLines.size() > 0);
+    }
+
+    private CompletableFuture<ClientResponse> sendResponse(ClientRequest request, String response) throws ClientException, URISyntaxException, InterruptedException {
         final Http2Client client = Http2Client.getInstance();
         final ClientConnection connection;
         URI uri = new URI("http://localhost:8080");
@@ -527,7 +576,7 @@ public class ValidatorHandlerTest {
         }
         CompletableFuture<ClientResponse> future;
         try {
-            ClientRequest request = new ClientRequest().setPath("/v1/todoItems").setMethod(Methods.GET);
+            request.setPath("/v1/todoItems").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
             request.getRequestHeaders().put(Headers.CONTENT_TYPE, "application/json");
@@ -539,7 +588,7 @@ public class ValidatorHandlerTest {
         } finally {
             IoUtils.safeClose(connection);
         }
-        Thread.sleep(3000);
+        Thread.sleep(2000);
         return future;
     }
 
