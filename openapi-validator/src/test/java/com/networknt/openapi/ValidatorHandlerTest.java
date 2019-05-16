@@ -565,7 +565,7 @@ public class ValidatorHandlerTest {
         Assert.assertTrue(errorLines.size() > 0);
     }
 
-    private CompletableFuture<ClientResponse> sendResponse(ClientRequest request, String response) throws ClientException, URISyntaxException, InterruptedException {
+    public static CompletableFuture<ClientResponse> sendResponse(ClientRequest request, String response) throws ClientException, URISyntaxException, InterruptedException {
         final Http2Client client = Http2Client.getInstance();
         final ClientConnection connection;
         URI uri = new URI("http://localhost:8080");

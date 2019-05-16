@@ -68,9 +68,20 @@ public class ResponseValidator {
      * validate a given response content object with status code "200" and media content type "application/json"
      * uri, httpMethod, JSON_MEDIA_TYPE("200"), DEFAULT_MEDIA_TYPE("application/json") is to locate the schema to validate
      * @param responseContent response content needs to be validated
+     * @param exchange HttpServerExchange in handler
+     * @return Status return null if no validation errors
+     */
+    public Status validateResponseContent(Object responseContent, HttpServerExchange exchange) {
+        return validateResponseContent(responseContent, exchange.getRequestURI(), exchange.getRequestMethod().toString().toLowerCase(), GOOD_STATUS_CODE);
+    }
+
+    /**
+     * validate a given response content object with status code "200" and media content type "application/json"
+     * uri, httpMethod, JSON_MEDIA_TYPE("200"), DEFAULT_MEDIA_TYPE("application/json") is to locate the schema to validate
+     * @param responseContent response content needs to be validated
      * @param uri original uri of the request
      * @param httpMethod eg. "put" or "get"
-     * @return Status
+     * @return Status return null if no validation errors
      */
     public Status validateResponseContent(Object responseContent, String uri, String httpMethod) {
         return validateResponseContent(responseContent, uri, httpMethod, GOOD_STATUS_CODE);
@@ -83,7 +94,7 @@ public class ResponseValidator {
      * @param uri original uri of the request
      * @param httpMethod eg. "put" or "get"
      * @param statusCode eg. 200, 400
-     * @return Status
+     * @return Status return null if no validation errors
      */
     public Status validateResponseContent(Object responseContent, String uri, String httpMethod, String statusCode) {
         return validateResponseContent(responseContent, uri, httpMethod, statusCode, JSON_MEDIA_TYPE);
@@ -97,7 +108,7 @@ public class ResponseValidator {
      * @param httpMethod eg. "put" or "get"
      * @param statusCode eg. 200, 400
      * @param mediaTypeName eg. "application/json"
-     * @return Status
+     * @return Status return null if no validation errors
      */
     public Status validateResponseContent(Object responseContent, String uri, String httpMethod, String statusCode, String mediaTypeName) {
         OpenApiOperation operation = null;
@@ -119,7 +130,7 @@ public class ResponseValidator {
      * @param openApiOperation OpenApi Operation which is located by uri and httpMethod
      * @param statusCode eg. 200, 400
      * @param mediaTypeName eg. "application/json"
-     * @return Status
+     * @return Status return null if no validation errors
      */
     public Status validateResponseContent(Object responseContent, OpenApiOperation openApiOperation, String statusCode, String mediaTypeName) {
         //try to convert json string to structured object
