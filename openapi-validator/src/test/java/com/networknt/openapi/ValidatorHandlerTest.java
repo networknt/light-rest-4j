@@ -126,8 +126,14 @@ public class ValidatorHandlerTest {
                 .add(Methods.POST, "/v1/pets", exchange -> exchange.getResponseSender().send("addPet"))
                 .add(Methods.GET, "/v1/pets/{petId}", exchange -> exchange.getResponseSender().send("getPetById"))
                 .add(Methods.DELETE, "/v1/pets/{petId}", exchange -> exchange.getResponseSender().send("deletePetById"))
-                .add(Methods.GET, "/v1/pets", exchange -> exchange.getResponseSender().send("getPets"))
-                .add(Methods.GET, "/v1/todoItems", forwardHandler);
+                .add(Methods.GET, "/v1/todoItems", forwardHandler)
+                .add(Methods.GET, "/v1/pets", exchange -> {
+                    if (exchange.getQueryParameters() != null && exchange.getQueryParameters().containsKey("arr")) {
+                        exchange.getResponseSender().send("getPets" + ", the query parameter = " + exchange.getQueryParameters() + ", length = " + exchange.getQueryParameters().get("arr").size());
+                    } else {
+                        exchange.getResponseSender().send("getPets");
+                    }
+                });
     }
 
     @Test
