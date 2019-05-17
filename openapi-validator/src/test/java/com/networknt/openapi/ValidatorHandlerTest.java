@@ -126,8 +126,14 @@ public class ValidatorHandlerTest {
                 .add(Methods.POST, "/v1/pets", exchange -> exchange.getResponseSender().send("addPet"))
                 .add(Methods.GET, "/v1/pets/{petId}", exchange -> exchange.getResponseSender().send("getPetById"))
                 .add(Methods.DELETE, "/v1/pets/{petId}", exchange -> exchange.getResponseSender().send("deletePetById"))
-                .add(Methods.GET, "/v1/pets", exchange -> exchange.getResponseSender().send("getPets"))
-                .add(Methods.GET, "/v1/todoItems", forwardHandler);
+                .add(Methods.GET, "/v1/todoItems", forwardHandler)
+                .add(Methods.GET, "/v1/pets", exchange -> {
+                    if (exchange.getQueryParameters() != null && exchange.getQueryParameters().containsKey("arr")) {
+                        exchange.getResponseSender().send("getPets" + ", the query parameter = " + exchange.getQueryParameters() + ", length = " + exchange.getQueryParameters().get("arr").size());
+                    } else {
+                        exchange.getResponseSender().send("getPets");
+                    }
+                });
     }
 
     @Test
@@ -498,6 +504,36 @@ public class ValidatorHandlerTest {
         }
         int statusCode = reference.get().getResponseCode();
         Assert.assertEquals(200, statusCode);
+    }
+
+    @Test
+    public void testQueryParameterArray() throws Exception {
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:8080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/v1/pets?arr=1&arr=2&arr=3").setMethod(Methods.GET);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
+            request.getRequestHeaders().put(new HttpString("accessId"), "accessId");
+            request.getRequestHeaders().put(new HttpString("requestId"), "requestId");
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
+        Assert.assertEquals(200, statusCode);
+        Assert.assertEquals("getPets, the query parameter = {arr=[1, 2, 3]}, length = 3", body);
     }
 
     @Test

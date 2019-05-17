@@ -27,8 +27,16 @@ paths:
         - name: all
           in: query
           description: Retrieve all for defect 57
+          required: false
           schema:
             type: boolean
+        - name: arr
+          in: query
+          description: Test array as query params
+          required: false
+          schema:
+            type: array
+            items: integer
       security:
         - petstore_auth:
             - 'read:pets'
