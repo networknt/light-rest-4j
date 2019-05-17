@@ -12,6 +12,7 @@ import io.undertow.client.ClientResponse;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Methods;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,6 +57,19 @@ public class ResponseValidatorTest {
                     .setHandler(handler)
                     .build();
             server.start();
+        }
+    }
+
+    @AfterClass
+    public static void tearDown() throws Exception {
+        if(server != null) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ignored) {
+
+            }
+            server.stop();
+            logger.info("The server is stopped.");
         }
     }
 
