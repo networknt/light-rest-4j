@@ -18,11 +18,15 @@ package com.networknt.openapi;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.networknt.config.Config;
+import com.networknt.dump.StoreResponseStreamSinkConduit;
 import com.networknt.jsonoverlay.Overlay;
 import com.networknt.oas.model.*;
 import com.networknt.oas.model.impl.SchemaImpl;
 import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.status.Status;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.HeaderValues;
+import io.undertow.util.Headers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,12 +35,16 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+
+import static java.util.Objects.requireNonNull;
 
 public class ResponseValidator {
     private final SchemaValidator schemaValidator;
     private final SchemaValidatorsConfig config;
     private static final String VALIDATOR_RESPONSE_CONTENT_UNEXPECTED = "ERR11018";
+    private static final String REQUIRED_RESPONSE_HEADER_MISSING = "ERR11019";
     private static final String JSON_MEDIA_TYPE = "application/json";
     private static final String GOOD_STATUS_CODE = "200";
     private static final String DEFAULT_STATUS_CODE = "default";
@@ -60,9 +68,20 @@ public class ResponseValidator {
      * validate a given response content object with status code "200" and media content type "application/json"
      * uri, httpMethod, JSON_MEDIA_TYPE("200"), DEFAULT_MEDIA_TYPE("application/json") is to locate the schema to validate
      * @param responseContent response content needs to be validated
+     * @param exchange HttpServerExchange in handler
+     * @return Status return null if no validation errors
+     */
+    public Status validateResponseContent(Object responseContent, HttpServerExchange exchange) {
+        return validateResponseContent(responseContent, exchange.getRequestURI(), exchange.getRequestMethod().toString().toLowerCase(), String.valueOf(exchange.getStatusCode()));
+    }
+
+    /**
+     * validate a given response content object with status code "200" and media content type "application/json"
+     * uri, httpMethod, JSON_MEDIA_TYPE("200"), DEFAULT_MEDIA_TYPE("application/json") is to locate the schema to validate
+     * @param responseContent response content needs to be validated
      * @param uri original uri of the request
      * @param httpMethod eg. "put" or "get"
-     * @return Status
+     * @return Status return null if no validation errors
      */
     public Status validateResponseContent(Object responseContent, String uri, String httpMethod) {
         return validateResponseContent(responseContent, uri, httpMethod, GOOD_STATUS_CODE);
@@ -75,7 +94,7 @@ public class ResponseValidator {
      * @param uri original uri of the request
      * @param httpMethod eg. "put" or "get"
      * @param statusCode eg. 200, 400
-     * @return Status
+     * @return Status return null if no validation errors
      */
     public Status validateResponseContent(Object responseContent, String uri, String httpMethod, String statusCode) {
         return validateResponseContent(responseContent, uri, httpMethod, statusCode, JSON_MEDIA_TYPE);
@@ -89,7 +108,7 @@ public class ResponseValidator {
      * @param httpMethod eg. "put" or "get"
      * @param statusCode eg. 200, 400
      * @param mediaTypeName eg. "application/json"
-     * @return Status
+     * @return Status return null if no validation errors
      */
     public Status validateResponseContent(Object responseContent, String uri, String httpMethod, String statusCode, String mediaTypeName) {
         OpenApiOperation operation = null;
@@ -111,7 +130,7 @@ public class ResponseValidator {
      * @param openApiOperation OpenApi Operation which is located by uri and httpMethod
      * @param statusCode eg. 200, 400
      * @param mediaTypeName eg. "application/json"
-     * @return Status
+     * @return Status return null if no validation errors
      */
     public Status validateResponseContent(Object responseContent, OpenApiOperation openApiOperation, String statusCode, String mediaTypeName) {
         //try to convert json string to structured object
@@ -194,6 +213,62 @@ public class ResponseValidator {
                 schema = mediaType.get().getSchema();
                 JsonNode schemaNode = schema == null ? null : Overlay.toJson((SchemaImpl)schema);
                 return schemaNode;
+            }
+        }
+        return null;
+    }
+
+    public Status validateResponse(HttpServerExchange exchange, OpenApiOperation openApiOperation) {
+        requireNonNull(exchange, "An exchange is required");
+        requireNonNull(openApiOperation, "An OpenAPI operation is required");
+        String statusCode = String.valueOf(exchange.getStatusCode());
+        Status status = validateHeaders(exchange, openApiOperation, statusCode);
+        if(status != null) return status;
+
+        byte[] responseBody = exchange.getAttachment(StoreResponseStreamSinkConduit.RESPONSE);
+        String mediaType = exchange.getResponseHeaders().get(Headers.CONTENT_TYPE) == null ? "" : exchange.getResponseHeaders().get(Headers.CONTENT_TYPE).getFirst();
+        String body = responseBody == null ? null : new String(responseBody);
+        status = validateResponseContent(body, openApiOperation, statusCode, mediaType);
+
+        return status;
+    }
+
+    private Status validateHeaders(HttpServerExchange exchange, OpenApiOperation operation, String statusCode) {
+        Optional<Response> response = Optional.ofNullable(operation.getOperation().getResponse(statusCode));
+        if(response.isPresent()) {
+            Map<String, Header> headerMap = response.get().getHeaders();
+            Optional<Status> optional = headerMap.entrySet()
+                    .stream()
+                    //based on OpenAPI specification, ignore "Content-Type" header
+                    //If a response header is defined with the name "Content-Type", it SHALL be ignored. - https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#responseObject
+                    .filter(entry -> !Headers.CONTENT_TYPE_STRING.equals(entry.getKey()))
+                    .map(p -> validateHeader(exchange, p.getKey(), p.getValue()))
+                    .filter(s -> s != null)
+                    .findFirst();
+            if(optional.isPresent()) {
+                return optional.get();
+            }
+        }
+        return null;
+    }
+
+    private Status validateHeader(HttpServerExchange exchange, String headerName, Header operationHeader) {
+        final HeaderValues headerValues = exchange.getResponseHeaders().get(headerName);
+        SchemaValidatorsConfig config = new SchemaValidatorsConfig();
+        //header won't tell if it's a real string or not. needs trying to convert.
+        config.setTypeLoose(true);
+        if ((headerValues == null || headerValues.isEmpty())) {
+            if(Boolean.TRUE.equals(operationHeader.getRequired())) {
+                return new Status(REQUIRED_RESPONSE_HEADER_MISSING, headerName);
+            }
+        } else {
+            Optional<Status> optional = headerValues
+                    .stream()
+                    .map((v) -> schemaValidator.validate(v, Overlay.toJson((SchemaImpl)operationHeader.getSchema()),  config))
+                    .filter(s -> s != null)
+                    .findFirst();
+            if(optional.isPresent()) {
+                return optional.get();
             }
         }
         return null;

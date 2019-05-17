@@ -18,6 +18,7 @@ package com.networknt.openapi;
 
 import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
+import com.networknt.dump.StoreResponseStreamSinkConduit;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.status.Status;
@@ -59,9 +60,12 @@ public class ValidatorHandler implements MiddlewareHandler {
 
     RequestValidator requestValidator;
 
+    ResponseValidator responseValidator;
+
     public ValidatorHandler() {
         final SchemaValidator schemaValidator = new SchemaValidator(OpenApiHelper.openApi3);
         this.requestValidator = new RequestValidator(schemaValidator);
+        this.responseValidator = new ResponseValidator();
     }
 
     @Override
@@ -85,7 +89,22 @@ public class ValidatorHandler implements MiddlewareHandler {
             if(config.logError) logger.error("ValidationError:" + status.toString());
             return;
         }
+        if(config.validateResponse) {
+            validateResponse(exchange, openApiOperation);
+        }
         Handler.next(exchange, next);
+    }
+
+    private void validateResponse(HttpServerExchange exchange, OpenApiOperation openApiOperation) {
+        exchange.addResponseWrapper((factory, exchange12) -> new StoreResponseStreamSinkConduit(factory.create(), exchange12));
+
+        exchange.addExchangeCompleteListener((exchange1, nextListener) ->{
+            Status status = responseValidator.validateResponse(exchange, openApiOperation);
+            if(status != null) {
+                logger.error("Response validation error: {} \n with response body: {}", status.getDescription(), new String(exchange.getAttachment(StoreResponseStreamSinkConduit.RESPONSE)));
+            }
+            nextListener.proceed();
+        });
     }
 
     @Override
