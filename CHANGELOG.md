@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.6.2](https://github.com/networknt/light-rest-4j/tree/1.6.2) (2019-05-17)
+
+
+**Merged pull requests:**
+
+
+- Fix/\#145 query parameter [\#91](https://github.com/networknt/light-rest-4j/pull/91) ([jiachen1120](https://github.com/jiachen1120))
+- Feat/response validation in ValidatorHandler [\#90](https://github.com/networknt/light-rest-4j/pull/90) ([BalloonWen](https://github.com/BalloonWen))
 ## [1.6.1](https://github.com/networknt/light-rest-4j/tree/1.6.1) (2019-05-03)
 
 
