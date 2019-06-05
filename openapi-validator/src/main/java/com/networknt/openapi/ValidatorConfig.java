@@ -24,6 +24,7 @@ public class ValidatorConfig {
     boolean enabled;
     boolean logError;
     boolean skipBodyValidation = false;
+    boolean validateResponse;
 
     public ValidatorConfig() {
     }
@@ -46,5 +47,13 @@ public class ValidatorConfig {
 
     public void setSkipBodyValidation(boolean skipBodyValidation) {
         this.skipBodyValidation = skipBodyValidation;
+    }
+
+    public boolean isValidateResponse() {
+        return validateResponse;
+    }
+
+    public void setValidateResponse(boolean validateResponse) {
+        this.validateResponse = validateResponse;
     }
 }

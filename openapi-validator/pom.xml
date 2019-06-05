@@ -21,7 +21,7 @@
     <parent>
         <groupId>com.networknt</groupId>
         <artifactId>light-rest-4j</artifactId>
-        <version>1.6.2-SNAPSHOT</version>
+        <version>1.6.3-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
 
@@ -33,6 +33,10 @@
         <dependency>
             <groupId>com.networknt</groupId>
             <artifactId>config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>dump</artifactId>
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>

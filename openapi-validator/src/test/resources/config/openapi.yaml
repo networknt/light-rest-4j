@@ -24,6 +24,19 @@ paths:
           schema:
             type: integer
             format: int32
+        - name: all
+          in: query
+          description: Retrieve all for defect 57
+          required: false
+          schema:
+            type: boolean
+        - name: arr
+          in: query
+          description: Test array as query params
+          required: false
+          schema:
+            type: array
+            items: integer
         - name: id_form
           in: query
           required: false
@@ -72,7 +85,6 @@ paths:
           explode: false
           schema:
             $ref: '#/components/schemas/Pet'                         
-                            
       security:
         - petstore_auth:
             - 'read:pets'
@@ -806,6 +818,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /todoItems:
+    get:
+      description: return all to-do items
+      operationId: getTodoItemList
+      responses:
+        '200':
+          description: all todo items response
+          headers:
+            todo_Header1:
+              required: true
+              schema:
+                type: string
+            todo_Header2:
+              schema:
+                type: integer
+            Accept-Encoding:
+              schema:
+                enum:
+                  - "*"
+            Content-Type:
+              schema:
+                enum:
+                  - application/json
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoItems'
+
 components:
   parameters:
     accessId:
@@ -859,3 +899,20 @@ components:
           format: int32
         message:
           type: string
+    TodoItems:
+        type: array
+        items:
+          $ref: '#/components/schemas/TodoItem'
+    TodoItem:
+      type: object
+      required:
+        - id
+        - content
+      properties:
+        id:
+          type: string
+        content:
+          type: string
+        date:
+          type: string
+          format: date
