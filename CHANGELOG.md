@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.6.4](https://github.com/networknt/light-rest-4j/tree/1.6.4) (2019-06-10)
+
+
+**Merged pull requests:**
+
+
+- Add deserialization and validation of parameters - \#67 [\#88](https://github.com/networknt/light-rest-4j/pull/88) ([dz-1](https://github.com/dz-1))
+- fixes \#92 add both release and snapshot repositories [\#93](https://github.com/networknt/light-rest-4j/pull/93) ([stevehu](https://github.com/stevehu))
 ## [1.6.2](https://github.com/networknt/light-rest-4j/tree/1.6.2) (2019-05-17)
 
 
