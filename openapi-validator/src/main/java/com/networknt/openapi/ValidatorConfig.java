@@ -2,7 +2,7 @@
  * Copyright (c) 2016 Network New Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
- * You may not use this file except in compliance with the License.
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.networknt.openapi;
 
 /**
@@ -24,6 +23,8 @@ package com.networknt.openapi;
 public class ValidatorConfig {
     boolean enabled;
     boolean logError;
+    boolean skipBodyValidation = false;
+    boolean validateResponse;
 
     public ValidatorConfig() {
     }
@@ -39,4 +40,20 @@ public class ValidatorConfig {
     public boolean isLogError() { return logError; }
 
     public void setLogError(boolean logError) { this.logError = logError; }
+
+    public boolean isSkipBodyValidation() {
+        return skipBodyValidation;
+    }
+
+    public void setSkipBodyValidation(boolean skipBodyValidation) {
+        this.skipBodyValidation = skipBodyValidation;
+    }
+
+    public boolean isValidateResponse() {
+        return validateResponse;
+    }
+
+    public void setValidateResponse(boolean validateResponse) {
+        this.validateResponse = validateResponse;
+    }
 }

@@ -2,7 +2,7 @@
  * Copyright (c) 2016 Network New Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
- * You may not use this file except in compliance with the License.
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
@@ -15,6 +15,25 @@
  */
 
 package com.networknt.openapi;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xnio.IoUtils;
+import org.xnio.OptionMap;
 
 import com.networknt.audit.AuditHandler;
 import com.networknt.client.Http2Client;
@@ -30,20 +49,6 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.RoutingHandler;
 import io.undertow.util.Headers;
 import io.undertow.util.Methods;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xnio.IoUtils;
-import org.xnio.OptionMap;
-
-import java.net.URI;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Created by steve on 30/09/16.
@@ -198,5 +203,30 @@ public class OpenApiHandlerTest {
             Assert.assertNotNull(body);
             Assert.assertEquals("withAuditInfo", body);
         }
+    }
+    
+    @Test
+    public void testMapUtils() {
+    	Map<String, String> preferredMap = new HashMap<>();
+    	Map<String, String> alternativeMap = new HashMap<>();
+    	
+    	preferredMap.put("a", "1");
+    	preferredMap.put("b", "2");
+    	
+    	alternativeMap.put("a", "11");
+    	alternativeMap.put("b", "22");
+    	alternativeMap.put("c", "33");
+    	
+    	Map<String, ?> mergedMap = OpenApiHandler.mergeMaps(preferredMap, alternativeMap);
+    	
+    	assertEquals(3, mergedMap.size());
+    	assertEquals("1", mergedMap.get("a"));
+    	assertEquals("2", mergedMap.get("b"));
+    	assertEquals("33", mergedMap.get("c"));
+    	
+    	Map<String, Object> nonNullMap = OpenApiHandler.nonNullMap(null);
+    	
+    	assertNotNull(nonNullMap);
+    	
     }
 }

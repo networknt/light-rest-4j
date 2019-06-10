@@ -2,7 +2,7 @@
  * Copyright (c) 2016 Network New Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
- * You may not use this file except in compliance with the License.
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
@@ -16,24 +16,31 @@
 
 package com.networknt.openapi;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.oas.model.Operation;
 import com.networknt.oas.model.Path;
-import com.networknt.status.Status;
+import com.networknt.openapi.parameter.ParameterDeserializer;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
+
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import io.undertow.util.AttachmentKey;
+import io.undertow.util.HeaderMap;
+import io.undertow.util.HeaderValues;
+import io.undertow.util.HttpString;
 
 /**
  * This is the handler that parses the OpenApi object based on uri and method
@@ -46,6 +53,11 @@ public class OpenApiHandler implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(OpenApiHandler.class);
 
     public static final String CONFIG_NAME = "openapi";
+    
+	public static final AttachmentKey<Map<String, Object>> DESERIALIZED_QUERY_PARAMETERS = AttachmentKey.create(Map.class);
+	public static final AttachmentKey<Map<String, Object>> DESERIALIZED_PATH_PARAMETERS = AttachmentKey.create(Map.class);
+	public static final AttachmentKey<Map<String, Object>> DESERIALIZED_HEADER_PARAMETERS = AttachmentKey.create(Map.class);
+	public static final AttachmentKey<Map<String, Object>> DESERIALIZED_COOKIE_PARAMETERS = AttachmentKey.create(Map.class);
 
     static final String STATUS_INVALID_REQUEST_PATH = "ERR10007";
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
@@ -79,6 +91,13 @@ public class OpenApiHandler implements MiddlewareHandler {
 
         // This handler can identify the openApiOperation and endpoint only. Other info will be added by JwtVerifyHandler.
         final OpenApiOperation openApiOperation = new OpenApiOperation(openApiPathString, path, httpMethod, operation);
+        
+        try {
+        	ParameterDeserializer.deserialize(exchange, openApiOperation);
+        }catch (Throwable t) {// do not crash the handler
+        	logger.error(t.getMessage(), t);
+        }
+        
         String endpoint = openApiPathString.normalised() + "@" + httpMethod.toString().toLowerCase();
         Map<String, Object> auditInfo = new HashMap<>();
         auditInfo.put(Constants.ENDPOINT_STRING, endpoint);
@@ -110,4 +129,87 @@ public class OpenApiHandler implements MiddlewareHandler {
     public void register() {
         ModuleRegistry.registerModule(OpenApiHandler.class.getName(), Config.getInstance().getJsonMapConfig(CONFIG_NAME), null);
     }
+    
+    /**
+     * merge two maps. The values in preferredMap take priority.
+     * 
+     * @param preferredMap
+     * @param alternativeMap
+     * @return
+     */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+	protected static Map<String, ?> mergeMaps(Map preferredMap, Map alternativeMap){
+    	Map mergedMap = new HashMap<>();
+    	
+    	if (null!=alternativeMap)
+    		mergedMap.putAll(alternativeMap);
+    	
+    	if (null!=preferredMap)
+    		mergedMap.putAll(preferredMap);
+    	
+    	return Collections.unmodifiableMap(mergedMap);
+    }
+    
+    protected static Map<String, Object> nonNullMap(Map<String, Object> map){
+    	return null==map?Collections.emptyMap():Collections.unmodifiableMap(map);
+    }
+    
+    public static Map<String, ?> getQueryParameters(final HttpServerExchange exchange){
+    	return getQueryParameters(exchange, false);
+    }
+    
+    public static Map<String, ?> getQueryParameters(final HttpServerExchange exchange, final boolean deserializedValueOnly){
+    	Map<String, Object> deserializedQueryParamters = exchange.getAttachment(DESERIALIZED_QUERY_PARAMETERS);
+    	
+    	return deserializedValueOnly?nonNullMap(deserializedQueryParamters)
+    			:mergeMaps(deserializedQueryParamters, exchange.getQueryParameters());
+    }
+    
+    public static Map<String, ?> getPathParameters(final HttpServerExchange exchange){
+    	return getPathParameters(exchange, false);
+    }
+    
+    public static Map<String, ?> getPathParameters(final HttpServerExchange exchange, final boolean deserializedValueOnly){
+    	Map<String, Object> deserializedPathParamters = exchange.getAttachment(DESERIALIZED_PATH_PARAMETERS);
+    	
+    	return deserializedValueOnly?nonNullMap(deserializedPathParamters)
+    			:mergeMaps(deserializedPathParamters, exchange.getPathParameters());
+    }
+    
+    public static Map<String, ?> getHeaderParameters(final HttpServerExchange exchange){
+    	return getHeaderParameters(exchange, false);
+    }
+    
+    public static Map<String, ?> getHeaderParameters(final HttpServerExchange exchange, final boolean deserializedValueOnly){
+    	Map<String, Object> deserializedHeaderParamters = exchange.getAttachment(DESERIALIZED_HEADER_PARAMETERS);
+    	
+    	if (!deserializedValueOnly) {
+    		HeaderMap headers = exchange.getRequestHeaders();
+    		
+    		if (null==headers) {
+    			return Collections.emptyMap();
+    		}
+    		
+    		Map<String, HeaderValues> headerMap = new HashMap<>();
+    		
+    		for (HttpString headerName: headers.getHeaderNames()) {
+    			headerMap.put(headerName.toString(), headers.get(headerName));
+    		}
+    		
+    		return mergeMaps(deserializedHeaderParamters, headerMap);
+    	}
+    	
+    	return nonNullMap(deserializedHeaderParamters);
+    }
+    
+    public static Map<String, ?> getCookieParameters(final HttpServerExchange exchange){
+    	return getCookieParameters(exchange, false);
+    }  
+    
+    public static Map<String, ?> getCookieParameters(final HttpServerExchange exchange, final boolean deserializedValueOnly){
+    	Map<String, Object> deserializedCookieParamters = exchange.getAttachment(DESERIALIZED_COOKIE_PARAMETERS);
+    	
+    	return deserializedValueOnly?nonNullMap(deserializedCookieParamters)
+    			:mergeMaps(deserializedCookieParamters, exchange.getRequestCookies());
+    } 
 }
