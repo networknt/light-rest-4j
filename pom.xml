@@ -108,9 +108,9 @@
         <version.swagger-parser>1.0.34</version.swagger-parser>
         <version.swagger-core>1.5.18</version.swagger-core>
         <version.jsr305>3.0.2</version.jsr305>
-        <version.json-schema-validator>1.0.14</version.json-schema-validator>
         <versions.maven-version>2.4</versions.maven-version>
-        <argLine>-Xmx512m -XX:MaxPermSize=256m</argLine>
+        <version.json-schema-validator>1.0.14</version.json-schema-validator>
+        <version.maven-javadoc>3.1.0</version.maven-javadoc>
     </properties>
 
     <modules>
@@ -468,7 +468,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>${version.maven-javadoc}</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
