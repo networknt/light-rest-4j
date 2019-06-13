@@ -21,7 +21,7 @@ import com.networknt.body.BodyHandler;
 import com.networknt.client.Http2Client;
 import com.networknt.config.Config;
 import com.networknt.status.Status;
-import com.networknt.status.exception.ClientException;
+import com.networknt.exception.ClientException;
 import com.networknt.swagger.SwaggerHandler;
 import io.undertow.Handlers;
 import io.undertow.Undertow;

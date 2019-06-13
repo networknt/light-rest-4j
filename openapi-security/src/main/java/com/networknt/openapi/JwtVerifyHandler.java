@@ -26,7 +26,7 @@ import com.networknt.oas.model.Path;
 import com.networknt.oas.model.SecurityParameter;
 import com.networknt.oas.model.SecurityRequirement;
 import com.networknt.security.JwtHelper;
-import com.networknt.status.exception.ExpiredTokenException;
+import com.networknt.exception.ExpiredTokenException;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
 import io.undertow.Handlers;
