@@ -15,8 +15,6 @@
  */
 
 package com.networknt.specification;
-
-import com.networknt.config.Config;
 import com.networknt.handler.LightHttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;

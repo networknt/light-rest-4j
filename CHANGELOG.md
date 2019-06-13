@@ -1,6 +1,6 @@
 # Change Log
 
-## [1.6.4](https://github.com/networknt/light-rest-4j/tree/1.6.4) (2019-06-10)
+## [2.0.1](https://github.com/networknt/light-rest-4j/tree/2.0.1) (2019-06-13)
 
 
 **Merged pull requests:**
@@ -8,28 +8,10 @@
 
 - Add deserialization and validation of parameters - \#67 [\#88](https://github.com/networknt/light-rest-4j/pull/88) ([dz-1](https://github.com/dz-1))
 - fixes \#92 add both release and snapshot repositories [\#93](https://github.com/networknt/light-rest-4j/pull/93) ([stevehu](https://github.com/stevehu))
-## [1.6.2](https://github.com/networknt/light-rest-4j/tree/1.6.2) (2019-05-17)
-
-
-**Merged pull requests:**
-
-
 - Fix/\#145 query parameter [\#91](https://github.com/networknt/light-rest-4j/pull/91) ([jiachen1120](https://github.com/jiachen1120))
 - Feat/response validation in ValidatorHandler [\#90](https://github.com/networknt/light-rest-4j/pull/90) ([BalloonWen](https://github.com/BalloonWen))
-## [1.6.1](https://github.com/networknt/light-rest-4j/tree/1.6.1) (2019-05-03)
-
-
-**Merged pull requests:**
-
-
 - fixes \#86 A java doc issue in the ResponseValidator [\#87](https://github.com/networknt/light-rest-4j/pull/87) ([stevehu](https://github.com/stevehu))
 - fixes \#84 change light-4j modules version to version.light-4j [\#85](https://github.com/networknt/light-rest-4j/pull/85) ([stevehu](https://github.com/stevehu))
-## [1.6.0](https://github.com/networknt/light-rest-4j/tree/1.6.0) (2019-04-05)
-
-
-**Merged pull requests:**
-
-
 - Pass response validation when no necessary to valid [\#77](https://github.com/networknt/light-rest-4j/pull/77) ([jiachen1120](https://github.com/jiachen1120))
 - Issue81 [\#82](https://github.com/networknt/light-rest-4j/pull/82) ([stevehu](https://github.com/stevehu))
 - fixes \#79 add NOTICE for license and copyright of dependencies [\#80](https://github.com/networknt/light-rest-4j/pull/80) ([stevehu](https://github.com/stevehu))

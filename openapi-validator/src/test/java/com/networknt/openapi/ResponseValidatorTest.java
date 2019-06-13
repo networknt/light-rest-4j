@@ -2,9 +2,9 @@ package com.networknt.openapi;
 
 import com.networknt.body.BodyHandler;
 import com.networknt.config.Config;
-import com.networknt.exception.ClientException;
 import com.networknt.handler.LightHttpHandler;
 import com.networknt.status.Status;
+import com.networknt.exception.ClientException;
 import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.client.ClientRequest;

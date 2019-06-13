@@ -11,6 +11,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.networknt.exception.ClientException;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -22,7 +23,6 @@ import org.xnio.OptionMap;
 
 import com.networknt.body.BodyHandler;
 import com.networknt.client.Http2Client;
-import com.networknt.exception.ClientException;
 import com.networknt.utility.StringUtils;
 
 import io.undertow.Handlers;
