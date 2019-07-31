@@ -106,7 +106,7 @@
         <version.swagger-parser>1.0.34</version.swagger-parser>
         <version.swagger-core>1.5.18</version.swagger-core>
         <version.jsr305>3.0.2</version.jsr305>
-        <version.json-schema-validator>1.0.14</version.json-schema-validator>
+        <version.json-schema-validator>1.0.18</version.json-schema-validator>
         <versions.maven-version>2.4</versions.maven-version>
         <argLine>-Xmx512m -XX:MaxPermSize=256m</argLine>
     </properties>
