@@ -48,6 +48,9 @@ public class RequestValidatorTest {
     @BeforeClass
     public static void setUp() {
         if(server == null) {
+        	// to accept legacy cookies
+        	System.setProperty("io.undertow.legacy.cookie.ALLOW_HTTP_SEPARATORS_IN_V0", "true");
+        	
             logger.info("starting server");
             HttpHandler handler = setupRoutings();
             
@@ -87,6 +90,7 @@ public class RequestValidatorTest {
 
             }
             server.stop();
+            System.clearProperty("io.undertow.legacy.cookie.ALLOW_HTTP_SEPARATORS_IN_V0");
             logger.info("The server is stopped.");
         }
     }
@@ -417,18 +421,21 @@ public class RequestValidatorTest {
     	runTest("/pets_header_obj_no_ep", EXPECTED_MAP_RESULT, headers, Collections.emptyMap());
     } 
     
-    //@Test
+    @Test
     public void test_array_cookie_param_deserialization() throws Exception {
     	Map<String, String> cookies = new HashMap<>();
     	cookies.put("petId", "3,4,5");
     	
+    	// require 'io.undertow.legacy.cookie.ALLOW_HTTP_SEPARATORS_IN_V0' to be 'true'
     	runTest("/pets_cookie_array", EXPECTED_ARRAY_RESULT, Collections.emptyMap(), cookies);
     }
     
-    //@Test
+    @Test
     public void test_object_simple_no_explode_cookie_param_deserialization() throws Exception {
     	Map<String, String> cookies = new HashMap<>();
     	cookies.put("petId", "id,001,name,Dog");
+    	
+    	// require 'io.undertow.legacy.cookie.ALLOW_HTTP_SEPARATORS_IN_V0' to be 'true'
     	runTest("/pets_cookie_obj_no_ep", EXPECTED_MAP_RESULT, Collections.emptyMap(), cookies);
     }    
 
