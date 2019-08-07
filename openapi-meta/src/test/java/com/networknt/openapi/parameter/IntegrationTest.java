@@ -51,6 +51,7 @@ public class IntegrationTest {
     public static void setUp() {
         if(server == null) {
             logger.info("starting server");
+			System.setProperty("io.undertow.legacy.cookie.ALLOW_HTTP_SEPARATORS_IN_V0", "true");
             HttpHandler handler = setupRoutings();
             
             OpenApiHandler openApiHandler = new OpenApiHandler();
@@ -408,7 +409,7 @@ public class IntegrationTest {
     	runTest("/pets_header_obj_no_ep", EXPECTED_MAP_RESULT, headers, Collections.emptyMap());
     } 
     
-    //@Test
+    @Test
     public void test_array_cookie_param_deserialization() throws Exception {
     	Map<String, String> cookies = new HashMap<>();
     	cookies.put("petId", "3,4,5");
@@ -416,7 +417,7 @@ public class IntegrationTest {
     	runTest("/pets_cookie_array", EXPECTED_ARRAY_RESULT, Collections.emptyMap(), cookies);
     }
     
-    //@Test
+    @Test
     public void test_object_simple_no_explode_cookie_param_deserialization() throws Exception {
     	Map<String, String> cookies = new HashMap<>();
     	cookies.put("petId", "id,001,name,Dog");
