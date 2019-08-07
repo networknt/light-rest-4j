@@ -57,15 +57,15 @@
         </triggeringPolicy>
     </appender>
 
-    <root level="trace">
+    <root level="info">
         <appender-ref ref="stdout" />
     </root>
 
-    <logger name="com.networknt" level="trace">
+    <logger name="com.networknt" level="info">
         <appender-ref ref="log"/>
     </logger>
 
-    <logger name="Audit" level="trace" additivity="false">
+    <logger name="Audit" level="info" additivity="false">
         <appender-ref ref="audit"/>
     </logger>
 
