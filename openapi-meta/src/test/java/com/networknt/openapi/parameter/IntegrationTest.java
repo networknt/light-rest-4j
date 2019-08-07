@@ -77,7 +77,6 @@ public class IntegrationTest {
 
             }
             server.stop();
-            System.clearProperty("io.undertow.legacy.cookie.ALLOW_HTTP_SEPARATORS_IN_V0");
             logger.info("The server is stopped.");
         }
     }
