@@ -487,14 +487,6 @@
 						<version>2.19.1</version>
 					</dependency>
 				</dependencies>
-				<configuration>
-					<systemProperties>
-						<property>
-							<name>io.undertow.legacy.cookie.ALLOW_HTTP_SEPARATORS_IN_V0</name>
-							<value>true</value>
-						</property>
-					</systemProperties>
-				</configuration>
 			</plugin>
             <!-- JACOCO added for code coverage -->
             <plugin>
