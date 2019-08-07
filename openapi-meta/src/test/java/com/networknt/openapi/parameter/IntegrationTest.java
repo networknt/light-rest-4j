@@ -23,7 +23,6 @@ import org.xnio.OptionMap;
 import com.networknt.client.Http2Client;
 import com.networknt.exception.ClientException;
 import com.networknt.openapi.OpenApiHandler;
-import com.networknt.openapi.OpenApiHandlerTest;
 import com.networknt.utility.StringUtils;
 
 import io.undertow.Handlers;
@@ -39,7 +38,7 @@ import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
 
 public class IntegrationTest {
-    private static final Logger logger = LoggerFactory.getLogger(OpenApiHandlerTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(IntegrationTest.class);
     private static final String EXPECTED_ARRAY_RESULT="3-4-5";
     private static final String EXPECTED_MAP_RESULT="id-name-001-Dog";
 
@@ -62,7 +61,7 @@ public class IntegrationTest {
             handler = parameterHandler;
             
             server = Undertow.builder()
-                    .addHttpListener(8080, "localhost")
+                    .addHttpListener(9000, "localhost")
                     .setHandler(handler)
                     .build();
             server.start();
@@ -78,6 +77,7 @@ public class IntegrationTest {
 
             }
             server.stop();
+            System.clearProperty("io.undertow.legacy.cookie.ALLOW_HTTP_SEPARATORS_IN_V0");
             logger.info("The server is stopped.");
         }
     }
@@ -408,18 +408,21 @@ public class IntegrationTest {
     	runTest("/pets_header_obj_no_ep", EXPECTED_MAP_RESULT, headers, Collections.emptyMap());
     } 
     
-    //@Test
+    @Test
     public void test_array_cookie_param_deserialization() throws Exception {
     	Map<String, String> cookies = new HashMap<>();
     	cookies.put("petId", "3,4,5");
     	
+    	// require 'io.undertow.legacy.cookie.ALLOW_HTTP_SEPARATORS_IN_V0' to be 'true'
     	runTest("/pets_cookie_array", EXPECTED_ARRAY_RESULT, Collections.emptyMap(), cookies);
     }
     
-    //@Test
+    @Test
     public void test_object_simple_no_explode_cookie_param_deserialization() throws Exception {
     	Map<String, String> cookies = new HashMap<>();
     	cookies.put("petId", "id,001,name,Dog");
+    	
+    	// require 'io.undertow.legacy.cookie.ALLOW_HTTP_SEPARATORS_IN_V0' to be 'true'
     	runTest("/pets_cookie_obj_no_ep", EXPECTED_MAP_RESULT, Collections.emptyMap(), cookies);
     }    
     
@@ -429,7 +432,7 @@ public class IntegrationTest {
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
         try {
-            connection = client.connect(new URI("http://localhost:8080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+            connection = client.connect(new URI("http://localhost:9000"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
         } catch (Exception e) {
             throw new ClientException(e);
         }

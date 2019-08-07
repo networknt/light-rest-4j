@@ -37,6 +37,7 @@ public class CookieParameterDeserializer implements ParameterDeserializer {
 			public Object deserialize(HttpServerExchange exchange, Parameter parameter, ValueType valueType,
 					boolean exploade) {
 				Cookie cookie = exchange.getRequestCookies().get(parameter.getName());
+				
 				String value = cookie.getValue();
 				
 				if (ValueType.ARRAY == valueType) {
