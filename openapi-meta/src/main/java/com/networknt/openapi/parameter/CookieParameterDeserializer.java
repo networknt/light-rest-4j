@@ -40,13 +40,11 @@ public class CookieParameterDeserializer implements ParameterDeserializer {
 					boolean exploade) {
 				List<String> rawCookies = exchange.getRequestHeaders().get(Headers.COOKIE);
 				
-				
 				Map<String, Cookie> cookies = CookieHelper.parseRequestCookies(
 						exchange.getConnection().getUndertowOptions().get(UndertowOptions.MAX_COOKIES, 200),
 						exchange.getConnection().getUndertowOptions().get(UndertowOptions.ALLOW_EQUALS_IN_COOKIE_VALUE, false),
 						rawCookies);
 						
-				
 				Cookie cookie = cookies.get(parameter.getName());
 				
 				String value = cookie.getValue();
