@@ -61,11 +61,11 @@
         <appender-ref ref="stdout" />
     </root>
 
-    <logger name="com.networknt.config" level="debug">
+    <logger name="com.networknt.config" level="info">
         <appender-ref ref="log"/>
     </logger>
 
-    <logger name="Audit" level="trace" additivity="false">
+    <logger name="Audit" level="info" additivity="false">
         <appender-ref ref="audit"/>
     </logger>
 
