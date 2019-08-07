@@ -9,9 +9,11 @@ import com.networknt.oas.model.Parameter;
 import com.networknt.openapi.OpenApiHandler;
 import com.networknt.utility.StringUtils;
 
+import io.undertow.UndertowOptions;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.Cookie;
 import io.undertow.util.AttachmentKey;
+import io.undertow.util.Headers;
 
 public class CookieParameterDeserializer implements ParameterDeserializer {
 	private static final String FORM="form";
@@ -36,7 +38,17 @@ public class CookieParameterDeserializer implements ParameterDeserializer {
 			@Override
 			public Object deserialize(HttpServerExchange exchange, Parameter parameter, ValueType valueType,
 					boolean exploade) {
-				Cookie cookie = exchange.getRequestCookies().get(parameter.getName());
+				List<String> rawCookies = exchange.getRequestHeaders().get(Headers.COOKIE);
+				
+				
+				Map<String, Cookie> cookies = CookieHelper.parseRequestCookies(
+						exchange.getConnection().getUndertowOptions().get(UndertowOptions.MAX_COOKIES, 200),
+						exchange.getConnection().getUndertowOptions().get(UndertowOptions.ALLOW_EQUALS_IN_COOKIE_VALUE, false),
+						rawCookies);
+						
+				
+				Cookie cookie = cookies.get(parameter.getName());
+				
 				String value = cookie.getValue();
 				
 				if (ValueType.ARRAY == valueType) {
