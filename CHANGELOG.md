@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.6.7](https://github.com/networknt/light-rest-4j/tree/1.6.7) (2019-08-16)
+
+
+**Merged pull requests:**
+
+
+- fixes \#101 upgrade jackson-databind to 2.9.9.3 [\#102](https://github.com/networknt/light-rest-4j/pull/102) ([stevehu](https://github.com/stevehu))
+- fix cookie tests - \#97 [\#100](https://github.com/networknt/light-rest-4j/pull/100) ([dz-1](https://github.com/dz-1))
+- fixes \#97 comment out the cookie array value test cases [\#98](https://github.com/networknt/light-rest-4j/pull/98) ([stevehu](https://github.com/stevehu))
 ## [1.6.6](https://github.com/networknt/light-rest-4j/tree/1.6.6) (2019-07-31)
 
 
