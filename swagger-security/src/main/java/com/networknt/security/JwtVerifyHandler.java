@@ -54,7 +54,7 @@ import java.util.Optional;
  *
  * @author Steve Hu
  */
-public class JwtVerifyHandler implements MiddlewareHandler {
+public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     static final Logger logger = LoggerFactory.getLogger(JwtVerifyHandler.class);
 
     static final String SWAGGER_SECURITY_CONFIG = "swagger-security";
@@ -71,11 +71,13 @@ public class JwtVerifyHandler implements MiddlewareHandler {
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
 
     static Map<String, Object> config;
+    static JwtVerifier jwtVerifier;
     static {
         // check if swagger-security.yml exist
         config = Config.getInstance().getJsonMapConfig(SWAGGER_SECURITY_CONFIG);
         // fallback to generic security.yml
-        if(config == null) config = Config.getInstance().getJsonMapConfig(JwtHelper.SECURITY_CONFIG);
+        if(config == null) config = Config.getInstance().getJsonMapConfig(JwtVerifier.SECURITY_CONFIG);
+        jwtVerifier = new JwtVerifier(config);
     }
 
     private volatile HttpHandler next;
@@ -86,10 +88,10 @@ public class JwtVerifyHandler implements MiddlewareHandler {
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
         HeaderMap headerMap = exchange.getRequestHeaders();
         String authorization = headerMap.getFirst(Headers.AUTHORIZATION);
-        String jwt = JwtHelper.getJwtFromAuthorization(authorization);
+        String jwt = jwtVerifier.getJwtFromAuthorization(authorization);
         if(jwt != null) {
             try {
-                JwtClaims claims = JwtHelper.verifyJwt(jwt, false);
+                JwtClaims claims = jwtVerifier.verifyJwt(jwt, false, true);
                 Map<String, Object> auditInfo = exchange.getAttachment(AuditHandler.AUDIT_INFO);
                 // In normal case, the auditInfo shouldn't be null as it is created by SwaggerHandler with
                 // endpoint and swaggerOperation available. This handler will enrich the auditInfo.
@@ -130,11 +132,11 @@ public class JwtVerifyHandler implements MiddlewareHandler {
 
                     // is there a scope token
                     String scopeHeader = headerMap.getFirst(HttpStringConstants.SCOPE_TOKEN);
-                    String scopeJwt = JwtHelper.getJwtFromAuthorization(scopeHeader);
+                    String scopeJwt = jwtVerifier.getJwtFromAuthorization(scopeHeader);
                     List<String> secondaryScopes = null;
                     if(scopeJwt != null) {
                         try {
-                            JwtClaims scopeClaims = JwtHelper.verifyJwt(scopeJwt, false);
+                            JwtClaims scopeClaims = jwtVerifier.verifyJwt(scopeJwt, false, true);
                             secondaryScopes = scopeClaims.getStringListClaimValue("scope");
                             auditInfo.put(Constants.SCOPE_CLIENT_ID_STRING, scopeClaims.getStringClaimValue(Constants.CLIENT_ID_STRING));
                             auditInfo.put(Constants.ACCESS_CLAIMS, scopeClaims);
@@ -226,7 +228,7 @@ public class JwtVerifyHandler implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        Object object = config.get(JwtHelper.ENABLE_VERIFY_JWT);
+        Object object = config.get(JwtVerifier.ENABLE_VERIFY_JWT);
         return object != null && (Boolean) object;
     }
 
@@ -235,4 +237,8 @@ public class JwtVerifyHandler implements MiddlewareHandler {
         ModuleRegistry.registerModule(JwtVerifyHandler.class.getName(), config, null);
     }
 
+    @Override
+    public JwtVerifier getJwtVerifier() {
+        return jwtVerifier;
+    }
 }
