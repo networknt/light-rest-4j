@@ -27,7 +27,6 @@ import com.networknt.oas.model.Path;
 import com.networknt.oas.model.SecurityParameter;
 import com.networknt.oas.model.SecurityRequirement;
 import com.networknt.security.IJwtVerifyHandler;
-import com.networknt.exception.ExpiredTokenException;
 import com.networknt.security.JwtVerifier;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
@@ -56,6 +55,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 
     static final String OPENAPI_SECURITY_CONFIG = "openapi-security";
     static final String ENABLE_VERIFY_SCOPE = "enableVerifyScope";
+    static final String ENABLE_VERIFY_JWT_SCOPE_TOKEN = "enableExtractScopeToken";
 
     static final String STATUS_INVALID_AUTH_TOKEN = "ERR10000";
     static final String STATUS_AUTH_TOKEN_EXPIRED = "ERR10001";
@@ -100,7 +100,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                 auditInfo.put(Constants.CLIENT_ID_STRING, claims.getStringClaimValue(Constants.CLIENT_ID_STRING));
                 auditInfo.put(Constants.USER_ID_STRING, claims.getStringClaimValue(Constants.USER_ID_STRING));
                 auditInfo.put(Constants.SUBJECT_CLAIMS, claims);
-                if(config != null && (Boolean)config.get(ENABLE_VERIFY_SCOPE) && OpenApiHelper.openApi3 != null) {
+                if(config != null && (Boolean)config.get(ENABLE_VERIFY_JWT_SCOPE_TOKEN) && OpenApiHelper.openApi3 != null) {
                     Operation operation = null;
                     OpenApiOperation openApiOperation = (OpenApiOperation)auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
                     if(openApiOperation == null) {
@@ -149,38 +149,41 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                         }
                     }
 
-                    // get scope defined in swagger spec for this endpoint.
-                    Collection<String> specScopes = null;
-                    Collection<SecurityRequirement> securityRequirements = operation.getSecurityRequirements();
-                    if(securityRequirements != null) {
-                        for(SecurityRequirement requirement: securityRequirements) {
-                            SecurityParameter securityParameter = requirement.getRequirement(OpenApiHelper.oauth2Name);
-                            specScopes = securityParameter.getParameters();
-                            if(specScopes != null) break;
-                        }
-                    }
-
-                    // validate scope
-                    if (scopeHeader != null) {
-                        if (secondaryScopes == null || !matchedScopes(secondaryScopes, specScopes)) {
-                            setExchangeStatus(exchange, STATUS_SCOPE_TOKEN_SCOPE_MISMATCH, secondaryScopes, specScopes);
-                            return;
-                        }
-                    } else {
-                        // no scope token, verify scope from auth token.
-                        List<String> primaryScopes;
-                        try {
-                            primaryScopes = claims.getStringListClaimValue("scope");
-                        } catch (MalformedClaimException e) {
-                            logger.error("MalformedClaimException", e);
-                            setExchangeStatus(exchange, STATUS_INVALID_AUTH_TOKEN);
-                            return;
-                        }
-                        if (!matchedScopes(primaryScopes, specScopes)) {
-                            setExchangeStatus(exchange, STATUS_AUTH_TOKEN_SCOPE_MISMATCH, primaryScopes, specScopes);
-                            return;
-                        }
-                    }
+                    // validate the scope against the scopes configured in the OpenAPI spec
+                    if((Boolean)config.get(ENABLE_VERIFY_SCOPE)) {
+	                    // get scope defined in OpenAPI spec for this endpoint.
+	                    Collection<String> specScopes = null;
+	                    Collection<SecurityRequirement> securityRequirements = operation.getSecurityRequirements();
+	                    if(securityRequirements != null) {
+	                        for(SecurityRequirement requirement: securityRequirements) {
+	                            SecurityParameter securityParameter = requirement.getRequirement(OpenApiHelper.oauth2Name);
+	                            specScopes = securityParameter.getParameters();
+	                            if(specScopes != null) break;
+	                        }
+	                    }
+	
+	                    // validate scope
+	                    if (scopeHeader != null) {
+	                        if (secondaryScopes == null || !matchedScopes(secondaryScopes, specScopes)) {
+	                            setExchangeStatus(exchange, STATUS_SCOPE_TOKEN_SCOPE_MISMATCH, secondaryScopes, specScopes);
+	                            return;
+	                        }
+	                    } else {
+	                        // no scope token, verify scope from auth token.
+	                        List<String> primaryScopes;
+	                        try {
+	                            primaryScopes = claims.getStringListClaimValue("scope");
+	                        } catch (MalformedClaimException e) {
+	                            logger.error("MalformedClaimException", e);
+	                            setExchangeStatus(exchange, STATUS_INVALID_AUTH_TOKEN);
+	                            return;
+	                        }
+	                        if (!matchedScopes(primaryScopes, specScopes)) {
+	                            setExchangeStatus(exchange, STATUS_AUTH_TOKEN_SCOPE_MISMATCH, primaryScopes, specScopes);
+	                            return;
+	                        }
+	                    }
+                    } // end scope validation
                 }
                 Handler.next(exchange, next);
             } catch (InvalidJwtException e) {
