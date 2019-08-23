@@ -55,7 +55,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 
     static final String OPENAPI_SECURITY_CONFIG = "openapi-security";
     static final String ENABLE_VERIFY_SCOPE = "enableVerifyScope";
-    static final String ENABLE_VERIFY_JWT_SCOPE_TOKEN = "enableVerifyJWTScopeToken";
+    static final String ENABLE_VERIFY_JWT_SCOPE_TOKEN = "enableExtractScopeToken";
 
     static final String STATUS_INVALID_AUTH_TOKEN = "ERR10000";
     static final String STATUS_AUTH_TOKEN_EXPIRED = "ERR10001";

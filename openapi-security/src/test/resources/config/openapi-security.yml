@@ -7,7 +7,7 @@
 enableVerifyJwt: true
 
 # Extract JWT scope token from the X-Scope-Token header and validate the JWT token
-enableVerifyJWTScopeToken: true
+enableExtractScopeToken: true
 
 # Enable JWT scope verification. 
 # Only valid when (enableVerifyJwt is true) AND (enableVerifyJWTScopeToken is true)
