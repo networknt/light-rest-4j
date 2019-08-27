@@ -28,6 +28,7 @@ import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
+import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.oas.model.Operation;
 import com.networknt.oas.model.Path;
 import com.networknt.openapi.parameter.ParameterDeserializer;
@@ -102,7 +103,7 @@ public class OpenApiHandler implements MiddlewareHandler {
         Map<String, Object> auditInfo = new HashMap<>();
         auditInfo.put(Constants.ENDPOINT_STRING, endpoint);
         auditInfo.put(Constants.OPENAPI_OPERATION_STRING, openApiOperation);
-        exchange.putAttachment(AuditHandler.AUDIT_INFO, auditInfo);
+        exchange.putAttachment(AttachmentConstants.AUDIT_INFO, auditInfo);
 
         Handler.next(exchange, next);
     }

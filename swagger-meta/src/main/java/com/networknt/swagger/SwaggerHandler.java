@@ -20,6 +20,7 @@ import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
+import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
@@ -87,7 +88,7 @@ public class SwaggerHandler implements MiddlewareHandler {
         Map<String, Object> auditInfo = new HashMap<>();
         auditInfo.put(Constants.ENDPOINT_STRING, endpoint);
         auditInfo.put(Constants.SWAGGER_OPERATION_STRING, swaggerOperation);
-        exchange.putAttachment(AuditHandler.AUDIT_INFO, auditInfo);
+        exchange.putAttachment(AttachmentConstants.AUDIT_INFO, auditInfo);
 
         Handler.next(exchange, next);
     }
