@@ -20,6 +20,7 @@ import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
+import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.httpstring.HttpStringConstants;
 import com.networknt.exception.ExpiredTokenException;
 import com.networknt.swagger.ApiNormalisedPath;
@@ -92,12 +93,12 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
         if(jwt != null) {
             try {
                 JwtClaims claims = jwtVerifier.verifyJwt(jwt, false, true);
-                Map<String, Object> auditInfo = exchange.getAttachment(AuditHandler.AUDIT_INFO);
+                Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
                 // In normal case, the auditInfo shouldn't be null as it is created by SwaggerHandler with
                 // endpoint and swaggerOperation available. This handler will enrich the auditInfo.
                 if(auditInfo == null) {
                     auditInfo = new HashMap<>();
-                    exchange.putAttachment(AuditHandler.AUDIT_INFO, auditInfo);
+                    exchange.putAttachment(AttachmentConstants.AUDIT_INFO, auditInfo);
                 }
                 auditInfo.put(Constants.CLIENT_ID_STRING, claims.getStringClaimValue(Constants.CLIENT_ID_STRING));
                 auditInfo.put(Constants.USER_ID_STRING, claims.getStringClaimValue(Constants.USER_ID_STRING));
