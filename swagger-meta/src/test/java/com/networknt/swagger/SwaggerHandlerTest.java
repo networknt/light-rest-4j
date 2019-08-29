@@ -20,6 +20,7 @@ import com.networknt.audit.AuditHandler;
 import com.networknt.client.Http2Client;
 import com.networknt.config.Config;
 import com.networknt.exception.ClientException;
+import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.status.Status;
 import io.undertow.Handlers;
 import io.undertow.Undertow;
@@ -86,7 +87,7 @@ public class SwaggerHandlerTest {
         return Handlers.routing()
                 .add(Methods.GET, "/get", exchange -> exchange.getResponseSender().send("get"))
                 .add(Methods.POST, "/v2/pet", exchange -> {
-                    Map<String, Object> auditInfo = exchange.getAttachment(AuditHandler.AUDIT_INFO);
+                    Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
                     if(auditInfo != null) {
                         exchange.getResponseSender().send("withAuditInfo");
                     } else {

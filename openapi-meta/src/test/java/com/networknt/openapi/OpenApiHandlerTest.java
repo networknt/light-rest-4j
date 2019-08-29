@@ -39,6 +39,7 @@ import com.networknt.audit.AuditHandler;
 import com.networknt.client.Http2Client;
 import com.networknt.config.Config;
 import com.networknt.exception.ClientException;
+import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.status.Status;
 
 import io.undertow.Handlers;
@@ -92,7 +93,7 @@ public class OpenApiHandlerTest {
         return Handlers.routing()
                 .add(Methods.GET, "/pets", exchange -> exchange.getResponseSender().send("get"))
                 .add(Methods.POST, "/v1/pets", exchange -> {
-                    Map<String, Object> auditInfo = exchange.getAttachment(AuditHandler.AUDIT_INFO);
+                    Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
                     if(auditInfo != null) {
                         exchange.getResponseSender().send("withAuditInfo");
                     } else {
