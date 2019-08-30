@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.6.8](https://github.com/networknt/light-rest-4j/tree/1.6.8) (2019-08-30)
+
+
+**Merged pull requests:**
+
+
+- Fixes \#107 Collect Status and StackTrace on Error in light-rest-4j handlers [\#108](https://github.com/networknt/light-rest-4j/pull/108) ([ddobrin](https://github.com/ddobrin))
+- Fixes \#105 - Add flexibility to JWT token validation in openapi-security [\#106](https://github.com/networknt/light-rest-4j/pull/106) ([ddobrin](https://github.com/ddobrin))
 ## [1.6.7](https://github.com/networknt/light-rest-4j/tree/1.6.7) (2019-08-16)
 
 
