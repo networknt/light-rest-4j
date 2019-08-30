@@ -7,6 +7,8 @@
 
 
 - fixes \#103 replace JwtHelper with JwtVerifier to remove dependency to… [\#104](https://github.com/networknt/light-rest-4j/pull/104) ([stevehu](https://github.com/stevehu))
+
+
 ## [2.0.4](https://github.com/networknt/light-rest-4j/tree/2.0.4) (2019-08-16)
 
 
