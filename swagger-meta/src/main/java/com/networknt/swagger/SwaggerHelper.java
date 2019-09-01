@@ -46,7 +46,8 @@ public class SwaggerHelper {
 
         swagger = swaggerParseResult.getSwagger();
         if (swagger == null) {
-            logger.error("Unable to load swagger.json");
+            logger.error("Unable to load swagger.json due to " + swaggerParseResult.getMessages().get(0));
+            System.out.println("Unable to load swagger.json due to " + swaggerParseResult.getMessages().get(0));
         } else {
             oauth2Name = getOAuth2Name();
         }
