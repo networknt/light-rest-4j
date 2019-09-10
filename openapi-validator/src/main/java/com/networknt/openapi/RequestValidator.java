@@ -119,6 +119,8 @@ public class RequestValidator {
         }
         SchemaValidatorsConfig config = new SchemaValidatorsConfig();
         config.setTypeLoose(false);
+        config.setHandleNullableField(ValidatorHandler.config.isHandleNullableField());
+        
         return schemaValidator.validate(requestBody, Overlay.toJson((SchemaImpl)specBody.getContentMediaType("application/json").getSchema()), config);
     }
     

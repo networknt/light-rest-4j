@@ -25,6 +25,7 @@ public class ValidatorConfig {
     boolean logError;
     boolean skipBodyValidation = false;
     boolean validateResponse;
+    boolean handleNullableField = true;
 
     public ValidatorConfig() {
     }
@@ -56,4 +57,12 @@ public class ValidatorConfig {
     public void setValidateResponse(boolean validateResponse) {
         this.validateResponse = validateResponse;
     }
+
+	public boolean isHandleNullableField() {
+		return handleNullableField;
+	}
+
+	public void setHandleNullableField(boolean handleNullableField) {
+		this.handleNullableField = handleNullableField;
+	}
 }
