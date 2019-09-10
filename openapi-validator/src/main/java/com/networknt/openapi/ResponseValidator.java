@@ -153,6 +153,7 @@ public class ResponseValidator {
             return new Status(VALIDATOR_RESPONSE_CONTENT_UNEXPECTED, openApiOperation.getMethod(), openApiOperation.getPathString().original());
         }
         config.setTypeLoose(false);
+        config.setHandleNullableField(ValidatorHandler.config.isHandleNullableField());
         return schemaValidator.validate(responseContent, schema, config);
     }
 
@@ -257,6 +258,7 @@ public class ResponseValidator {
         SchemaValidatorsConfig config = new SchemaValidatorsConfig();
         //header won't tell if it's a real string or not. needs trying to convert.
         config.setTypeLoose(true);
+        config.setHandleNullableField(ValidatorHandler.config.isHandleNullableField());
         if ((headerValues == null || headerValues.isEmpty())) {
             if(Boolean.TRUE.equals(operationHeader.getRequired())) {
                 return new Status(REQUIRED_RESPONSE_HEADER_MISSING, headerName);
