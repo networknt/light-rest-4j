@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.6.9](https://github.com/networknt/light-rest-4j/tree/1.6.9) (2019-09-13)
+
+
+**Merged pull requests:**
+
+
+- Fixes \#113 - Support parameterization of handling nullable fields [\#114](https://github.com/networknt/light-rest-4j/pull/114) ([ddobrin](https://github.com/ddobrin))
 ## [1.6.8](https://github.com/networknt/light-rest-4j/tree/1.6.8) (2019-08-30)
 
 
