@@ -1,5 +1,14 @@
 # Change Log
 
+## [2.0.6](https://github.com/networknt/light-rest-4j/tree/2.0.6) (2019-09-13)
+
+
+**Merged pull requests:**
+
+
+- Fixes \#113 - Support parameterization of handling nullable fields [\#114](https://github.com/networknt/light-rest-4j/pull/114) ([ddobrin](https://github.com/ddobrin))
+- fixes \#111 Exit the application if swagger.json is not loaded success… [\#112](https://github.com/networknt/light-rest-4j/pull/112) ([stevehu](https://github.com/stevehu))
+- fixes \#109 output clear error message when swagger 2.0 specification … [\#110](https://github.com/networknt/light-rest-4j/pull/110) ([stevehu](https://github.com/stevehu))
 ## [2.0.5](https://github.com/networknt/light-rest-4j/tree/2.0.5) (2019-08-30)
 
 
