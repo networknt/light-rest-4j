@@ -31,6 +31,7 @@ import io.swagger.models.properties.Property;
 import io.swagger.models.properties.StringProperty;
 import io.swagger.util.Json;
 
+import javax.xml.validation.Schema;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
@@ -49,6 +50,7 @@ public class SchemaValidator {
 
     private final Swagger api;
     private JsonNode definitions;
+    private SchemaValidatorsConfig defaultConfig;
 
     /**
      * Build a new validator with no API specification.
@@ -68,6 +70,8 @@ public class SchemaValidator {
      */
     public SchemaValidator(final Swagger api) {
         this.api = api;
+        this.defaultConfig = new SchemaValidatorsConfig();
+        this.defaultConfig.setTypeLoose(true);
     }
 
     /**
@@ -79,7 +83,7 @@ public class SchemaValidator {
      * @return A status containing error code and description
      */
     public Status validate(final Object value, final Property schema) {
-        return doValidate(value, schema, null);
+        return doValidate(value, schema, defaultConfig);
     }
 
     /**
@@ -96,7 +100,7 @@ public class SchemaValidator {
     }
 
     public Status validate(final Object value, final Model schema) {
-        return doValidate(value, schema, null);
+        return doValidate(value, schema, defaultConfig);
     }
 
     private Status doValidate(final Object value, final Object schema, SchemaValidatorsConfig config) {
