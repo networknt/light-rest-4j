@@ -117,7 +117,7 @@ public class RequestValidator {
         }
         SchemaValidatorsConfig config = new SchemaValidatorsConfig();
         config.setTypeLoose(false);
-        return schemaValidator.validate(requestBody, ((BodyParameter)bodyParameter.get()).getSchema());
+        return schemaValidator.validate(requestBody, ((BodyParameter)bodyParameter.get()).getSchema(), config);
     }
 
     private Status validatePathParameters(final NormalisedPath requestPath,
