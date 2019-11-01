@@ -46,6 +46,7 @@ public class SchemaValidator {
 
     private final OpenApi3 api;
     private JsonNode jsonNode;
+    private final SchemaValidatorsConfig defaultConfig;
 
     /**
      * Build a new validator with no API specification.
@@ -66,6 +67,8 @@ public class SchemaValidator {
     public SchemaValidator(final OpenApi3 api) {
         this.api = api;
         this.jsonNode = Overlay.toJson((OpenApi3Impl)api).get("components");
+        this.defaultConfig = new SchemaValidatorsConfig();
+        this.defaultConfig.setTypeLoose(true);
     }
 
     /**
@@ -82,7 +85,7 @@ public class SchemaValidator {
     }
 
     public Status validate(final Object value, final JsonNode schema) {
-        return doValidate(value, schema, null);
+        return doValidate(value, schema, defaultConfig);
     }
 
     private Status doValidate(final Object value, final JsonNode schema, SchemaValidatorsConfig config) {
