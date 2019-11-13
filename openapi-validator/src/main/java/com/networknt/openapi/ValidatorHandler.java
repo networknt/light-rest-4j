@@ -28,6 +28,7 @@ import com.networknt.utility.ModuleRegistry;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.util.Headers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,15 +82,18 @@ public class ValidatorHandler implements MiddlewareHandler {
             setExchangeStatus(exchange, STATUS_MISSING_OPENAPI_OPERATION);
             return;
         }
-
-        Status status = requestValidator.validateRequest(requestPath, exchange, openApiOperation);
-        if(status != null) {
-            exchange.setStatusCode(status.getStatusCode());
-            status.setDescription(status.getDescription().replaceAll("\\\\", "\\\\\\\\"));
-            exchange.getResponseSender().send(status.toString());
-            if(config.logError) logger.error("ValidationError:" + status.toString());
-            return;
+        String contentType = exchange.getRequestHeaders().getFirst(Headers.CONTENT_TYPE);
+        if (contentType==null || contentType.startsWith("application/json")) {
+            Status status = requestValidator.validateRequest(requestPath, exchange, openApiOperation);
+            if(status != null) {
+                exchange.setStatusCode(status.getStatusCode());
+                status.setDescription(status.getDescription().replaceAll("\\\\", "\\\\\\\\"));
+                exchange.getResponseSender().send(status.toString());
+                if(config.logError) logger.error("ValidationError:" + status.toString());
+                return;
+            }
         }
+
         if(config.validateResponse) {
             validateResponse(exchange, openApiOperation);
         }
