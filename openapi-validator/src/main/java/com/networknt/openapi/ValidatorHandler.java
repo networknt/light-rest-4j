@@ -82,16 +82,13 @@ public class ValidatorHandler implements MiddlewareHandler {
             setExchangeStatus(exchange, STATUS_MISSING_OPENAPI_OPERATION);
             return;
         }
-        String contentType = exchange.getRequestHeaders().getFirst(Headers.CONTENT_TYPE);
-        if (contentType==null || contentType.startsWith("application/json")) {
-            Status status = requestValidator.validateRequest(requestPath, exchange, openApiOperation);
-            if(status != null) {
-                exchange.setStatusCode(status.getStatusCode());
-                status.setDescription(status.getDescription().replaceAll("\\\\", "\\\\\\\\"));
-                exchange.getResponseSender().send(status.toString());
-                if(config.logError) logger.error("ValidationError:" + status.toString());
-                return;
-            }
+        Status status = requestValidator.validateRequest(requestPath, exchange, openApiOperation);
+        if(status != null) {
+            exchange.setStatusCode(status.getStatusCode());
+            status.setDescription(status.getDescription().replaceAll("\\\\", "\\\\\\\\"));
+            exchange.getResponseSender().send(status.toString());
+            if(config.logError) logger.error("ValidationError:" + status.toString());
+            return;
         }
 
         if(config.validateResponse) {
