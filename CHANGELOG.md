@@ -1,5 +1,13 @@
 # Change Log
 
+## [2.0.8](https://github.com/networknt/light-rest-4j/tree/2.0.8) (2019-11-27)
+
+
+**Merged pull requests:**
+
+
+- fixes \#117 [\#118](https://github.com/networknt/light-rest-4j/pull/118) ([chenyan71](https://github.com/chenyan71))
+- fixes \#115 update schemaValidator with a default SchemaValidatorConfig [\#116](https://github.com/networknt/light-rest-4j/pull/116) ([stevehu](https://github.com/stevehu))
 ## [2.0.7](https://github.com/networknt/light-rest-4j/tree/2.0.7) (2019-10-26)
 
 
