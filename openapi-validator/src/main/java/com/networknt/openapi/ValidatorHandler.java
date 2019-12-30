@@ -83,7 +83,7 @@ public class ValidatorHandler implements MiddlewareHandler {
         }
         Status status = requestValidator.validateRequest(requestPath, exchange, openApiOperation);
         if(status != null) {
-            setExchangeStatus(exchange, status.getCode());
+            setExchangeStatus(exchange, status);
             if(config.logError) logger.error("ValidationError:" + status.toString());
             return;
         }
