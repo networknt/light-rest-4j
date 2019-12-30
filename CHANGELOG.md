@@ -6,6 +6,9 @@
 **Merged pull requests:**
 
 
+- fixes \#119 Status being overwritten by new implementation of setExcha… [\#120](https://github.com/networknt/light-rest-4j/pull/120) ([stevehu](https://github.com/stevehu))
+
+
 ## [1.6.11](https://github.com/networknt/light-rest-4j/tree/1.6.11) (2019-11-27)
 
 
