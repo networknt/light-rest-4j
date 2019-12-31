@@ -1,5 +1,12 @@
 # Change Log
 
+## [2.0.9](https://github.com/networknt/light-rest-4j/tree/2.0.9) (2019-12-30)
+
+
+**Merged pull requests:**
+
+
+- fixes \#119 Status being overwritten by new implementation of setExcha… [\#120](https://github.com/networknt/light-rest-4j/pull/120) ([stevehu](https://github.com/stevehu))
 ## [2.0.8](https://github.com/networknt/light-rest-4j/tree/2.0.8) (2019-11-27)
 
 
