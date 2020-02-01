@@ -6,6 +6,8 @@
 **Merged pull requests:**
 
 
+
+
 ## [2.0.9](https://github.com/networknt/light-rest-4j/tree/2.0.9) (2019-12-30)
 
 
