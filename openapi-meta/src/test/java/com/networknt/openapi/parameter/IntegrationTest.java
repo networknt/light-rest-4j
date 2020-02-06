@@ -42,6 +42,7 @@ public class IntegrationTest {
     private static final Logger logger = LoggerFactory.getLogger(OpenApiHandlerTest.class);
     private static final String EXPECTED_ARRAY_RESULT="3-4-5";
     private static final String EXPECTED_MAP_RESULT="id-name-001-Dog";
+    private static final String EXPECTED_NEGATIVE_RESULT = "failed";
 
     private static Undertow server = null;
     
@@ -294,6 +295,12 @@ public class IntegrationTest {
     public void test_array_default_query_param_deserialization() throws Exception {
     	runTest("/pets?limit=3&limit=4&limit=5", EXPECTED_ARRAY_RESULT);
     }
+	
+	@Test
+	/** negative test: query params are case sensitive */
+	public void test_mixed_case_array_default_query_param_deserialization() throws Exception {
+		runTest("/pets?LIMIT=3&LIMIT=4&LIMIT=5", EXPECTED_NEGATIVE_RESULT);
+	}
     
     @Test
     public void test_array_no_explode_query_param_deserialization() throws Exception {
@@ -392,6 +399,14 @@ public class IntegrationTest {
     	
     	runTest("/pets_header_array", EXPECTED_ARRAY_RESULT, headers, Collections.emptyMap());
     }
+	
+	@Test
+	public void test_array_mixed_case_header_param_deserialization() throws Exception {
+		Map<String, String> headers = new HashMap<>();
+		headers.put("PeTiD", "3,4,5");
+		
+		runTest("/pets_header_array", EXPECTED_ARRAY_RESULT, headers, Collections.emptyMap());
+	}
     
     @Test
     public void test_object_simple_explode_header_param_deserialization() throws Exception {
@@ -400,27 +415,50 @@ public class IntegrationTest {
     	
     	runTest("/pets_header_obj_ep", EXPECTED_MAP_RESULT, headers, Collections.emptyMap());
     }
+	
+	@Test
+	public void test_object_simple_explode_mixed_case_header_param_deserialization() throws Exception {
+		Map<String, String> headers = new HashMap<>();
+		headers.put("PeTiD", "id=001,name=Dog");
+		
+		runTest("/pets_header_obj_ep", EXPECTED_MAP_RESULT, headers, Collections.emptyMap());
+	}
     
     @Test
     public void test_object_simple_no_explode_header_param_deserialization() throws Exception {
     	Map<String, String> headers = new HashMap<>();
     	headers.put("petId", "id,001,name,Dog");
     	runTest("/pets_header_obj_no_ep", EXPECTED_MAP_RESULT, headers, Collections.emptyMap());
-    } 
-    
-    @Test
+    }
+	
+	@Test
+	public void test_object_simple_no_explode_mixed_case_header_param_deserialization() throws Exception {
+		Map<String, String> headers = new HashMap<>();
+		headers.put("PeTiD", "id,001,name,Dog");
+		runTest("/pets_header_obj_no_ep", EXPECTED_MAP_RESULT, headers, Collections.emptyMap());
+	}
+	
+	@Test
     public void test_array_cookie_param_deserialization() throws Exception {
     	Map<String, String> cookies = new HashMap<>();
     	cookies.put("petId", "3,4,5");
     	runTest("/pets_cookie_array", EXPECTED_ARRAY_RESULT, Collections.emptyMap(), cookies);
     }
+	
+	@Test
+	/*** negative test: cookie params are case sensitive */
+	public void test_array_mixed_case_cookie_param_deserialization() throws Exception {
+		Map<String, String> cookies = new HashMap<>();
+		cookies.put("petid", "3,4,5");
+		runTest("/pets_cookie_array", EXPECTED_NEGATIVE_RESULT, Collections.emptyMap(), cookies);
+	}
     
     @Test
     public void test_object_simple_no_explode_cookie_param_deserialization() throws Exception {
     	Map<String, String> cookies = new HashMap<>();
     	cookies.put("petId", "id,001,name,Dog");
     	runTest("/pets_cookie_obj_no_ep", EXPECTED_MAP_RESULT, Collections.emptyMap(), cookies);
-    }    
+    }
     
     public void runTest(String requestPath, String expectedValue, Map<String, String> headers, Map<String, String> cookies) throws Exception {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();

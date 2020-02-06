@@ -58,7 +58,11 @@ public interface ParameterDeserializer {
 	}
 	
 	default boolean isApplicable(HttpServerExchange exchange, Parameter parameter, Set<String> candidateParams) {
-		return candidateParams.contains(parameter.getName());
+		// HTTP header names are case insensitive (RFC 7230, https://tools.ietf.org/html/rfc7230#section-3.2)
+		if(ParameterType.of(parameter.getIn()) == ParameterType.HEADER)
+			return candidateParams.stream().anyMatch(s->parameter.getName().equalsIgnoreCase(s));
+		else
+			return candidateParams.contains(parameter.getName());
 	}
 	
 	default void deserialize(HttpServerExchange exchange, Parameter parameter, Set<String> candidateParams) {
