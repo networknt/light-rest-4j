@@ -392,6 +392,14 @@ public class IntegrationTest {
     	
     	runTest("/pets_header_array", EXPECTED_ARRAY_RESULT, headers, Collections.emptyMap());
     }
+	
+	@Test
+	public void test_array_mixed_case_header_param_deserialization() throws Exception {
+		Map<String, String> headers = new HashMap<>();
+		headers.put("PeTiD", "3,4,5");
+		
+		runTest("/pets_header_array", EXPECTED_ARRAY_RESULT, headers, Collections.emptyMap());
+	}
     
     @Test
     public void test_object_simple_explode_header_param_deserialization() throws Exception {
