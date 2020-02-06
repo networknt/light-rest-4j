@@ -7,6 +7,8 @@
 
 
 - Case insensitive lookup for deserialization type for header parameters [\#123](https://github.com/networknt/light-rest-4j/pull/123) ([miklish](https://github.com/miklish))
+
+
 ## [1.6.14](https://github.com/networknt/light-rest-4j/tree/1.6.14) (2020-01-31)
 
 
