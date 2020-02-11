@@ -123,7 +123,7 @@ public class RequestValidator {
         config.setTypeLoose(false);
         config.setHandleNullableField(ValidatorHandler.config.isHandleNullableField());
         
-        return schemaValidator.validate(requestBody, Overlay.toJson((SchemaImpl)specBody.getContentMediaType("application/json").getSchema()), config);
+        return schemaValidator.validate(requestBody, Overlay.toJson((SchemaImpl)specBody.getContentMediaType("application/json").getSchema()), config, "requestBody");
     }
     
     private Status validateRequestParameters(final HttpServerExchange exchange, final NormalisedPath requestPath, final OpenApiOperation openApiOperation) {
@@ -170,7 +170,7 @@ public class RequestValidator {
 	                logger.info("Path parameter cannot be decoded, it will be used directly");
 	            }
 
-                return schemaValidator.validate(paramValue, Overlay.toJson((SchemaImpl)(parameter.get().getSchema())));
+                return schemaValidator.validate(paramValue, Overlay.toJson((SchemaImpl)(parameter.get().getSchema())), paramName);
             }
         }
         return status;
@@ -212,7 +212,7 @@ public class RequestValidator {
 
             Optional<Status> optional = queryParameterValues
                     .stream()
-                    .map((v) -> schemaValidator.validate(v, Overlay.toJson((SchemaImpl)queryParameter.getSchema())))
+                    .map((v) -> schemaValidator.validate(v, Overlay.toJson((SchemaImpl)queryParameter.getSchema()), queryParameter.getName()))
                     .filter(s -> s != null)
                     .findFirst();
             
@@ -221,7 +221,7 @@ public class RequestValidator {
         // Since if the queryParameterValue's length larger than 2, it means the query parameter is an array.
         // thus array validation should be applied, for example, validate the length of the array.
         } else {
-            return schemaValidator.validate(queryParameterValues, Overlay.toJson((SchemaImpl)queryParameter.getSchema()));
+            return schemaValidator.validate(queryParameterValues, Overlay.toJson((SchemaImpl)queryParameter.getSchema()), queryParameter.getName());
         }
         return null;
     }
@@ -321,7 +321,7 @@ public class RequestValidator {
         } else {
             Optional<Status> optional = headerValues
                     .stream()
-                    .map((v) -> schemaValidator.validate(v, Overlay.toJson((SchemaImpl)headerParameter.getSchema())))
+                    .map((v) -> schemaValidator.validate(v, Overlay.toJson((SchemaImpl)headerParameter.getSchema()), headerParameter.getName()))
                     .filter(s -> s != null)
                     .findFirst();
             return optional.orElse(null);
@@ -340,7 +340,7 @@ public class RequestValidator {
 		        	if (null==deserializedValue) {
 		        		validationResult.addSkipped(p);
 		        	}else {
-		        		Status s = schemaValidator.validate(deserializedValue, Overlay.toJson((SchemaImpl)(p.getSchema())));
+		        		Status s = schemaValidator.validate(deserializedValue, Overlay.toJson((SchemaImpl)(p.getSchema())), p.getName());
 		        		validationResult.addStatus(s);
 		        	}
 		        });
