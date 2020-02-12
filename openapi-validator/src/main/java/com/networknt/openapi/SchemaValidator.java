@@ -81,14 +81,31 @@ public class SchemaValidator {
      * @return A status containing error code and description
      */
     public Status validate(final Object value, final JsonNode schema, SchemaValidatorsConfig config) {
-        return doValidate(value, schema, config);
+        return doValidate(value, schema, config, "$");
+    }
+
+    /**
+     * Validate the given value against the given property schema.
+     *
+     * @param value The value to validate
+     * @param schema The property schema to validate the value against
+     * @param config The config model for some validator
+     * @param at The name of the property being validated
+     * @return
+     */
+    public Status validate(final Object value, final JsonNode schema, SchemaValidatorsConfig config, String at) {
+        return doValidate(value, schema, config, at);
     }
 
     public Status validate(final Object value, final JsonNode schema) {
-        return doValidate(value, schema, defaultConfig);
+        return doValidate(value, schema, defaultConfig, "$");
     }
 
-    private Status doValidate(final Object value, final JsonNode schema, SchemaValidatorsConfig config) {
+    public Status validate(final Object value, final JsonNode schema, String at) {
+        return doValidate(value, schema, defaultConfig, at);
+    }
+
+    private Status doValidate(final Object value, final JsonNode schema, SchemaValidatorsConfig config, String at) {
         requireNonNull(schema, "A schema is required");
 
         Status status = null;
@@ -99,7 +116,7 @@ public class SchemaValidator {
             }
             JsonSchema jsonSchema = JsonSchemaFactory.getInstance().getSchema(schema, config);
             final JsonNode content = Config.getInstance().getMapper().valueToTree(value);
-            processingReport = jsonSchema.validate(content);
+            processingReport = jsonSchema.validate(content, content, at);
         } catch (Exception e) {
             e.printStackTrace();
         }
