@@ -1,5 +1,13 @@
 # Change Log
 
+## [2.0.11](https://github.com/networknt/light-rest-4j/tree/2.0.11) (2020-02-29)
+
+
+**Merged pull requests:**
+
+
+- Issue/api 314: property name not displayed in error message [\#124](https://github.com/networknt/light-rest-4j/pull/124) ([santoshaherkar](https://github.com/santoshaherkar))
+- Case insensitive lookup for deserialization type for header parameters [\#123](https://github.com/networknt/light-rest-4j/pull/123) ([miklish](https://github.com/miklish))
 ## [2.0.10](https://github.com/networknt/light-rest-4j/tree/2.0.10) (2020-01-31)
 
 
