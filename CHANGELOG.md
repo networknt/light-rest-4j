@@ -7,6 +7,8 @@
 
 
 - Issue/api 314: property name not displayed in error message [\#124](https://github.com/networknt/light-rest-4j/pull/124) ([santoshaherkar](https://github.com/santoshaherkar))
+
+
 ## [1.6.16](https://github.com/networknt/light-rest-4j/tree/1.6.16) (2020-02-06)
 
 
