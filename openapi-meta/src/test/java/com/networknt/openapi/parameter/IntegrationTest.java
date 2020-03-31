@@ -489,7 +489,7 @@ public class IntegrationTest {
                     	 request.getRequestHeaders().put(Headers.COOKIE, String.join(";", cookieItems));
                     }
                     
-                    connection.sendRequest(request, client.createClientCallback(reference, latch, ""));
+                    connection.sendRequest(request, client.createClientCallback(reference, latch));
                 }
             });
             latch.await(60, TimeUnit.SECONDS);
