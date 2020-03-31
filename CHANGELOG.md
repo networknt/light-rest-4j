@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.6.18](https://github.com/networknt/light-rest-4j/tree/1.6.18) (2020-03-31)
+
+
+**Merged pull requests:**
+
+
+- fixes \#125 update openapi-meta integration test [\#126](https://github.com/networknt/light-rest-4j/pull/126) ([stevehu](https://github.com/stevehu))
 ## [1.6.17](https://github.com/networknt/light-rest-4j/tree/1.6.17) (2020-02-29)
 
 
