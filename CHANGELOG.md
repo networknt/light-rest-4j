@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.0.13](https://github.com/networknt/light-rest-4j/tree/2.0.13) (2020-05-01)
+
+
+**Merged pull requests:**
+
+
 ## [2.0.12](https://github.com/networknt/light-rest-4j/tree/2.0.12) (2020-03-31)
 
 
