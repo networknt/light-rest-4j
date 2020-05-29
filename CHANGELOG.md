@@ -8,6 +8,8 @@
 
 - fixes \#131 disable an openapi-validator test case while upgrade to un… [\#133](https://github.com/networknt/light-rest-4j/pull/133) ([stevehu](https://github.com/stevehu))
 - fixes \#129 disable a test case as undertow 2.0.30 breaks it [\#130](https://github.com/networknt/light-rest-4j/pull/130) ([stevehu](https://github.com/stevehu))
+
+
 ## [1.6.19](https://github.com/networknt/light-rest-4j/tree/1.6.19) (2020-05-01)
 
 
