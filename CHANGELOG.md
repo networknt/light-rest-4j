@@ -1,5 +1,14 @@
 # Change Log
 
+## [2.0.14](https://github.com/networknt/light-rest-4j/tree/2.0.14) (2020-05-29)
+
+
+**Merged pull requests:**
+
+
+- fixes \#131 disable an openapi-validator test case while upgrade to un… [\#133](https://github.com/networknt/light-rest-4j/pull/133) ([stevehu](https://github.com/stevehu))
+- fixes \#129 disable a test case as undertow 2.0.30 breaks it [\#130](https://github.com/networknt/light-rest-4j/pull/130) ([stevehu](https://github.com/stevehu))
+- fixes \#127 add keyResolver to openapi-security in test resource with … [\#128](https://github.com/networknt/light-rest-4j/pull/128) ([stevehu](https://github.com/stevehu))
 ## [2.0.13](https://github.com/networknt/light-rest-4j/tree/2.0.13) (2020-05-01)
 
 
