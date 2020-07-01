@@ -1,5 +1,12 @@
 # Change Log
 
+## [2.0.15](https://github.com/networknt/light-rest-4j/tree/2.0.15) (2020-07-01)
+
+
+**Merged pull requests:**
+
+
+- fixes \#134 remove the temporary version.jackson-databind in the pom.xml [\#135](https://github.com/networknt/light-rest-4j/pull/135) ([stevehu](https://github.com/stevehu))
 ## [2.0.14](https://github.com/networknt/light-rest-4j/tree/2.0.14) (2020-05-29)
 
 
