@@ -134,9 +134,9 @@ public class OpenApiHandler implements MiddlewareHandler {
     /**
      * merge two maps. The values in preferredMap take priority.
      * 
-     * @param preferredMap
-     * @param alternativeMap
-     * @return
+     * @param preferredMap preferred map
+     * @param alternativeMap alternative map
+     * @return Map result map
      */
     @SuppressWarnings({ "rawtypes", "unchecked" })
 	protected static Map<String, ?> mergeMaps(Map preferredMap, Map alternativeMap){
