@@ -26,6 +26,8 @@ import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -47,7 +49,7 @@ public class OpenApiHelper {
     static final Logger logger = LoggerFactory.getLogger(OpenApiHelper.class);
 
     public static OpenApi3 openApi3;
-    public static String oauth2Name;
+    public static List<String> oauth2Names;
     public static String basePath;
 
     static {
@@ -68,7 +70,7 @@ public class OpenApiHelper {
             logger.error("Unable to load openapi.json");
             throw new RuntimeException("Unable to load openapi.json");
         } else {
-            oauth2Name = getOAuth2Name();
+            oauth2Names = getOAuth2Name();
             basePath = getBasePath();
         }
     }
@@ -85,18 +87,17 @@ public class OpenApiHelper {
         }
     }
 
-    private static String getOAuth2Name() {
-        String name = null;
+    private static List<String> getOAuth2Name() {
+        List<String> names = new ArrayList<>();
         Map<String, SecurityScheme> defMap = openApi3.getSecuritySchemes();
         if(defMap != null) {
             for(Map.Entry<String, SecurityScheme> entry : defMap.entrySet()) {
                 if(entry.getValue().getType().equals("oauth2")) {
-                    name = entry.getKey();
-                    break;
+                    names.add(entry.getKey());
                 }
             }
         }
-        return name;
+        return names;
     }
 
     private static String getBasePath() {

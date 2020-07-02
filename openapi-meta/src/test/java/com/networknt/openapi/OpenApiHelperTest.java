@@ -16,6 +16,7 @@
 
 package com.networknt.openapi;
 
+import com.networknt.oas.OpenApiParser;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -25,7 +26,8 @@ import org.junit.Test;
 public class OpenApiHelperTest {
     @Test
     public void testOAuth2Name() {
-        Assert.assertEquals("petstore_auth", OpenApiHelper.oauth2Name);
+        Assert.assertEquals(1, OpenApiHelper.oauth2Names.size());
+        Assert.assertEquals("petstore_auth", OpenApiHelper.oauth2Names.get(0));
     }
 
     @Test
