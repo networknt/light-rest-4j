@@ -157,8 +157,12 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 	                    Collection<SecurityRequirement> securityRequirements = operation.getSecurityRequirements();
 	                    if(securityRequirements != null) {
 	                        for(SecurityRequirement requirement: securityRequirements) {
-	                            SecurityParameter securityParameter = requirement.getRequirement(OpenApiHelper.oauth2Name);
-	                            specScopes = securityParameter.getParameters();
+                                SecurityParameter securityParameter = null;
+	                            for(String oauth2Name: OpenApiHelper.oauth2Names) {
+                                    securityParameter = requirement.getRequirement(oauth2Name);
+                                    if(securityParameter != null) break;
+                                }
+	                            if(securityParameter != null) specScopes = securityParameter.getParameters();
 	                            if(specScopes != null) break;
 	                        }
 	                    }
