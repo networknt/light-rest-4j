@@ -16,7 +16,6 @@
 
 package com.networknt.openapi;
 
-import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
 import com.networknt.exception.ExpiredTokenException;
 import com.networknt.handler.Handler;
