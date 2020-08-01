@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.6.26](https://github.com/networknt/light-rest-4j/tree/1.6.26) (2020-07-31)
+
+
+**Merged pull requests:**
+
+
+- fixes \#139 remove the un-used AuditHandler import from JwtVerifyHandler [\#140](https://github.com/networknt/light-rest-4j/pull/140) ([stevehu](https://github.com/stevehu))
+- fixes \#136 Scope verification doesnot work with two or more securityS… [\#137](https://github.com/networknt/light-rest-4j/pull/137) ([stevehu](https://github.com/stevehu))
 ## [1.6.25](https://github.com/networknt/light-rest-4j/tree/1.6.25) (2020-07-31)
 
 
