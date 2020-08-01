@@ -1,5 +1,14 @@
 # Change Log
 
+## [2.0.16](https://github.com/networknt/light-rest-4j/tree/2.0.16) (2020-08-01)
+
+
+**Merged pull requests:**
+
+
+- fixes \#139 remove the un-used AuditHandler import from JwtVerifyHandler [\#140](https://github.com/networknt/light-rest-4j/pull/140) ([stevehu](https://github.com/stevehu))
+- fixes \#95 mark swagger 2.0 handlers deprecated in 1.6.x and remove in… [\#138](https://github.com/networknt/light-rest-4j/pull/138) ([stevehu](https://github.com/stevehu))
+- fixes \#136 Scope verification doesnot work with two or more securityS… [\#137](https://github.com/networknt/light-rest-4j/pull/137) ([stevehu](https://github.com/stevehu))
 ## [2.0.15](https://github.com/networknt/light-rest-4j/tree/2.0.15) (2020-07-01)
 
 
