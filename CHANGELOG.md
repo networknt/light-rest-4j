@@ -1,5 +1,13 @@
 # Change Log
 
+## [2.0.19](https://github.com/networknt/light-rest-4j/tree/2.0.19) (2020-11-01)
+
+
+**Merged pull requests:**
+
+
+- fixes \#142 get callerId from the header and put it into the auditInfo… [\#143](https://github.com/networknt/light-rest-4j/pull/143) ([stevehu](https://github.com/stevehu))
+- Bump junit from 4.12 to 4.13.1 [\#141](https://github.com/networknt/light-rest-4j/pull/141) ([dependabot](https://github.com/apps/dependabot))
 ## [2.0.18](https://github.com/networknt/light-rest-4j/tree/2.0.18) (2020-10-01)
 
 
