@@ -132,6 +132,105 @@ public class JwtVerifyHandlerTest {
         }
     }
 
+    /**
+     * Test comma seperated scopes with the key 'scp'
+     */
+    @Test
+    public void testWithCorrectCommaSeperatedScpClaimScopeInIdToken() throws Exception {
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:8080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
+            request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTkxOTc4NjIxNiwianRpIjoicGlxZjE4QlhvbzFja0lraFJNMEVSQSIsImlhdCI6MTYwNDQyNjIxNiwibmJmIjoxNjA0NDI2MDk2LCJ2ZXJzaW9uIjoiMS4wIiwiY2xpZW50X2lkIjoiZjdkNDIzNDgtYzY0Ny00ZWZiLWE1MmQtNGM1Nzg3NDIxZTczIiwic2NwIjpbIndyaXRlOnBldHMiLCJyZWFkOnBldHMiXX0.U1JoPHEMXqbmCa_3aABzIN4DKmX702Q7BQxyzmr7yCLWRD4jqAvacdk-F6_mdYmxBXF8KY-sEO4AifaJA2picr5DPIabbbDtSEr9vrd3HaDMXx3c5CyiTg1U0DVmJh__OP8GJdVVhKVnrj36bvY_xLrWE9cbgTnRp4XMhWwHYHTVGNo6qP_vRRRMTZD4elNlbMxLnmfIy0XM5k3WuoEteJnRnG9ePJaGnRGcd6WkYWW1lfFD-YO2seNA4eegzouaV1qc7dpmYXuaXo5DvUr-oHcj1Aj6Q7XBAoZsXWbS8LhHH-dn_bJFzJnWA420p6wrEeJKDhdm4AWtzrAKxRQpYw");
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        Assert.assertEquals(200, statusCode);
+        if(statusCode == 200) {
+            Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
+        }
+    }
+
+    /**
+     * Test space seperated scopes with the key 'scp'
+     */
+    @Test
+    public void testWithCorrectSpaceSeperatedScpClaimScopeInIdToken() throws Exception {
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:8080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
+            request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTkxOTc4NjIxNiwianRpIjoiNjRoVWRiNWJ0OFYzRkJzOFZDNXZRQSIsImlhdCI6MTYwNDQyNjIxNiwibmJmIjoxNjA0NDI2MDk2LCJ2ZXJzaW9uIjoiMS4wIiwiY2xpZW50X2lkIjoiZjdkNDIzNDgtYzY0Ny00ZWZiLWE1MmQtNGM1Nzg3NDIxZTczIiwic2NwIjoid3JpdGU6cGV0cyByZWFkOnBldHMifQ.MPRUBQRbN-13poJ1XV0jHuJgGbOuOglojDzQScEo7WU2UwHseLl_HaZqPEHm-eW8AAmLZ_tzKlchAJR7OVP3CPWgsQNrb2uR3uf4dgSBdD2ZmMPdT1m6KAFhNVzwsEx3vdweL6OlZMm3x03nz3eIRKW8gdGoeTq08HGOzTjKpsFYVMSgdv6nf0HfyOeg5dhByVsdqnhKdig3bMyaHo4HlKQfN-eSaMusG9QPDbQoP0IBWRrFlv63iNrEm5EX9zx6K81awWR7K5Iu_WIJkGZU_Fm0qHee9Ur4_1OdXLOLRKIvNE150jS7vX_a0YGHteLgkvAjs_AtVaUzVnAnHE46lw");
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        Assert.assertEquals(200, statusCode);
+        if(statusCode == 200) {
+            Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
+        }
+    }
+
+    /**
+     * Test space seperated scopes with the key 'scope'
+     */
+    @Test
+    public void testWithCorrectSpaceSeperatedScopeClaimScopeInIdToken() throws Exception {
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:8080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
+            request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTkxOTc4NjIxNiwianRpIjoid1RtZFhWRE83VHVaaWw1TG5YYks1USIsImlhdCI6MTYwNDQyNjIxNiwibmJmIjoxNjA0NDI2MDk2LCJ2ZXJzaW9uIjoiMS4wIiwiY2xpZW50X2lkIjoiZjdkNDIzNDgtYzY0Ny00ZWZiLWE1MmQtNGM1Nzg3NDIxZTczIiwic2NvcGUiOiJ3cml0ZTpwZXRzIHJlYWQ6cGV0cyJ9.P4WSx19ueJDKDZBLvy_esrvQpGaeKwHpCnXtf7o89XXKkpRlAyFlJj4bkclHi8H-gi1g8xqnna2ygKVQUbcjzPDt2ks8ZpZTqRAeYQP6dWJZXEww_VV_DSJZTLNq_zjN9JGllvO5A3C3SdV536V0P7w249mSL4JXFaAwdMgnmnneTdP54qyaGH9w0QYjffdx8ODG8JMq-YY434jQ8q81hXKxu5OF1kOpGSqA7bJ3_kAtx5aYPtoxOv4xwv_-ear2meKbMTo0yKVNIhXI6GlfUEiJ1tgZ0Ni89XBxTMaEy7I0t3rvB0ko9ONTyOtnH3cLdwQeqnTP6-TMps1WUuxYxQ");
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        Assert.assertEquals(200, statusCode);
+        if(statusCode == 200) {
+            Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
+        }
+    }
+
     @Test
     public void testUnmatchedScopeInIdToken() throws Exception {
         final Http2Client client = Http2Client.getInstance();

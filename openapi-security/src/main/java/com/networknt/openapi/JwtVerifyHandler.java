@@ -137,7 +137,21 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                     if(scopeJwt != null) {
                         try {
                             JwtClaims scopeClaims = jwtVerifier.verifyJwt(scopeJwt, false, true);
-                            secondaryScopes = scopeClaims.getStringListClaimValue("scope");
+                            Object scopeClaim = scopeClaims.getClaimValue("scope");
+                            if(scopeClaim instanceof String) {
+                                secondaryScopes = Arrays.asList(scopeClaims.getStringClaimValue("scope").split(" "));
+                            } else if(scopeClaim instanceof List) {
+                                secondaryScopes = scopeClaims.getStringListClaimValue("scope");
+                            }
+                            if(secondaryScopes == null || secondaryScopes.isEmpty()) {
+                                // some IDPs like Okta and Microsoft call scope claim "scp" instead of "scope"
+                                Object scpClaim = scopeClaims.getClaimValue("scp");
+                                if(scpClaim instanceof String) {
+                                    secondaryScopes = Arrays.asList(scpClaim.getStringClaimValue("scp").split(" "));
+                                } else if(scpClaim instanceof List) {
+                                    secondaryScopes = scpClaim.getStringListClaimValue("scp");
+                                }
+                            }
                             auditInfo.put(Constants.SCOPE_CLIENT_ID_STRING, scopeClaims.getStringClaimValue(Constants.CLIENT_ID_STRING));
                             auditInfo.put(Constants.ACCESS_CLAIMS, scopeClaims);
                         } catch (InvalidJwtException | MalformedClaimException e) {
@@ -176,9 +190,23 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 	                        }
 	                    } else {
 	                        // no scope token, verify scope from auth token.
-	                        List<String> primaryScopes;
+	                        List<String> primaryScopes = null;
 	                        try {
-	                            primaryScopes = claims.getStringListClaimValue("scope");
+	                            Object scopeClaim = claims.getClaimValue("scope");
+	                            if(scopeClaim instanceof String) {
+	                                primaryScopes = Arrays.asList(claims.getStringClaimValue("scope").split(" "));
+	                            } else if(scopeClaim instanceof List) {
+	                                primaryScopes = claims.getStringListClaimValue("scope");
+	                            }
+	                            if(primaryScopes == null || primaryScopes.isEmpty()) {
+	                                // some IDPs like Okta and Microsoft call scope claim "scp" instead of "scope"
+	                                Object scpClaim = claims.getClaimValue("scp");
+	                                if(scpClaim instanceof String) {
+	                                    primaryScopes = Arrays.asList(claims.getStringClaimValue("scp").split(" "));
+	                                } else if(scpClaim instanceof List) {
+	                                    primaryScopes = claims.getStringListClaimValue("scp");
+	                                }
+	                            }
 	                        } catch (MalformedClaimException e) {
 	                            logger.error("MalformedClaimException", e);
 	                            setExchangeStatus(exchange, STATUS_INVALID_AUTH_TOKEN);
