@@ -137,19 +137,19 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                     if(scopeJwt != null) {
                         try {
                             JwtClaims scopeClaims = jwtVerifier.verifyJwt(scopeJwt, false, true);
-                            Object scopeClaim = scopeClaims.getClaimValue("scope");
+                            Object scopeClaim = scopeClaims.getClaimValue(Constants.SCOPE_STRING);
                             if(scopeClaim instanceof String) {
-                                secondaryScopes = Arrays.asList(scopeClaims.getStringClaimValue("scope").split(" "));
+                                secondaryScopes = Arrays.asList(scopeClaims.getStringClaimValue(Constants.SCOPE_STRING).split(" "));
                             } else if(scopeClaim instanceof List) {
-                                secondaryScopes = scopeClaims.getStringListClaimValue("scope");
+                                secondaryScopes = scopeClaims.getStringListClaimValue(Constants.SCOPE_STRING);
                             }
                             if(secondaryScopes == null || secondaryScopes.isEmpty()) {
                                 // some IDPs like Okta and Microsoft call scope claim "scp" instead of "scope"
-                                Object scpClaim = scopeClaims.getClaimValue("scp");
+                                Object scpClaim = scopeClaims.getClaimValue(Constants.SCP_STRING);
                                 if(scpClaim instanceof String) {
-                                    secondaryScopes = Arrays.asList(scopeClaims.getStringClaimValue("scp").split(" "));
+                                    secondaryScopes = Arrays.asList(scopeClaims.getStringClaimValue(Constants.SCP_STRING).split(" "));
                                 } else if(scpClaim instanceof List) {
-                                    secondaryScopes = scopeClaims.getStringListClaimValue("scp");
+                                    secondaryScopes = scopeClaims.getStringListClaimValue(Constants.SCP_STRING);
                                 }
                             }
                             auditInfo.put(Constants.SCOPE_CLIENT_ID_STRING, scopeClaims.getStringClaimValue(Constants.CLIENT_ID_STRING));
@@ -192,19 +192,19 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 	                        // no scope token, verify scope from auth token.
 	                        List<String> primaryScopes = null;
 	                        try {
-	                            Object scopeClaim = claims.getClaimValue("scope");
+	                            Object scopeClaim = claims.getClaimValue(Constants.SCOPE_STRING);
 	                            if(scopeClaim instanceof String) {
-	                                primaryScopes = Arrays.asList(claims.getStringClaimValue("scope").split(" "));
+	                                primaryScopes = Arrays.asList(claims.getStringClaimValue(Constants.SCOPE_STRING).split(" "));
 	                            } else if(scopeClaim instanceof List) {
-	                                primaryScopes = claims.getStringListClaimValue("scope");
+	                                primaryScopes = claims.getStringListClaimValue(Constants.SCOPE_STRING);
 	                            }
 	                            if(primaryScopes == null || primaryScopes.isEmpty()) {
 	                                // some IDPs like Okta and Microsoft call scope claim "scp" instead of "scope"
-	                                Object scpClaim = claims.getClaimValue("scp");
+	                                Object scpClaim = claims.getClaimValue(Constants.SCP_STRING);
 	                                if(scpClaim instanceof String) {
-	                                    primaryScopes = Arrays.asList(claims.getStringClaimValue("scp").split(" "));
+	                                    primaryScopes = Arrays.asList(claims.getStringClaimValue(Constants.SCP_STRING).split(" "));
 	                                } else if(scpClaim instanceof List) {
-	                                    primaryScopes = claims.getStringListClaimValue("scp");
+	                                    primaryScopes = claims.getStringListClaimValue(Constants.SCP_STRING);
 	                                }
 	                            }
 	                        } catch (MalformedClaimException e) {
