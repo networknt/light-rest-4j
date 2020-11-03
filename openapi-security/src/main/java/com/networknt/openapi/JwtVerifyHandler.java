@@ -147,9 +147,9 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                                 // some IDPs like Okta and Microsoft call scope claim "scp" instead of "scope"
                                 Object scpClaim = scopeClaims.getClaimValue("scp");
                                 if(scpClaim instanceof String) {
-                                    secondaryScopes = Arrays.asList(scpClaim.getStringClaimValue("scp").split(" "));
+                                    secondaryScopes = Arrays.asList(scopeClaims.getStringClaimValue("scp").split(" "));
                                 } else if(scpClaim instanceof List) {
-                                    secondaryScopes = scpClaim.getStringListClaimValue("scp");
+                                    secondaryScopes = scopeClaims.getStringListClaimValue("scp");
                                 }
                             }
                             auditInfo.put(Constants.SCOPE_CLIENT_ID_STRING, scopeClaims.getStringClaimValue(Constants.CLIENT_ID_STRING));
