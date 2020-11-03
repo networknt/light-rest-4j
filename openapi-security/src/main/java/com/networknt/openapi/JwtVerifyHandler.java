@@ -138,6 +138,10 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                         try {
                             JwtClaims scopeClaims = jwtVerifier.verifyJwt(scopeJwt, false, true);
                             secondaryScopes = scopeClaims.getStringListClaimValue("scope");
+                            if(secondaryScopes == null) {
+                                // some IDPs like Okta and Microsoft call scope claim "scp" instead of "scope"
+                                secondaryScopes = scopeClaims.getStringListClaimValue("scp");
+                            }
                             auditInfo.put(Constants.SCOPE_CLIENT_ID_STRING, scopeClaims.getStringClaimValue(Constants.CLIENT_ID_STRING));
                             auditInfo.put(Constants.ACCESS_CLAIMS, scopeClaims);
                         } catch (InvalidJwtException | MalformedClaimException e) {
@@ -179,6 +183,10 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 	                        List<String> primaryScopes;
 	                        try {
 	                            primaryScopes = claims.getStringListClaimValue("scope");
+	                            if(primaryScopes == null) {
+	                                // some IDPs like Okta and Microsoft call scope claim "scp" instead of "scope"
+	                                primaryScopes = claims.getStringListClaimValue("scp");
+	                            }
 	                        } catch (MalformedClaimException e) {
 	                            logger.error("MalformedClaimException", e);
 	                            setExchangeStatus(exchange, STATUS_INVALID_AUTH_TOKEN);
