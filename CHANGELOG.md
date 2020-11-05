@@ -1,5 +1,14 @@
 # Change Log
 
+## [2.0.20](https://github.com/networknt/light-rest-4j/tree/2.0.20) (2020-11-05)
+
+
+**Merged pull requests:**
+
+
+- fixes \#148 update the JwtVerifierHandler to use SCOPE_STRING and SCP_… [\#149](https://github.com/networknt/light-rest-4j/pull/149) ([stevehu](https://github.com/stevehu))
+- fixes \#146 resolved a typo in the merged PR for the scp claim [\#147](https://github.com/networknt/light-rest-4j/pull/147) ([stevehu](https://github.com/stevehu))
+- Adding support for scp claim in addition to scope claim for scopes [\#145](https://github.com/networknt/light-rest-4j/pull/145) ([jaswalkiranavtar](https://github.com/jaswalkiranavtar))
 ## [2.0.19](https://github.com/networknt/light-rest-4j/tree/2.0.19) (2020-11-01)
 
 
