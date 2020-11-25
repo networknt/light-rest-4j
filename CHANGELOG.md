@@ -7,6 +7,8 @@
 
 
 - fixes \#150 support cid uid for client_id and user_id for some jwt tokens [\#151](https://github.com/networknt/light-rest-4j/pull/151) ([stevehu](https://github.com/stevehu))
+
+
 ## [2.0.20](https://github.com/networknt/light-rest-4j/tree/2.0.20) (2020-11-05)
 
 
