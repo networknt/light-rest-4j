@@ -56,6 +56,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     static final String OPENAPI_SECURITY_CONFIG = "openapi-security";
     static final String ENABLE_VERIFY_SCOPE = "enableVerifyScope";
     static final String ENABLE_VERIFY_JWT_SCOPE_TOKEN = "enableExtractScopeToken";
+    static final String IGNORE_JWT_EXPIRY = "ignoreJwtExpiry";
 
     static final String STATUS_INVALID_AUTH_TOKEN = "ERR10000";
     static final String STATUS_AUTH_TOKEN_EXPIRED = "ERR10001";
@@ -87,9 +88,10 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
         HeaderMap headerMap = exchange.getRequestHeaders();
         String authorization = headerMap.getFirst(Headers.AUTHORIZATION);
         String jwt = jwtVerifier.getJwtFromAuthorization(authorization);
+        boolean ignoreExpiry = config.get(IGNORE_JWT_EXPIRY) == null ? false : (boolean)config.get(IGNORE_JWT_EXPIRY);
         if(jwt != null) {
             try {
-                JwtClaims claims = jwtVerifier.verifyJwt(jwt, false, true);
+                JwtClaims claims = jwtVerifier.verifyJwt(jwt, ignoreExpiry, true);
                 Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
                 // In normal case, the auditInfo shouldn't be null as it is created by OpenApiHandler with
                 // endpoint and swaggerOperation available. This handler will enrich the auditInfo.
@@ -142,7 +144,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                     List<String> secondaryScopes = null;
                     if(scopeJwt != null) {
                         try {
-                            JwtClaims scopeClaims = jwtVerifier.verifyJwt(scopeJwt, false, true);
+                            JwtClaims scopeClaims = jwtVerifier.verifyJwt(scopeJwt, ignoreExpiry, true);
                             Object scopeClaim = scopeClaims.getClaimValue(Constants.SCOPE_STRING);
                             if(scopeClaim instanceof String) {
                                 secondaryScopes = Arrays.asList(scopeClaims.getStringClaimValue(Constants.SCOPE_STRING).split(" "));
