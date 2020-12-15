@@ -144,7 +144,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                     List<String> secondaryScopes = null;
                     if(scopeJwt != null) {
                         try {
-                            JwtClaims scopeClaims = jwtVerifier.verifyJwt(scopeJwt, false, true);
+                            JwtClaims scopeClaims = jwtVerifier.verifyJwt(scopeJwt, ignoreExpiry, true);
                             Object scopeClaim = scopeClaims.getClaimValue(Constants.SCOPE_STRING);
                             if(scopeClaim instanceof String) {
                                 secondaryScopes = Arrays.asList(scopeClaims.getStringClaimValue(Constants.SCOPE_STRING).split(" "));
