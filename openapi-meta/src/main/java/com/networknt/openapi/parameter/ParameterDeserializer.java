@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 
 import com.networknt.oas.model.Parameter;
 import com.networknt.openapi.OpenApiOperation;
-
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.AttachmentKey;
 
