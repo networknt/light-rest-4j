@@ -44,6 +44,9 @@ import java.util.Map;
 public class ValidatorHandler implements MiddlewareHandler {
     public static final String OPENAPI_CONFIG_NAME = "openapi-validator";
     public static final String CONFIG_NAME = "validator";
+    static final String OPENAPI_YML_CONFIG = "openapi.yml";
+    static final String OPENAPI_YAML_CONFIG = "openapi.yaml";
+    static final String OPENAPI_JSON_CONFIG = "openapi.json";
 
     static final String STATUS_MISSING_OPENAPI_OPERATION = "ERR10012";
 
@@ -64,6 +67,16 @@ public class ValidatorHandler implements MiddlewareHandler {
     ResponseValidator responseValidator;
 
     public ValidatorHandler() {
+        if(OpenApiHelper.getInstance() == null) {
+            String spec = Config.getInstance().getStringFromFile(OPENAPI_YML_CONFIG);
+            if(spec == null) {
+                spec = Config.getInstance().getStringFromFile(OPENAPI_YAML_CONFIG);
+                if(spec == null) {
+                    spec = Config.getInstance().getStringFromFile(OPENAPI_JSON_CONFIG);
+                }
+            }
+            OpenApiHelper.init(spec);
+        }
         final SchemaValidator schemaValidator = new SchemaValidator(OpenApiHelper.openApi3);
         this.requestValidator = new RequestValidator(schemaValidator);
         this.responseValidator = new ResponseValidator();
