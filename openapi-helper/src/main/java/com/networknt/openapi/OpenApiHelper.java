@@ -16,7 +16,6 @@
 
 package com.networknt.openapi;
 
-import com.networknt.config.Config;
 import com.networknt.oas.OpenApiParser;
 import com.networknt.oas.model.OpenApi3;
 import com.networknt.oas.model.SecurityScheme;
@@ -41,27 +40,15 @@ import java.util.Optional;
  * @author Steve Hu
  */
 public class OpenApiHelper {
-
-    static final String OPENAPI_YML_CONFIG = "openapi.yml";
-    static final String OPENAPI_YAML_CONFIG = "openapi.yaml";
-    static final String OPENAPI_JSON_CONFIG = "openapi.json";
-
     static final Logger logger = LoggerFactory.getLogger(OpenApiHelper.class);
 
     public static OpenApi3 openApi3;
     public static List<String> oauth2Names;
     public static String basePath;
+    private static OpenApiHelper INSTANCE = null;
 
-    static {
+    private OpenApiHelper(String spec) {
         try {
-            // first try to load the specification into a string regardless it is in YAML or JSON.
-            String spec = Config.getInstance().getStringFromFile(OPENAPI_YML_CONFIG);
-            if(spec == null) {
-                spec = Config.getInstance().getStringFromFile(OPENAPI_YAML_CONFIG);
-                if(spec == null) {
-                    spec = Config.getInstance().getStringFromFile(OPENAPI_JSON_CONFIG);
-                }
-            }
             openApi3 = (OpenApi3) new OpenApiParser().parse(spec, new URL("https://oas.lightapi.net/"));
         } catch (MalformedURLException e) {
             logger.error("MalformedURLException", e);
@@ -73,9 +60,25 @@ public class OpenApiHelper {
             oauth2Names = getOAuth2Name();
             basePath = getBasePath();
         }
+
     }
 
-    public static Optional<NormalisedPath> findMatchingApiPath(final NormalisedPath requestPath) {
+    public static OpenApiHelper getInstance() {
+        if(INSTANCE == null) {
+            return null;
+        }
+        return INSTANCE;
+    }
+
+    public synchronized static OpenApiHelper init(String spec) {
+        if(INSTANCE != null) {
+            return INSTANCE;
+        }
+        INSTANCE = new OpenApiHelper(spec);
+        return INSTANCE;
+    }
+
+    public Optional<NormalisedPath> findMatchingApiPath(final NormalisedPath requestPath) {
         if(OpenApiHelper.openApi3 != null) {
             return OpenApiHelper.openApi3.getPaths().keySet()
                     .stream()
@@ -87,7 +90,7 @@ public class OpenApiHelper {
         }
     }
 
-    private static List<String> getOAuth2Name() {
+    private List<String> getOAuth2Name() {
         List<String> names = new ArrayList<>();
         Map<String, SecurityScheme> defMap = openApi3.getSecuritySchemes();
         if(defMap != null) {
@@ -100,7 +103,7 @@ public class OpenApiHelper {
         return names;
     }
 
-    private static String getBasePath() {
+    private String getBasePath() {
 
         String basePath = "";
         String url = null;
@@ -119,7 +122,7 @@ public class OpenApiHelper {
         return basePath;
     }
 
-    private static boolean pathMatches(final NormalisedPath requestPath, final NormalisedPath apiPath) {
+    private boolean pathMatches(final NormalisedPath requestPath, final NormalisedPath apiPath) {
         if (requestPath.parts().size() != apiPath.parts().size()) {
             return false;
         }

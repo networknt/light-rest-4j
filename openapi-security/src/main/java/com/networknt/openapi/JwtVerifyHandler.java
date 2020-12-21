@@ -52,6 +52,9 @@ import java.util.*;
  */
 public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     static final Logger logger = LoggerFactory.getLogger(JwtVerifyHandler.class);
+    static final String OPENAPI_YML_CONFIG = "openapi.yml";
+    static final String OPENAPI_YAML_CONFIG = "openapi.yaml";
+    static final String OPENAPI_JSON_CONFIG = "openapi.json";
 
     static final String OPENAPI_SECURITY_CONFIG = "openapi-security";
     static final String ENABLE_VERIFY_SCOPE = "enableVerifyScope";
@@ -81,7 +84,18 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 
     private volatile HttpHandler next;
 
-    public JwtVerifyHandler() {}
+    public JwtVerifyHandler() {
+        if(OpenApiHelper.getInstance() == null) {
+            String spec = Config.getInstance().getStringFromFile(OPENAPI_YML_CONFIG);
+            if(spec == null) {
+                spec = Config.getInstance().getStringFromFile(OPENAPI_YAML_CONFIG);
+                if(spec == null) {
+                    spec = Config.getInstance().getStringFromFile(OPENAPI_JSON_CONFIG);
+                }
+            }
+            OpenApiHelper.init(spec);
+        }
+    }
 
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
@@ -115,7 +129,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                     OpenApiOperation openApiOperation = (OpenApiOperation)auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
                     if(openApiOperation == null) {
                         final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI());
-                        final Optional<NormalisedPath> maybeApiPath = OpenApiHelper.findMatchingApiPath(requestPath);
+                        final Optional<NormalisedPath> maybeApiPath = OpenApiHelper.getInstance().findMatchingApiPath(requestPath);
                         if (!maybeApiPath.isPresent()) {
                             setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH);
                             return;

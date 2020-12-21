@@ -54,7 +54,10 @@ public class OpenApiHandler implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(OpenApiHandler.class);
 
     public static final String CONFIG_NAME = "openapi";
-    
+    static final String OPENAPI_YML_CONFIG = "openapi.yml";
+    static final String OPENAPI_YAML_CONFIG = "openapi.yaml";
+    static final String OPENAPI_JSON_CONFIG = "openapi.json";
+
 	public static final AttachmentKey<Map<String, Object>> DESERIALIZED_QUERY_PARAMETERS = AttachmentKey.create(Map.class);
 	public static final AttachmentKey<Map<String, Object>> DESERIALIZED_PATH_PARAMETERS = AttachmentKey.create(Map.class);
 	public static final AttachmentKey<Map<String, Object>> DESERIALIZED_HEADER_PARAMETERS = AttachmentKey.create(Map.class);
@@ -64,16 +67,22 @@ public class OpenApiHandler implements MiddlewareHandler {
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
 
     private volatile HttpHandler next;
-
     public OpenApiHandler() {
-
+        String spec = Config.getInstance().getStringFromFile(OPENAPI_YML_CONFIG);
+        if(spec == null) {
+            spec = Config.getInstance().getStringFromFile(OPENAPI_YAML_CONFIG);
+            if(spec == null) {
+                spec = Config.getInstance().getStringFromFile(OPENAPI_JSON_CONFIG);
+            }
+        }
+        OpenApiHelper.init(spec);
     }
 
 
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
         final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI());
-        final Optional<NormalisedPath> maybeApiPath = OpenApiHelper.findMatchingApiPath(requestPath);
+        final Optional<NormalisedPath> maybeApiPath = OpenApiHelper.getInstance().findMatchingApiPath(requestPath);
         if (!maybeApiPath.isPresent()) {
             setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH, requestPath.normalised());
             return;

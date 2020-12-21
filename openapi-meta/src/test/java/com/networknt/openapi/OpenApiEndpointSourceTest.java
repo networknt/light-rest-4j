@@ -23,7 +23,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import com.networknt.config.Config;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.networknt.handler.config.EndpointSource;
@@ -35,6 +37,10 @@ public class OpenApiEndpointSourceTest {
             "/v1/pets/{petId}@get",
             "/v1/pets/{petId}@delete"
         ));
+    static {
+        String spec = Config.getInstance().getStringFromFile("openapi.yaml");
+        OpenApiHelper.init(spec);
+    }
 
     @Test
     public void testFindBasePath() {

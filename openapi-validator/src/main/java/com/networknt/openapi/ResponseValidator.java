@@ -193,7 +193,7 @@ public class ResponseValidator {
     private OpenApiOperation getOpenApiOperation(String uri, String httpMethod) throws URISyntaxException {
         String uriWithoutQuery = new URI(uri).getPath();
         NormalisedPath requestPath = new ApiNormalisedPath(uriWithoutQuery);
-        Optional<NormalisedPath> maybeApiPath = OpenApiHelper.findMatchingApiPath(requestPath);
+        Optional<NormalisedPath> maybeApiPath = OpenApiHelper.getInstance().findMatchingApiPath(requestPath);
         if (!maybeApiPath.isPresent()) {
             return null;
         }
