@@ -1,5 +1,18 @@
 # Change Log
 
+## [2.0.22](https://github.com/networknt/light-rest-4j/tree/2.0.22) (2020-12-22)
+
+
+**Merged pull requests:**
+
+
+- Fix/\#160 audit [\#161](https://github.com/networknt/light-rest-4j/pull/161) ([BalloonWen](https://github.com/BalloonWen))
+- fixes \#158 make OpenApiHelper a singleton with an init method and loa… [\#159](https://github.com/networknt/light-rest-4j/pull/159) ([stevehu](https://github.com/stevehu))
+- issue-\#156 [\#157](https://github.com/networknt/light-rest-4j/pull/157) ([BalloonWen](https://github.com/BalloonWen))
+- fixes \#154 splite openapi-meta to move specification parser to openap… [\#155](https://github.com/networknt/light-rest-4j/pull/155) ([stevehu](https://github.com/stevehu))
+- issue-\#152 [\#153](https://github.com/networknt/light-rest-4j/pull/153) ([BalloonWen](https://github.com/BalloonWen))
+
+
 ## [2.0.21](https://github.com/networknt/light-rest-4j/tree/2.0.21) (2020-11-25)
 
 
