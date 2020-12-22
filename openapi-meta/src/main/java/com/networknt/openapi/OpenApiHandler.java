@@ -109,7 +109,9 @@ public class OpenApiHandler implements MiddlewareHandler {
         }
         
         String endpoint = openApiPathString.normalised() + "@" + httpMethod.toString().toLowerCase();
-        Map<String, Object> auditInfo = new HashMap<>();
+        Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO) == null
+                ? new HashMap<>()
+                : exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
         auditInfo.put(Constants.ENDPOINT_STRING, endpoint);
         auditInfo.put(Constants.OPENAPI_OPERATION_STRING, openApiOperation);
         exchange.putAttachment(AttachmentConstants.AUDIT_INFO, auditInfo);
