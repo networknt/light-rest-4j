@@ -99,7 +99,6 @@ public class ValidatorHandler implements MiddlewareHandler {
             setExchangeStatus(exchange, status);
             if(config.logError) {
                 logger.error("There is an Validation Error:");
-                logger.error(status.toString());
             }
             return;
         }
