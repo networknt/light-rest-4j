@@ -1,5 +1,13 @@
 # Change Log
 
+## [2.0.23](https://github.com/networknt/light-rest-4j/tree/2.0.23) (2021-01-29)
+
+
+**Merged pull requests:**
+
+
+- fixes \#167 remove the primary and secondary keystore for jwt [\#168](https://github.com/networknt/light-rest-4j/pull/168) ([stevehu](https://github.com/stevehu))
+- issue \#163 remove duplicate logging for status [\#164](https://github.com/networknt/light-rest-4j/pull/164) ([BalloonWen](https://github.com/BalloonWen))
 ## [2.0.22](https://github.com/networknt/light-rest-4j/tree/2.0.22) (2020-12-22)
 
 
