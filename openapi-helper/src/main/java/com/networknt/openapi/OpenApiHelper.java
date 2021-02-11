@@ -78,8 +78,8 @@ public class OpenApiHelper {
 
     /**
      * merge inject map to openapi map
-     * @param openapi
-     * @param inject
+     * @param openapi {@link Map} openapi
+     * @param inject {@link Map} openapi
      */
     public static void merge(Map<String, Object> openapi, Map<String, Object> inject) {
         if (inject == null) {
@@ -100,6 +100,9 @@ public class OpenApiHelper {
                 }
             } else if (o instanceof List && i instanceof List) {
                 ((List<Object>) o).addAll((List)i);
+            } else {
+                // if has the same key, return the injected
+                return i;
             }
             return o;
         }
