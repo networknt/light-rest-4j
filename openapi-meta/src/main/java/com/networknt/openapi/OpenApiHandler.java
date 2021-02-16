@@ -24,6 +24,7 @@ import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.oas.model.Operation;
 import com.networknt.oas.model.Path;
 import com.networknt.openapi.parameter.ParameterDeserializer;
+import com.networknt.service.SingletonServiceFactory;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
 import io.undertow.Handlers;
@@ -66,6 +67,14 @@ public class OpenApiHandler implements MiddlewareHandler {
     public OpenApiHandler() {
         Map<String, Object> inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
         Map<String, Object> openapi = Config.getInstance().getJsonMapConfig(CONFIG_NAME);
+        InjectableSpecValidator validator = SingletonServiceFactory.getBean(InjectableSpecValidator.class);
+        if (validator == null) {
+            validator = new DefaultInjectableSpecValidator();
+        }
+        if (!validator.isValid(openapi, inject)) {
+            logger.error("the original spec and injected spec has error, please check the validator {}", validator.getClass().getName());
+            throw new RuntimeException("inject spec error");
+        }
         OpenApiHelper.merge(openapi, inject);
         try {
             OpenApiHelper.init(Config.getInstance().getMapper().writeValueAsString(openapi));
