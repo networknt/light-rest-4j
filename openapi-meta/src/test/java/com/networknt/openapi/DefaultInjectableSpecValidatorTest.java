@@ -24,4 +24,13 @@ public class DefaultInjectableSpecValidatorTest {
         boolean isValid = validator.isValid(openapi, inject);
         Assert.assertTrue(isValid);
     }
+
+    @Test
+    public void testNoInject() {
+        Map<String, Object> openapi = Config.getInstance().getJsonMapConfig("openapi");
+        Map<String, Object> inject = null;
+        DefaultInjectableSpecValidator validator = new DefaultInjectableSpecValidator();
+        boolean isValid = validator.isValid(openapi, inject);
+        Assert.assertTrue(isValid);
+    }
 }
