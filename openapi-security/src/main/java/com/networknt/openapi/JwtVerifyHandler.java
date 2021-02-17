@@ -293,6 +293,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     @Override
     public void register() {
         ModuleRegistry.registerModule(JwtVerifyHandler.class.getName(), config, null);
+        ModuleRegistry.registerModule(JwtVerifyHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(OPENAPI_SECURITY_CONFIG), null);
     }
 
     @Override
