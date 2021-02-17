@@ -1,0 +1,16 @@
+openapi: 3.0.0
+paths:
+  /pets/{petId}:
+    # the original spec does not contain put method
+    put:
+      security:
+        - api-scope:
+            - admim
+
+components:
+  securitySchemes:
+    api-scope:
+      flows:
+        clientCredentials:
+          scopes:
+            admin: orwritten
