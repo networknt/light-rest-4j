@@ -16,15 +16,7 @@
 
 package com.networknt.openapi;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.networknt.audit.AuditHandler;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.networknt.config.Config;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
@@ -32,9 +24,9 @@ import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.oas.model.Operation;
 import com.networknt.oas.model.Path;
 import com.networknt.openapi.parameter.ParameterDeserializer;
+import com.networknt.service.SingletonServiceFactory;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
-
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -42,6 +34,13 @@ import io.undertow.util.AttachmentKey;
 import io.undertow.util.HeaderMap;
 import io.undertow.util.HeaderValues;
 import io.undertow.util.HttpString;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * This is the handler that parses the OpenApi object based on uri and method
@@ -54,11 +53,9 @@ public class OpenApiHandler implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(OpenApiHandler.class);
 
     public static final String CONFIG_NAME = "openapi";
-    static final String OPENAPI_YML_CONFIG = "openapi.yml";
-    static final String OPENAPI_YAML_CONFIG = "openapi.yaml";
-    static final String OPENAPI_JSON_CONFIG = "openapi.json";
+    public static final String SPEC_INJECT = "openapi-inject";
 
-	public static final AttachmentKey<Map<String, Object>> DESERIALIZED_QUERY_PARAMETERS = AttachmentKey.create(Map.class);
+    public static final AttachmentKey<Map<String, Object>> DESERIALIZED_QUERY_PARAMETERS = AttachmentKey.create(Map.class);
 	public static final AttachmentKey<Map<String, Object>> DESERIALIZED_PATH_PARAMETERS = AttachmentKey.create(Map.class);
 	public static final AttachmentKey<Map<String, Object>> DESERIALIZED_HEADER_PARAMETERS = AttachmentKey.create(Map.class);
 	public static final AttachmentKey<Map<String, Object>> DESERIALIZED_COOKIE_PARAMETERS = AttachmentKey.create(Map.class);
@@ -68,16 +65,24 @@ public class OpenApiHandler implements MiddlewareHandler {
 
     private volatile HttpHandler next;
     public OpenApiHandler() {
-        String spec = Config.getInstance().getStringFromFile(OPENAPI_YML_CONFIG);
-        if(spec == null) {
-            spec = Config.getInstance().getStringFromFile(OPENAPI_YAML_CONFIG);
-            if(spec == null) {
-                spec = Config.getInstance().getStringFromFile(OPENAPI_JSON_CONFIG);
-            }
+        Map<String, Object> inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
+        Map<String, Object> openapi = Config.getInstance().getJsonMapConfig(CONFIG_NAME);
+        InjectableSpecValidator validator = SingletonServiceFactory.getBean(InjectableSpecValidator.class);
+        if (validator == null) {
+            validator = new DefaultInjectableSpecValidator();
         }
-        OpenApiHelper.init(spec);
+        if (!validator.isValid(openapi, inject)) {
+            logger.error("the original spec and injected spec has error, please check the validator {}", validator.getClass().getName());
+            throw new RuntimeException("inject spec error");
+        }
+        OpenApiHelper.merge(openapi, inject);
+        try {
+            OpenApiHelper.init(Config.getInstance().getMapper().writeValueAsString(openapi));
+        } catch (JsonProcessingException e) {
+            logger.error("merge specification failed");
+            throw new RuntimeException("merge specification failed");
+        }
     }
-
 
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {

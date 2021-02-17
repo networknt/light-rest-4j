@@ -1,0 +1,15 @@
+openapi: 3.0.0
+paths:
+  /pets/${goodKey}:
+    get:
+      security:
+        - api-scope:
+            - admim
+
+components:
+  securitySchemes:
+    api-scope:
+      flows:
+        clientCredentials:
+          scopes:
+            admin: orwritten

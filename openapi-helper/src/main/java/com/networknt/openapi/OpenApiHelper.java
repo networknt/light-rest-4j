@@ -25,10 +25,8 @@ import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.BiFunction;
 
 /**
  * This class load and cache openapi.json in a static block so that it can be
@@ -76,6 +74,38 @@ public class OpenApiHelper {
         }
         INSTANCE = new OpenApiHelper(spec);
         return INSTANCE;
+    }
+
+    /**
+     * merge inject map to openapi map
+     * @param openapi {@link Map} openapi
+     * @param inject {@link Map} openapi
+     */
+    public static void merge(Map<String, Object> openapi, Map<String, Object> inject) {
+        if (inject == null) {
+            return;
+        }
+        for (Map.Entry<String, Object> entry : inject.entrySet()) {
+            openapi.merge(entry.getKey(), entry.getValue(), new Merger());
+        }
+    }
+
+    // merge in case of map, add in case of list
+    static class Merger implements BiFunction {
+        @Override
+        public Object apply(Object o, Object i) {
+            if (o instanceof Map && i instanceof Map) {
+                for (Map.Entry<String, Object> entry : ((Map<String, Object>) i).entrySet()) {
+                    ((Map<String, Object>) o).merge(entry.getKey(), entry.getValue(), new Merger());
+                }
+            } else if (o instanceof List && i instanceof List) {
+                ((List<Object>) o).addAll((List)i);
+            } else {
+                // if has the same key, return the injected
+                return i;
+            }
+            return o;
+        }
     }
 
     public Optional<NormalisedPath> findMatchingApiPath(final NormalisedPath requestPath) {
