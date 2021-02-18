@@ -79,7 +79,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
         config = Config.getInstance().getJsonMapConfig(OPENAPI_SECURITY_CONFIG);
         // fallback to generic security.yml
         if(config == null) config = Config.getInstance().getJsonMapConfig(JwtVerifier.SECURITY_CONFIG);
-        jwtVerifier = new JwtVerifier(config);
+
     }
 
     private volatile HttpHandler next;
@@ -95,6 +95,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
             }
             OpenApiHelper.init(spec);
         }
+        jwtVerifier = new JwtVerifier(config);
     }
 
     @Override
