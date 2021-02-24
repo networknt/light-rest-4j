@@ -1,5 +1,15 @@
 # Change Log
 
+## [2.0.24](https://github.com/networknt/light-rest-4j/tree/2.0.24) (2021-02-24)
+
+
+**Merged pull requests:**
+
+
+- Bump version.jackson from 2.10.4 to 2.12.1 [\#175](https://github.com/networknt/light-rest-4j/pull/175) ([dependabot](https://github.com/apps/dependabot))
+- issue \#173 move JwtVerifier from static block to constructor [\#174](https://github.com/networknt/light-rest-4j/pull/174) ([BalloonWen](https://github.com/BalloonWen))
+- fixes \#171 update the JwtVerifierHandler to make sure the module regi… [\#172](https://github.com/networknt/light-rest-4j/pull/172) ([stevehu](https://github.com/stevehu))
+- inject additional spec to origin spec at the start up [\#170](https://github.com/networknt/light-rest-4j/pull/170) ([BalloonWen](https://github.com/BalloonWen))
 ## [2.0.23](https://github.com/networknt/light-rest-4j/tree/2.0.23) (2021-01-29)
 
 
