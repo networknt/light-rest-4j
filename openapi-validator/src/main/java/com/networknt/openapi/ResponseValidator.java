@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.networknt.openapi.ValidatorHandler.*;
 import static java.util.Objects.requireNonNull;
 
 public class ResponseValidator {
@@ -60,6 +61,16 @@ public class ResponseValidator {
     }
 
     public ResponseValidator() {
+        if(OpenApiHelper.getInstance() == null) {
+            String spec = Config.getInstance().getStringFromFile(OPENAPI_YML_CONFIG);
+            if(spec == null) {
+                spec = Config.getInstance().getStringFromFile(OPENAPI_YAML_CONFIG);
+                if(spec == null) {
+                    spec = Config.getInstance().getStringFromFile(OPENAPI_JSON_CONFIG);
+                }
+            }
+            OpenApiHelper.init(spec);
+        }
         this.schemaValidator = new SchemaValidator(OpenApiHelper.openApi3);
         this.config = new SchemaValidatorsConfig();
     }
