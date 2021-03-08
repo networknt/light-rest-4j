@@ -31,7 +31,6 @@ import static com.networknt.openapi.ValidatorHandlerTest.sendResponse;
 public class ResponseValidatorTest {
     static Map<String, Object> responses = Config.getInstance().getJsonMapConfig("responses");
     static Undertow server = null;
-    ResponseValidator validator = new ResponseValidator();
     static final Logger logger = LoggerFactory.getLogger(ResponseValidatorTest.class);
     @Before
     public void setUp() {
@@ -86,6 +85,7 @@ public class ResponseValidatorTest {
         CompletableFuture<ClientResponse> future = sendResponse(clientRequest, "response2");
         Assert.assertTrue(future.get(3, TimeUnit.SECONDS).getResponseCode() > 300);
     }
+
     public class TestValidateResponseHandler implements LightHttpHandler {
 
         @Override
@@ -95,6 +95,7 @@ public class ResponseValidatorTest {
             if(exchange.getAttachment(BodyHandler.REQUEST_BODY) != null) {
                 responseBody = Config.getInstance().getMapper().writeValueAsString(exchange.getAttachment(BodyHandler.REQUEST_BODY));
             }
+            ResponseValidator validator = new ResponseValidator();
             Status status = validator.validateResponseContent(responseBody, exchange);
             if(status == null) {
                 exchange.getResponseSender().send("good");
