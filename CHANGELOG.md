@@ -7,6 +7,8 @@
 
 
 - fixes \#176 initialize the OpenApiHelper for the response validator [\#177](https://github.com/networknt/light-rest-4j/pull/177) ([stevehu](https://github.com/stevehu))
+
+
 ## [2.0.24](https://github.com/networknt/light-rest-4j/tree/2.0.24) (2021-02-24)
 
 
