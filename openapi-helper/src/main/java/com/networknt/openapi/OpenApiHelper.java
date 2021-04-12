@@ -25,7 +25,10 @@ import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiFunction;
 
 /**
@@ -144,9 +147,14 @@ public class OpenApiHelper {
         if (url != null) {
             // find "://" index
             int protocolIndex = url.indexOf("://");
-            int pathIndex = url.indexOf('/', protocolIndex + 3);
-            if (pathIndex > 0) {
-                basePath = url.substring(pathIndex);
+            if (protocolIndex != -1) {
+                int pathIndex = url.indexOf('/', protocolIndex + 3);
+                if (pathIndex > 0) {
+                    basePath = url.substring(pathIndex);
+                }
+            } else {
+                // support openapi Relative URLs
+                basePath = url.startsWith("/") ? url : "";
             }
         }
         return basePath;
