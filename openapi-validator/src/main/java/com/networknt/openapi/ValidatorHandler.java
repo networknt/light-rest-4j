@@ -21,6 +21,7 @@ import com.networknt.config.Config;
 import com.networknt.dump.StoreResponseStreamSinkConduit;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
+import com.networknt.handler.config.HandlerConfig;
 import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
@@ -47,6 +48,7 @@ public class ValidatorHandler implements MiddlewareHandler {
     public static final String OPENAPI_YML_CONFIG = "openapi.yml";
     public static final String OPENAPI_YAML_CONFIG = "openapi.yaml";
     public static final String OPENAPI_JSON_CONFIG = "openapi.json";
+    public static final String HANDLER_CONFIG_NAME = "handler";
 
     static final String STATUS_MISSING_OPENAPI_OPERATION = "ERR10012";
 
@@ -66,6 +68,8 @@ public class ValidatorHandler implements MiddlewareHandler {
 
     ResponseValidator responseValidator;
 
+    String basePath;
+
     public ValidatorHandler() {
         if(OpenApiHelper.getInstance() == null) {
             String spec = Config.getInstance().getStringFromFile(OPENAPI_YML_CONFIG);
@@ -80,11 +84,12 @@ public class ValidatorHandler implements MiddlewareHandler {
         final SchemaValidator schemaValidator = new SchemaValidator(OpenApiHelper.openApi3);
         this.requestValidator = new RequestValidator(schemaValidator);
         this.responseValidator = new ResponseValidator();
+        basePath = ((HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG_NAME, HandlerConfig.class)).getBasePath();
     }
 
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
-        final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI());
+        final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), basePath);
         OpenApiOperation openApiOperation = null;
         Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
         if(auditInfo != null) {

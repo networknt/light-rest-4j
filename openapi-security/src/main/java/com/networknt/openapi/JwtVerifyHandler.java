@@ -20,6 +20,7 @@ import com.networknt.config.Config;
 import com.networknt.exception.ExpiredTokenException;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
+import com.networknt.handler.config.HandlerConfig;
 import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.httpstring.HttpStringConstants;
 import com.networknt.oas.model.Operation;
@@ -56,6 +57,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     static final String OPENAPI_YAML_CONFIG = "openapi.yaml";
     static final String OPENAPI_JSON_CONFIG = "openapi.json";
 
+    static final String HANDLER_CONFIG = "handler";
     static final String OPENAPI_SECURITY_CONFIG = "openapi-security";
     static final String ENABLE_VERIFY_SCOPE = "enableVerifyScope";
     static final String ENABLE_VERIFY_JWT_SCOPE_TOKEN = "enableExtractScopeToken";
@@ -72,6 +74,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
 
     static Map<String, Object> config;
+    String basePath;
     // make this static variable public so that it can be accessed from the server-info module
     public static JwtVerifier jwtVerifier;
     static {
@@ -96,6 +99,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
             OpenApiHelper.init(spec);
         }
         jwtVerifier = new JwtVerifier(config);
+        basePath = ((HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class)).getBasePath();
     }
 
     @Override
@@ -129,7 +133,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                     Operation operation = null;
                     OpenApiOperation openApiOperation = (OpenApiOperation)auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
                     if(openApiOperation == null) {
-                        final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI());
+                        final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), basePath);
                         final Optional<NormalisedPath> maybeApiPath = OpenApiHelper.getInstance().findMatchingApiPath(requestPath);
                         if (!maybeApiPath.isPresent()) {
                             setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH);

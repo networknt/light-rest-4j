@@ -37,12 +37,29 @@ public class ApiNormalisedPath implements NormalisedPath {
     private final String original;
     private final String normalised;
 
+    @Deprecated
     public ApiNormalisedPath(final String path) {
         if (logger.isDebugEnabled()) logger.debug("path =" + path);
         this.original = requireNonNull(path, "A path is required");
-        this.normalised = normalise(path);
+        this.normalised = normalise(path, null);
         if (logger.isDebugEnabled()) logger.debug("normalised = " + this.normalised);
-        this.pathParts = unmodifiableList(asList(normalised.split("/")));
+        this.pathParts = List.of(normalised.split("/"));
+    }
+
+    /**
+     * Construct normalized path
+     * @param path original path
+     * @param basePath the path you want to overwrite
+     *                 - put null will use the base path parsed from {@link OpenApiHelper}
+     *                 - put "" empty String will not trigger any overwrites
+     *                 - put regex will replace the first basePath with empty String
+     */
+    public ApiNormalisedPath(final String path, final String basePath) {
+        if (logger.isDebugEnabled()) logger.debug("path = {}, base path is set to: {}", path, basePath);
+        this.original = requireNonNull(path, "A path is required");
+        this.normalised = normalise(path, basePath);
+        if (logger.isDebugEnabled()) logger.debug("normalised = " + this.normalised);
+        this.pathParts = List.of(normalised.split("/"));
     }
 
     @Override
@@ -80,10 +97,14 @@ public class ApiNormalisedPath implements NormalisedPath {
         return normalised;
     }
 
-    private String normalise(String requestPath) {
-        if(OpenApiHelper.openApi3 != null && OpenApiHelper.basePath.length() > 0) {
-            requestPath = requestPath.replaceFirst(OpenApiHelper.basePath, "");
+    // case basePath == null, use OpenApiHelper.basePath
+    // case basePath != null, remove the basePath
+    private String normalise(String requestPath, String basePath) {
+        if (basePath == null) {
+            basePath = OpenApiHelper.openApi3 == null ? "" : OpenApiHelper.basePath;
         }
+        requestPath = requestPath.replaceFirst(basePath, "");
+
         if (!requestPath.startsWith("/")) {
             return "/" + requestPath;
         }

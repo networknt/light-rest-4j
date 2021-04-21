@@ -13,6 +13,12 @@ public class BasePathTest {
     }
     @Test
     public void testBasePath() {
-        Assert.assertEquals("/api/v1", OpenApiHelper.basePath);
+        Assert.assertEquals("/namespace/application/v1", OpenApiHelper.basePath);
+    }
+
+    @Test
+    public void testApiNormalizedPathWithRegex() {
+        ApiNormalisedPath normalisedPath = new ApiNormalisedPath("/v1/pets/26", "\\/[^\\/]+");
+        Assert.assertEquals(normalisedPath.normalised(), "/pets/26");
     }
 }
