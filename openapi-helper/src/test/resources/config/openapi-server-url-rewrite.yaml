@@ -5,7 +5,7 @@ info:
   license:
     name: MIT
 servers:
-  - url: '/v1'
+  - url: 'https://localhost:8080/namespace/application/v1'
 paths:
   /pets:
     get:
