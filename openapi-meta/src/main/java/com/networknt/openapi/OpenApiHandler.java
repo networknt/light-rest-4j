@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.networknt.config.Config;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
+import com.networknt.handler.config.HandlerConfig;
 import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.oas.model.Operation;
 import com.networknt.oas.model.Path;
@@ -54,6 +55,7 @@ public class OpenApiHandler implements MiddlewareHandler {
 
     public static final String CONFIG_NAME = "openapi";
     public static final String SPEC_INJECT = "openapi-inject";
+    public static final String HANDLER_CONFIG = "handler";
 
     public static final AttachmentKey<Map<String, Object>> DESERIALIZED_QUERY_PARAMETERS = AttachmentKey.create(Map.class);
 	public static final AttachmentKey<Map<String, Object>> DESERIALIZED_PATH_PARAMETERS = AttachmentKey.create(Map.class);
@@ -62,11 +64,13 @@ public class OpenApiHandler implements MiddlewareHandler {
 
     static final String STATUS_INVALID_REQUEST_PATH = "ERR10007";
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
+    String basePath;
 
     private volatile HttpHandler next;
     public OpenApiHandler() {
         Map<String, Object> inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
         Map<String, Object> openapi = Config.getInstance().getJsonMapConfig(CONFIG_NAME);
+        basePath = ((HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class)).getBasePath();
         InjectableSpecValidator validator = SingletonServiceFactory.getBean(InjectableSpecValidator.class);
         if (validator == null) {
             validator = new DefaultInjectableSpecValidator();
@@ -86,7 +90,8 @@ public class OpenApiHandler implements MiddlewareHandler {
 
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
-        final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI());
+
+        final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), basePath);
         final Optional<NormalisedPath> maybeApiPath = OpenApiHelper.getInstance().findMatchingApiPath(requestPath);
         if (!maybeApiPath.isPresent()) {
             setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH, requestPath.normalised());
