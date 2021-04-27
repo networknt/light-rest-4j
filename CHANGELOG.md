@@ -1,5 +1,13 @@
 # Change Log
 
+## [2.0.26](https://github.com/networknt/light-rest-4j/tree/2.0.26) (2021-04-27)
+
+
+**Merged pull requests:**
+
+
+- issue \#178 fixed tests due to handerl.yml is missing in the tests [\#180](https://github.com/networknt/light-rest-4j/pull/180) ([BalloonWen](https://github.com/BalloonWen))
+- feat \#178 [\#179](https://github.com/networknt/light-rest-4j/pull/179) ([BalloonWen](https://github.com/BalloonWen))
 ## [2.0.25](https://github.com/networknt/light-rest-4j/tree/2.0.25) (2021-03-28)
 
 
