@@ -70,7 +70,9 @@ public class OpenApiHandler implements MiddlewareHandler {
     public OpenApiHandler() {
         Map<String, Object> inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
         Map<String, Object> openapi = Config.getInstance().getJsonMapConfig(CONFIG_NAME);
-        basePath = ((HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class)).getBasePath();
+        HandlerConfig handlerConfig = (HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class);
+        // if PathHandlerProvider is used, the chain is defined in the service.yml and no handler.yml available.
+        basePath = handlerConfig == null ? null : handlerConfig.getBasePath();
         InjectableSpecValidator validator = SingletonServiceFactory.getBean(InjectableSpecValidator.class);
         if (validator == null) {
             validator = new DefaultInjectableSpecValidator();
