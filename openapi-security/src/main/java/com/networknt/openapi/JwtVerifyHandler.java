@@ -99,7 +99,9 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
             OpenApiHelper.init(spec);
         }
         jwtVerifier = new JwtVerifier(config);
-        basePath = ((HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class)).getBasePath();
+        HandlerConfig handlerConfig = (HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class);
+        // if PathHandlerProvider is used, the chain is defined in the service.yml and no handler.yml available.
+        basePath = handlerConfig == null ? null : handlerConfig.getBasePath();
     }
 
     @Override

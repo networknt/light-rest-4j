@@ -84,7 +84,9 @@ public class ValidatorHandler implements MiddlewareHandler {
         final SchemaValidator schemaValidator = new SchemaValidator(OpenApiHelper.openApi3);
         this.requestValidator = new RequestValidator(schemaValidator);
         this.responseValidator = new ResponseValidator();
-        basePath = ((HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG_NAME, HandlerConfig.class)).getBasePath();
+        HandlerConfig handlerConfig = (HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG_NAME, HandlerConfig.class);
+        // if PathHandlerProvider is used, the chain is defined in the service.yml and no handler.yml available.
+        basePath = handlerConfig == null ? null : handlerConfig.getBasePath();
     }
 
     @Override
