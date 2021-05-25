@@ -1,5 +1,12 @@
 # Change Log
 
+## [2.0.27](https://github.com/networknt/light-rest-4j/tree/2.0.27) (2021-05-25)
+
+
+**Merged pull requests:**
+
+
+- fixes \#181 update the basePath logic to make sure it is backward comp… [\#182](https://github.com/networknt/light-rest-4j/pull/182) ([stevehu](https://github.com/stevehu))
 ## [2.0.26](https://github.com/networknt/light-rest-4j/tree/2.0.26) (2021-04-27)
 
 
