@@ -7,6 +7,8 @@
 
 
 - fixes \#183 [\#184](https://github.com/networknt/light-rest-4j/pull/184) ([chenyan71](https://github.com/chenyan71))
+
+
 ## [2.0.28](https://github.com/networknt/light-rest-4j/tree/2.0.28) (2021-06-27)
 
 
