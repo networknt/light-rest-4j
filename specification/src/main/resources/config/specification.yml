@@ -1,5 +1,5 @@
 ---
 # Sepcification type and file name definition
 
-fileName: config/openapi.yaml
-contentType: text/yaml
+fileName: ${specification.fileName:config/openapi.yaml}
+contentType: ${specification.contentType:text/yaml}
