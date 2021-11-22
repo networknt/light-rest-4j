@@ -25,9 +25,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>openapi-validator</artifactId>
+    <artifactId>access-control</artifactId>
     <packaging>jar</packaging>
-    <description>An OpenAPI specification 3.0 handler that validates request based on specification.</description>
+    <description>A module that contains fine-grained authorization handlers to address business domain security</description>
 
     <dependencies>
         <dependency>
@@ -36,11 +36,11 @@
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
-            <artifactId>dump</artifactId>
+            <artifactId>handler</artifactId>
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
-            <artifactId>json-overlay</artifactId>
+            <artifactId>status</artifactId>
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
@@ -48,54 +48,30 @@
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
-            <artifactId>openapi-meta</artifactId>
+            <artifactId>openapi-helper</artifactId>
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
-            <artifactId>openapi-security</artifactId>
+            <artifactId>rule-loader</artifactId>
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
-            <artifactId>body</artifactId>
+            <artifactId>yaml-rule</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>handler</artifactId>
-        </dependency>
+
         <dependency>
             <groupId>io.undertow</groupId>
             <artifactId>undertow-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>json-schema-validator</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.owasp.encoder</groupId>
-            <artifactId>encoder</artifactId>
-        </dependency>
 
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>client</artifactId>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
@@ -104,11 +80,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
