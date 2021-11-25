@@ -52,7 +52,7 @@ public class ResponseValidatorTest {
             handler = openApiHandler;
 
             server = Undertow.builder()
-                    .addHttpListener(8080, "localhost")
+                    .addHttpListener(7080, "localhost")
                     .setHandler(handler)
                     .build();
             server.start();
