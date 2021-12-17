@@ -107,7 +107,7 @@ public class OpenApiHandler implements MiddlewareHandler {
         final Operation operation = path.getOperation(httpMethod);
 
         if (operation == null) {
-            setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED);
+            setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED, httpMethod, openApiPathString.normalised());
             return;
         }
 

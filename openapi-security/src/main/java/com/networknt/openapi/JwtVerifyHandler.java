@@ -149,7 +149,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                         operation = swaggerPath.getOperation(httpMethod);
 
                         if (operation == null) {
-                            setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED);
+                            setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED, httpMethod, swaggerPathString.normalised());
                             return;
                         }
                         openApiOperation = new OpenApiOperation(swaggerPathString, swaggerPath, httpMethod, operation);
