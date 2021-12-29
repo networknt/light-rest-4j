@@ -48,7 +48,7 @@
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
-            <artifactId>openapi-helper</artifactId>
+            <artifactId>openapi-parser</artifactId>
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
