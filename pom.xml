@@ -115,7 +115,6 @@
     </properties>
 
     <modules>
-        <module>openapi-helper</module>
         <module>openapi-meta</module>
         <module>openapi-validator</module>
         <module>openapi-security</module>
@@ -126,11 +125,6 @@
     <dependencyManagement>
         <dependencies>
             <!-- Modules in this project -->
-            <dependency>
-                <groupId>com.networknt</groupId>
-                <artifactId>openapi-helper</artifactId>
-                <version>${project.version}</version>
-            </dependency>
             <dependency>
                 <groupId>com.networknt</groupId>
                 <artifactId>openapi-meta</artifactId>
