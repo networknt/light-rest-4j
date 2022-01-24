@@ -13,7 +13,7 @@ enableExtractScopeToken: ${openapi-security.enableExtractScopeToken:true}
 enableVerifyScope: ${openapi-security.enableVerifyScope:true}
 
 # Enable JWT scope verification. 
-# Only valid when (enableVerifyJwt is true) AND (enableVerifyJWTScopeToken is true)
+# Only valid when (enableVerifyJwt is true) AND (enableVerifyScope is true)
 enableVerifyJWTScopeToken: ${openapi-security.enableVerifyJWTScopeToken:true}
 
 # User for test only. should be always be false on official environment.
