@@ -1,5 +1,18 @@
 # Change Log
 
+## [2.1.0](https://github.com/networknt/light-rest-4j/tree/2.1.0) (2022-02-27)
+
+
+**Merged pull requests:**
+
+
+- fixes \#193 move the openapi-helper to the openapi-parser project for … [\#194](https://github.com/networknt/light-rest-4j/pull/194) ([stevehu](https://github.com/stevehu))
+- fixes \#191 Add method and path to the STATUS_METHOD_NOT_ALLOWED [\#192](https://github.com/networknt/light-rest-4j/pull/192) ([stevehu](https://github.com/stevehu))
+- fixes \#189 update the openapi-security.yml in the test resource as a … [\#190](https://github.com/networknt/light-rest-4j/pull/190) ([stevehu](https://github.com/stevehu))
+- fixes \#187 Add rest access-control module for fine-grained authorizat… [\#188](https://github.com/networknt/light-rest-4j/pull/188) ([stevehu](https://github.com/stevehu))
+- fixes \#185 patternize specification.yml and openapi-validator.yml [\#186](https://github.com/networknt/light-rest-4j/pull/186) ([stevehu](https://github.com/stevehu))
+
+
 ## [2.0.32](https://github.com/networknt/light-rest-4j/tree/2.0.32) (2021-10-19)
 
 
