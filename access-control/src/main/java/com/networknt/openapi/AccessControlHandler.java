@@ -15,13 +15,13 @@
  */
 package com.networknt.openapi;
 
+import com.networknt.body.BodyHandler;
 import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
+import com.networknt.http.HttpMethod;
 import com.networknt.httpstring.AttachmentConstants;
-import com.networknt.oas.model.Operation;
-import com.networknt.oas.model.impl.OperationImpl;
 import com.networknt.rule.RuleConstants;
 import com.networknt.rule.RuleEngine;
 import com.networknt.rule.RuleLoaderStartupHook;
@@ -29,6 +29,7 @@ import com.networknt.utility.ModuleRegistry;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.util.HeaderMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,13 +37,13 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * This is a business middleware handler that should be put after the technical middleware handlers in the request/response chain. It
- * handles fine-grained authorization on the business domain. In the request chain, it will check a list of conditions (role-based and
- * attributed-based authorization) at the endpoint level. In the response chain, a list of conditions will be checked to filter the
- * response to remove some rows and/or some columns.
+ * This is a business middleware handler that should be put after the technical middleware handlers in the request/response chain. It handles
+ * fine-grained authorization on the business domain. In the request chain, it will check a list of conditions (rule-based authorization) at
+ * the endpoint level. In the response chain, a list of rules/conditions will be checked to filter the response to remove some rows and/or
+ * some columns.
  *
- * This handler is depending on the yaml-rule from networknt and all rules for the service will be loaded during the startup time with
- * a startup hook and this handler will use the cached rules and data to do local calculation for the best performance.
+ * This handler is depending on the yaml-rule from light-4j of networknt and all rules for the service will be loaded during the startup time
+ * with a startup hook and this handler will use the cached rules and data to do local calculation for the best performance.
  *
  * @author Steve Hu
  */
@@ -50,6 +51,9 @@ public class AccessControlHandler implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(AccessControlHandler.class);
     static final AccessControlConfig config = (AccessControlConfig) Config.getInstance().getJsonObjectConfig(AccessControlConfig.CONFIG_NAME, AccessControlConfig.class);
     static final String ACCESS_CONTROL_ERROR = "ERR10067";
+    static final String REQUEST_ACCESS = "request-access";
+    static final String RESPONSE_FILTER = "response-filter";
+    static final String RULE_ID = "ruleId";
     private volatile HttpHandler next;
     private RuleEngine engine;
 
@@ -61,16 +65,42 @@ public class AccessControlHandler implements MiddlewareHandler {
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
         Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
-        OpenApiOperation operation = (OpenApiOperation) auditInfo.get("openapi_operation");
-        Operation op = operation.getOperation();
-        Map<String, Object> ra = (Map)op.getExtension("x-request-access");
-        String ruleId = (String)ra.get("rule");
-        String roles = (String)ra.get("roles");
+        // This map is the input for the rule. For different access control rules, the input might be different.
+        // so we just put as many objects into the map in case the rule needs it for the access control calculation.
+        HeaderMap requestHeaders = exchange.getRequestHeaders();
+        Map<String, Deque<String>> queryParameters = exchange.getQueryParameters();
+        Map<String, Deque<String>> pathParameters = exchange.getPathParameters();
         Map<String, Object> objMap = new HashMap<>();
-        objMap.put("auditInfo", auditInfo);
-        objMap.put("roles", roles);
-        Map<String, Object> result = engine.executeRule(ruleId, objMap);
-        if((Boolean)result.get(RuleConstants.RESULT)) {
+        objMap.put("auditInfo", auditInfo); // Jwt info is in this object.
+        objMap.put("headers", requestHeaders);
+        objMap.put("queryParameters", queryParameters);
+        objMap.put("pathParameters", pathParameters);
+        HttpMethod httpMethod = HttpMethod.resolve(exchange.getRequestMethod().toString());
+        objMap.put("method", httpMethod.toString());
+        if(httpMethod == HttpMethod.POST || httpMethod == HttpMethod.PUT || httpMethod == HttpMethod.PATCH) {
+            Map<String, Object> bodyMap = (Map<String, Object>)exchange.getAttachment(BodyHandler.REQUEST_BODY);
+            objMap.put("requestBody", bodyMap);
+        }
+        // need to get the rule/rules to execute from the RuleLoaderStartupHook. First, get the endpoint.
+        String endpoint = (String)auditInfo.get("endpoint");
+        // get the access rules (maybe multiple) based on the endpoint.
+        Map<String, List> requestRules = (Map<String, List>)RuleLoaderStartupHook.endpointRules.get(endpoint);
+        List<Map<String, Object>> accessRules = requestRules.get(REQUEST_ACCESS);
+        boolean finalResult = true;
+        Map<String, Object> result = null;
+        String ruleId = null;
+        // iterate the rules and execute them in sequence. Allow access only when all rules return true.
+        for(Map<String, Object> ruleMap: accessRules) {
+            ruleId = (String)ruleMap.get(RULE_ID);
+            objMap.putAll(ruleMap);
+            result = engine.executeRule(ruleId, objMap);
+            boolean res = (Boolean)result.get(RuleConstants.RESULT);
+            if(!res) {
+                finalResult = false;
+                break;
+            }
+        }
+        if(finalResult) {
             next(exchange);
         } else {
             logger.error(JsonMapper.toJson(result));
