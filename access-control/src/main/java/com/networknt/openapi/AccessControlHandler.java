@@ -51,6 +51,7 @@ public class AccessControlHandler implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(AccessControlHandler.class);
     static final AccessControlConfig config = (AccessControlConfig) Config.getInstance().getJsonObjectConfig(AccessControlConfig.CONFIG_NAME, AccessControlConfig.class);
     static final String ACCESS_CONTROL_ERROR = "ERR10067";
+    static final String ACCESS_CONTROL_MISSING = "ERR10069";
     static final String REQUEST_ACCESS = "request-access";
     static final String RESPONSE_FILTER = "response-filter";
     static final String RULE_ID = "ruleId";
@@ -85,26 +86,36 @@ public class AccessControlHandler implements MiddlewareHandler {
         String endpoint = (String)auditInfo.get("endpoint");
         // get the access rules (maybe multiple) based on the endpoint.
         Map<String, List> requestRules = (Map<String, List>)RuleLoaderStartupHook.endpointRules.get(endpoint);
-        List<Map<String, Object>> accessRules = requestRules.get(REQUEST_ACCESS);
-        boolean finalResult = true;
-        Map<String, Object> result = null;
-        String ruleId = null;
-        // iterate the rules and execute them in sequence. Allow access only when all rules return true.
-        for(Map<String, Object> ruleMap: accessRules) {
-            ruleId = (String)ruleMap.get(RULE_ID);
-            objMap.putAll(ruleMap);
-            result = engine.executeRule(ruleId, objMap);
-            boolean res = (Boolean)result.get(RuleConstants.RESULT);
-            if(!res) {
-                finalResult = false;
-                break;
+        // if there is no access rule for this endpoint, check the default deny flag in the config.
+        if(requestRules == null ) {
+            if(config.defaultDeny) {
+                logger.error("Access control rule is missing and default deny is true for endpoint " + endpoint);
+                setExchangeStatus(exchange, ACCESS_CONTROL_MISSING, endpoint);
+            } else {
+                next(exchange);
             }
-        }
-        if(finalResult) {
-            next(exchange);
         } else {
-            logger.error(JsonMapper.toJson(result));
-            setExchangeStatus(exchange, ACCESS_CONTROL_ERROR, ruleId);
+            boolean finalResult = true;
+            List<Map<String, Object>> accessRules = requestRules.get(REQUEST_ACCESS);
+            Map<String, Object> result = null;
+            String ruleId = null;
+            // iterate the rules and execute them in sequence. Allow access only when all rules return true.
+            for(Map<String, Object> ruleMap: accessRules) {
+                ruleId = (String)ruleMap.get(RULE_ID);
+                objMap.putAll(ruleMap);
+                result = engine.executeRule(ruleId, objMap);
+                boolean res = (Boolean)result.get(RuleConstants.RESULT);
+                if(!res) {
+                    finalResult = false;
+                    break;
+                }
+            }
+            if(finalResult) {
+                next(exchange);
+            } else {
+                logger.error(JsonMapper.toJson(result));
+                setExchangeStatus(exchange, ACCESS_CONTROL_ERROR, ruleId);
+            }
         }
     }
 

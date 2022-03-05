@@ -18,6 +18,7 @@ package com.networknt.openapi;
 class AccessControlConfig {
     public static final String CONFIG_NAME = "access-control";
     boolean enabled;
+    boolean defaultDeny;
 
     private AccessControlConfig() {
 
@@ -29,5 +30,13 @@ class AccessControlConfig {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public boolean isDefaultDeny() {
+        return defaultDeny;
+    }
+
+    public void setDefaultDeny(boolean defaultDeny) {
+        this.defaultDeny = defaultDeny;
     }
 }
