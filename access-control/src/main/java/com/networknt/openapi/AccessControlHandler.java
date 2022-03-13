@@ -15,7 +15,6 @@
  */
 package com.networknt.openapi;
 
-import com.networknt.body.BodyConfig;
 import com.networknt.body.BodyHandler;
 import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;

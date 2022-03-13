@@ -16,14 +16,12 @@
 
 package com.networknt.openapi;
 
-import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
 import com.networknt.dump.StoreResponseStreamSinkConduit;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.handler.config.HandlerConfig;
 import com.networknt.httpstring.AttachmentConstants;
-import com.networknt.security.JwtVerifier;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
