@@ -65,12 +65,13 @@ public class OpenApiHandler implements MiddlewareHandler {
     static final String STATUS_INVALID_REQUEST_PATH = "ERR10007";
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
     String basePath;
+    HandlerConfig handlerConfig;
 
     private volatile HttpHandler next;
     public OpenApiHandler() {
         Map<String, Object> inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
         Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache(CONFIG_NAME);
-        HandlerConfig handlerConfig = (HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class);
+        handlerConfig = (HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class);
         // if PathHandlerProvider is used, the chain is defined in the service.yml and no handler.yml available.
         basePath = handlerConfig == null ? null : handlerConfig.getBasePath();
         InjectableSpecValidator validator = SingletonServiceFactory.getBean(InjectableSpecValidator.class);
@@ -153,7 +154,12 @@ public class OpenApiHandler implements MiddlewareHandler {
     public void register() {
         ModuleRegistry.registerModule(OpenApiHandler.class.getName(), Config.getInstance().getJsonMapConfig(CONFIG_NAME), null);
     }
-    
+
+    @Override
+    public void reload() {
+        handlerConfig = (HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class);
+    }
+
     /**
      * merge two maps. The values in preferredMap take priority.
      * 
