@@ -49,7 +49,7 @@ import java.util.*;
  */
 public class AccessControlHandler implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(AccessControlHandler.class);
-    static final AccessControlConfig config = (AccessControlConfig) Config.getInstance().getJsonObjectConfig(AccessControlConfig.CONFIG_NAME, AccessControlConfig.class);
+    static  AccessControlConfig config = (AccessControlConfig) Config.getInstance().getJsonObjectConfig(AccessControlConfig.CONFIG_NAME, AccessControlConfig.class);
     static final String ACCESS_CONTROL_ERROR = "ERR10067";
     static final String ACCESS_CONTROL_MISSING = "ERR10069";
     static final String REQUEST_ACCESS = "request-access";
@@ -143,5 +143,10 @@ public class AccessControlHandler implements MiddlewareHandler {
     @Override
     public void register() {
         ModuleRegistry.registerModule(AccessControlHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(AccessControlConfig.CONFIG_NAME), null);
+    }
+
+    @Override
+    public void reload() {
+        config = (AccessControlConfig) Config.getInstance().getJsonObjectConfig(AccessControlConfig.CONFIG_NAME, AccessControlConfig.class);
     }
 }

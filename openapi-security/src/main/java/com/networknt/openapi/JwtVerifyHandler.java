@@ -304,6 +304,14 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     }
 
     @Override
+    public void reload() {
+        // check if openapi-security.yml exist
+        config = Config.getInstance().getJsonMapConfig(OPENAPI_SECURITY_CONFIG);
+        // fallback to generic security.yml
+        if(config == null) config = Config.getInstance().getJsonMapConfig(JwtVerifier.SECURITY_CONFIG);
+    }
+
+    @Override
     public JwtVerifier getJwtVerifier() {
         return jwtVerifier;
     }

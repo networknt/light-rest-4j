@@ -16,7 +16,6 @@
 
 package com.networknt.openapi;
 
-import com.networknt.audit.AuditHandler;
 import com.networknt.config.Config;
 import com.networknt.dump.StoreResponseStreamSinkConduit;
 import com.networknt.handler.Handler;
@@ -148,5 +147,13 @@ public class ValidatorHandler implements MiddlewareHandler {
     @Override
     public void register() {
         ModuleRegistry.registerModule(ValidatorHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(OPENAPI_CONFIG_NAME), null);
+    }
+
+    @Override
+    public void reload() {
+        config = (ValidatorConfig)Config.getInstance().getJsonObjectConfig(OPENAPI_CONFIG_NAME, ValidatorConfig.class);
+        if(config == null) {
+            config = (ValidatorConfig)Config.getInstance().getJsonObjectConfig(CONFIG_NAME, ValidatorConfig.class);
+        }
     }
 }
