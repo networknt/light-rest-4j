@@ -48,10 +48,6 @@
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
-            <artifactId>openapi-parser</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
             <artifactId>rule-loader</artifactId>
         </dependency>
         <dependency>
