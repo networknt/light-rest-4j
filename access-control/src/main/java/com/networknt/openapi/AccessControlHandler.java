@@ -52,6 +52,7 @@ public class AccessControlHandler implements MiddlewareHandler {
     static final AccessControlConfig config = (AccessControlConfig) Config.getInstance().getJsonObjectConfig(AccessControlConfig.CONFIG_NAME, AccessControlConfig.class);
     static final String ACCESS_CONTROL_ERROR = "ERR10067";
     static final String ACCESS_CONTROL_MISSING = "ERR10069";
+    static final String STARTUP_HOOK_NOT_LOADED = "ERR11019";
     static final String REQUEST_ACCESS = "request-access";
     static final String RESPONSE_FILTER = "response-filter";
     static final String RULE_ID = "ruleId";
@@ -84,6 +85,11 @@ public class AccessControlHandler implements MiddlewareHandler {
         }
         // need to get the rule/rules to execute from the RuleLoaderStartupHook. First, get the endpoint.
         String endpoint = (String)auditInfo.get("endpoint");
+        // checked the RuleLoaderStartupHook to ensure it is loaded. If not, return an error to the caller.
+        if(RuleLoaderStartupHook.endpointRules == null) {
+            logger.error("RuleLoaderStartupHook endpointRules is null");
+            setExchangeStatus(exchange, STARTUP_HOOK_NOT_LOADED, "RuleLoaderStartupHook");
+        }
         // get the access rules (maybe multiple) based on the endpoint.
         Map<String, List> requestRules = (Map<String, List>)RuleLoaderStartupHook.endpointRules.get(endpoint);
         // if there is no access rule for this endpoint, check the default deny flag in the config.
