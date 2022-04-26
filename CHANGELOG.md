@@ -1,5 +1,15 @@
 # Change Log
 
+## [2.1.1](https://github.com/networknt/light-rest-4j/tree/2.1.1) (2022-04-26)
+
+
+**Merged pull requests:**
+
+
+- fixes \#202 Update access control handler to return error if rule load… [\#203](https://github.com/networknt/light-rest-4j/pull/203) ([stevehu](https://github.com/stevehu))
+- Issue1143 [\#201](https://github.com/networknt/light-rest-4j/pull/201) ([GavinChenYan](https://github.com/GavinChenYan))
+- fixes \#199 add a new flag defaultDeny for acces-control.yml to define… [\#200](https://github.com/networknt/light-rest-4j/pull/200) ([stevehu](https://github.com/stevehu))
+- fixes \#197 update the access-control to get service rule for fine-gra… [\#198](https://github.com/networknt/light-rest-4j/pull/198) ([stevehu](https://github.com/stevehu))
 ## [2.1.0](https://github.com/networknt/light-rest-4j/tree/2.1.0) (2022-02-27)
 
 
