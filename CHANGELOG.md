@@ -7,6 +7,8 @@
 
 
 - fixes \#195 upgrade swagger-parser and swagger-core to the latest to r… [\#196](https://github.com/networknt/light-rest-4j/pull/196) ([stevehu](https://github.com/stevehu))
+
+
 ## [1.6.38](https://github.com/networknt/light-rest-4j/tree/1.6.38) (2022-02-19)
 
 
