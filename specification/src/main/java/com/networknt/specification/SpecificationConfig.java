@@ -21,6 +21,7 @@ package com.networknt.specification;
  *
  */
 public class SpecificationConfig {
+    public static final String CONFIG_NAME = "specification";
     String fileName;
     String contentType;
 
