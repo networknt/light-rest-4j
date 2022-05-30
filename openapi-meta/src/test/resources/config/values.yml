@@ -1,2 +1,4 @@
+# server.yml
+server.serviceId: com.networknt.petstore-1.0.0
 badKey: "{petId}"
 goodKey: petId
