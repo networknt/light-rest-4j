@@ -1,0 +1,19 @@
+---
+openapi: "3.0.0"
+servers:
+- description: "Light Router Gateway"
+  url: "https://router.neworknt.com"
+info:
+  description: "Light Router Gateway Generic Specification"
+  version: "1.0.0"
+  title: "Light Router Gateway"
+  contact:
+    email: "stevehu@gmail.com"
+paths:
+ /dummy:
+   get:
+     description: dummy endpoint to make sure that the specification valid
+     responses:
+       '200':
+         description: An paged array of pets
+     
