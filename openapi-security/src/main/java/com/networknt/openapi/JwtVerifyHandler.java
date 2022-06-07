@@ -108,6 +108,14 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
         HeaderMap headerMap = exchange.getRequestHeaders();
         String authorization = headerMap.getFirst(Headers.AUTHORIZATION);
+        if(logger.isTraceEnabled() && authorization != null) logger.trace("Authorization header = " + authorization.substring(0, 10));
+        // in the gateway case, the authorization header might be a basic header for the native API or other authentication headers.
+        // this will allow the Basic authentication be wrapped up with a JWT token between proxy client and proxy server for native.
+        if(!authorization.startsWith("Bearer ")) {
+            // get the jwt token from the X-Scope-Token header in this case and allow the verification done with the secondary token.
+            authorization = headerMap.getFirst(HttpStringConstants.SCOPE_TOKEN);
+            if(logger.isTraceEnabled() && authorization != null) logger.trace("The replaced authorization from X-Scope-Token header = " + authorization.substring(0, 15));
+        }
         String jwt = jwtVerifier.getJwtFromAuthorization(authorization);
         boolean ignoreExpiry = config.get(IGNORE_JWT_EXPIRY) == null ? false : (boolean)config.get(IGNORE_JWT_EXPIRY);
         if(jwt != null) {
