@@ -1,6 +1,6 @@
 ---
 # Specification type and file name definition
 # The filename with path of the specification file, and usually it is openapi.yaml
-fileName: ${specification.fileName:config/openapi.yaml}
+fileName: ${specification.fileName:openapi.yaml}
 # The content type of the specification file. In most cases, we are using yaml format.
 contentType: ${specification.contentType:text/yaml}
