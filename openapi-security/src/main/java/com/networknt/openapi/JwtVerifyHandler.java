@@ -29,6 +29,7 @@ import com.networknt.oas.model.SecurityParameter;
 import com.networknt.oas.model.SecurityRequirement;
 import com.networknt.security.IJwtVerifyHandler;
 import com.networknt.security.JwtVerifier;
+import com.networknt.security.SecurityConfig;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
 import io.undertow.Handlers;
@@ -59,9 +60,6 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 
     static final String HANDLER_CONFIG = "handler";
     static final String OPENAPI_SECURITY_CONFIG = "openapi-security";
-    static final String ENABLE_VERIFY_SCOPE = "enableVerifyScope";
-    static final String ENABLE_VERIFY_JWT_SCOPE_TOKEN = "enableExtractScopeToken";
-    static final String IGNORE_JWT_EXPIRY = "ignoreJwtExpiry";
 
     static final String STATUS_INVALID_AUTH_TOKEN = "ERR10000";
     static final String STATUS_AUTH_TOKEN_EXPIRED = "ERR10001";
@@ -73,16 +71,12 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     static final String STATUS_INVALID_REQUEST_PATH = "ERR10007";
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
 
-    static Map<String, Object> config;
+    static SecurityConfig config;
     String basePath;
     // make this static variable public so that it can be accessed from the server-info module
     public static JwtVerifier jwtVerifier;
     static {
-        // check if openapi-security.yml exist
-        config = Config.getInstance().getJsonMapConfig(OPENAPI_SECURITY_CONFIG);
-        // fallback to generic security.yml
-        if(config == null) config = Config.getInstance().getJsonMapConfig(JwtVerifier.SECURITY_CONFIG);
-
+        config = SecurityConfig.load(OPENAPI_SECURITY_CONFIG);
     }
 
     private volatile HttpHandler next;
@@ -109,7 +103,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
         HeaderMap headerMap = exchange.getRequestHeaders();
         String authorization = headerMap.getFirst(Headers.AUTHORIZATION);
         String jwt = jwtVerifier.getJwtFromAuthorization(authorization);
-        boolean ignoreExpiry = config.get(IGNORE_JWT_EXPIRY) == null ? false : (boolean)config.get(IGNORE_JWT_EXPIRY);
+        boolean ignoreExpiry = config.isIgnoreJwtExpiry();
         if(jwt != null) {
             try {
                 JwtClaims claims = jwtVerifier.verifyJwt(jwt, ignoreExpiry, true);
@@ -131,7 +125,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                 auditInfo.put(Constants.SUBJECT_CLAIMS, claims);
                 String callerId = headerMap.getFirst(HttpStringConstants.CALLER_ID);
                 if(callerId != null) auditInfo.put(Constants.CALLER_ID_STRING, callerId);
-                if(config != null && (Boolean)config.get(ENABLE_VERIFY_JWT_SCOPE_TOKEN) && OpenApiHelper.openApi3 != null) {
+                if(config != null && config.isEnableVerifyScope() && OpenApiHelper.openApi3 != null) {
                     Operation operation = null;
                     OpenApiOperation openApiOperation = (OpenApiOperation)auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
                     if(openApiOperation == null) {
@@ -195,7 +189,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                     }
 
                     // validate the scope against the scopes configured in the OpenAPI spec
-                    if((Boolean)config.get(ENABLE_VERIFY_SCOPE)) {
+                    if(config.isEnableVerifyScope()) {
 	                    // get scope defined in OpenAPI spec for this endpoint.
 	                    Collection<String> specScopes = null;
 	                    Collection<SecurityRequirement> securityRequirements = operation.getSecurityRequirements();
@@ -293,22 +287,17 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 
     @Override
     public boolean isEnabled() {
-        Object object = config.get(JwtVerifier.ENABLE_VERIFY_JWT);
-        return object != null && Boolean.valueOf(object.toString()) ;
+        return config.isEnableVerifyJwt();
     }
 
     @Override
     public void register() {
-        ModuleRegistry.registerModule(JwtVerifyHandler.class.getName(), config, null);
         ModuleRegistry.registerModule(JwtVerifyHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(OPENAPI_SECURITY_CONFIG), null);
     }
 
     @Override
     public void reload() {
-        // check if openapi-security.yml exist
-        config = Config.getInstance().getJsonMapConfig(OPENAPI_SECURITY_CONFIG);
-        // fallback to generic security.yml
-        if(config == null) config = Config.getInstance().getJsonMapConfig(JwtVerifier.SECURITY_CONFIG);
+        config.reload(OPENAPI_SECURITY_CONFIG);
     }
 
     @Override
