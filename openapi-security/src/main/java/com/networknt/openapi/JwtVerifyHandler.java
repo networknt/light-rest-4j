@@ -17,6 +17,7 @@
 package com.networknt.openapi;
 
 import com.networknt.config.Config;
+import com.networknt.config.JsonMapper;
 import com.networknt.exception.ExpiredTokenException;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
@@ -102,19 +103,21 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
         HeaderMap headerMap = exchange.getRequestHeaders();
         String authorization = headerMap.getFirst(Headers.AUTHORIZATION);
-        if(logger.isTraceEnabled() && authorization != null) logger.trace("Authorization header = " + authorization.substring(0, 10));
+        if(logger.isTraceEnabled() && authorization != null) logger.trace("Authorization header = " + authorization.substring(0, 20));
         // in the gateway case, the authorization header might be a basic header for the native API or other authentication headers.
         // this will allow the Basic authentication be wrapped up with a JWT token between proxy client and proxy server for native.
-        if(!authorization.startsWith("Bearer ")) {
+        if(authorization != null && !authorization.startsWith("Bearer ")) {
             // get the jwt token from the X-Scope-Token header in this case and allow the verification done with the secondary token.
             authorization = headerMap.getFirst(HttpStringConstants.SCOPE_TOKEN);
-            if(logger.isTraceEnabled() && authorization != null) logger.trace("The replaced authorization from X-Scope-Token header = " + authorization.substring(0, 15));
+            if(logger.isTraceEnabled() && authorization != null) logger.trace("The replaced authorization from X-Scope-Token header = " + authorization.substring(0, 20));
         }
         String jwt = jwtVerifier.getJwtFromAuthorization(authorization);
         boolean ignoreExpiry = config.isIgnoreJwtExpiry();
         if(jwt != null) {
+            if(logger.isTraceEnabled()) logger.trace("parsed jwt from authorization = " + jwt.substring(0, 20));
             try {
                 JwtClaims claims = jwtVerifier.verifyJwt(jwt, ignoreExpiry, true);
+                if(logger.isTraceEnabled()) logger.trace("claims = " + claims.toJson());
                 Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
                 // In normal case, the auditInfo shouldn't be null as it is created by OpenApiHandler with
                 // endpoint and swaggerOperation available. This handler will enrich the auditInfo.
@@ -133,7 +136,9 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                 auditInfo.put(Constants.SUBJECT_CLAIMS, claims);
                 String callerId = headerMap.getFirst(HttpStringConstants.CALLER_ID);
                 if(callerId != null) auditInfo.put(Constants.CALLER_ID_STRING, callerId);
+                if(logger.isTraceEnabled()) logger.trace("auditInfo = " + JsonMapper.toJson(auditInfo));
                 if(config != null && config.isEnableVerifyScope() && OpenApiHelper.openApi3 != null) {
+                    if(logger.isTraceEnabled()) logger.trace("verify scope from the primary token when enableVerifyScope is true");
                     Operation operation = null;
                     OpenApiOperation openApiOperation = (OpenApiOperation)auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
                     if(openApiOperation == null) {
@@ -166,6 +171,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                     String scopeJwt = jwtVerifier.getJwtFromAuthorization(scopeHeader);
                     List<String> secondaryScopes = null;
                     if(scopeJwt != null) {
+                        if(logger.isTraceEnabled()) logger.trace("start verifying scope token = " + scopeJwt.substring(0, 20));
                         try {
                             JwtClaims scopeClaims = jwtVerifier.verifyJwt(scopeJwt, ignoreExpiry, true);
                             Object scopeClaim = scopeClaims.getClaimValue(Constants.SCOPE_STRING);
@@ -215,12 +221,14 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 	
 	                    // validate scope
 	                    if (scopeHeader != null) {
+                            if(logger.isTraceEnabled()) logger.trace("validate the scope with scope token");
 	                        if (secondaryScopes == null || !matchedScopes(secondaryScopes, specScopes)) {
 	                            setExchangeStatus(exchange, STATUS_SCOPE_TOKEN_SCOPE_MISMATCH, secondaryScopes, specScopes);
 	                            return;
 	                        }
 	                    } else {
 	                        // no scope token, verify scope from auth token.
+                            if(logger.isTraceEnabled()) logger.trace("validate the scope with primary token");
 	                        List<String> primaryScopes = null;
 	                        try {
 	                            Object scopeClaim = claims.getClaimValue(Constants.SCOPE_STRING);
