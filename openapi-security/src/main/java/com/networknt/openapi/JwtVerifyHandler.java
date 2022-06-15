@@ -258,6 +258,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 	                    }
                     } // end scope validation
                 }
+                if(logger.isTraceEnabled()) logger.trace("complete JWT verification for request path = " + exchange.getRequestURI());
                 Handler.next(exchange, next);
             } catch (InvalidJwtException e) {
                 // only log it and unauthorized is returned.
