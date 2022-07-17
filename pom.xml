@@ -102,7 +102,7 @@
         <version.junit>4.13.1</version.junit>
         <version.mockito>2.23.0</version.mockito>
         <version.powermock>2.0.0</version.powermock>
-        <version.undertow>2.2.14.Final</version.undertow>
+        <version.undertow>2.2.18.Final</version.undertow>
         <version.swagger-parser>1.0.57</version.swagger-parser>
         <version.swagger-core>1.6.5</version.swagger-core>
         <version.jsr305>3.0.2</version.jsr305>
