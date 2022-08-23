@@ -137,7 +137,6 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                 auditInfo.put(Constants.SUBJECT_CLAIMS, claims);
                 String callerId = headerMap.getFirst(HttpStringConstants.CALLER_ID);
                 if(callerId != null) auditInfo.put(Constants.CALLER_ID_STRING, callerId);
-                if(logger.isTraceEnabled()) logger.trace("auditInfo = " + JsonMapper.toJson(auditInfo));
                 if(config != null && config.isEnableVerifyScope() && OpenApiHelper.openApi3 != null) {
                     if(logger.isTraceEnabled()) logger.trace("verify scope from the primary token when enableVerifyScope is true");
                     Operation operation = null;
