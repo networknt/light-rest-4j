@@ -71,17 +71,17 @@ public class ValidatorHandlerTest {
     public void setUp() {
         if(server == null) {
             logger.info("starting server");
+            OpenApiHandler openApiHandler = new OpenApiHandler();
+            BodyHandler bodyHandler = new BodyHandler();
 
             HttpHandler handler = getPetStoreHandler();
             ValidatorHandler validatorHandler = new ValidatorHandler();
             validatorHandler.setNext(handler);
             handler = validatorHandler;
 
-            BodyHandler bodyHandler = new BodyHandler();
             bodyHandler.setNext(handler);
             handler = bodyHandler;
 
-            OpenApiHandler openApiHandler = new OpenApiHandler();
             openApiHandler.setNext(handler);
             handler = openApiHandler;
 
@@ -137,7 +137,7 @@ public class ValidatorHandlerTest {
     }
 
     @Test
-    public void testInvalidRequstPath() throws Exception {
+    public void testInvalidRequestPath() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;

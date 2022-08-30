@@ -50,10 +50,7 @@ import io.undertow.server.RoutingHandler;
 import io.undertow.util.Headers;
 import io.undertow.util.Methods;
 
-/**
- * Created by steve on 30/09/16.
- */
-public class OpenApiHandlerTest {
+public class OpenApiHandlerMultipleSpecsTest {
     static final Logger logger = LoggerFactory.getLogger(OpenApiHandlerTest.class);
 
     static Undertow server = null;
@@ -63,7 +60,7 @@ public class OpenApiHandlerTest {
         if(server == null) {
             logger.info("starting server");
             HttpHandler handler = getTestHandler();
-            OpenApiHandler openApiHandler = new OpenApiHandler();
+            OpenApiHandler openApiHandler = new OpenApiHandler(OpenApiHandlerConfig.load("openapi-handler-multiple"));
             openApiHandler.setNext(handler);
             handler = openApiHandler;
             server = Undertow.builder()
@@ -90,7 +87,7 @@ public class OpenApiHandlerTest {
     static RoutingHandler getTestHandler() {
         return Handlers.routing()
                 .add(Methods.GET, "/pets", exchange -> exchange.getResponseSender().send("get"))
-                .add(Methods.POST, "/v1/pets", exchange -> {
+                .add(Methods.POST, "/petstore/pets", exchange -> {
                     Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
                     if(auditInfo != null) {
                         exchange.getResponseSender().send("withAuditInfo");
@@ -98,11 +95,11 @@ public class OpenApiHandlerTest {
                         exchange.getResponseSender().send("withoutAuditInfo");
                     }
                 })
-                .add(Methods.DELETE, "/v1/pets", exchange -> exchange.getResponseSender().send("deleted"));
+                .add(Methods.DELETE, "/petstore/pets", exchange -> exchange.getResponseSender().send("deleted"));
     }
 
     @Test
-    public void testWrongPath() throws Exception {
+    public void testWrongPathWithoutBasePath() throws Exception {
         // this path is not in petstore swagger specification. get error
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -136,6 +133,40 @@ public class OpenApiHandlerTest {
     }
 
     @Test
+    public void testWrongPathWithBasePath() throws Exception {
+        // this path is not in petstore swagger specification. get error
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/market/get").setMethod(Methods.GET);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
+        System.out.println("statusCode = " + statusCode + " responseBody = " + responseBody);
+        Assert.assertEquals(404, statusCode);
+        if(statusCode == 404) {
+            Status status = Config.getInstance().getMapper().readValue(responseBody, Status.class);
+            Assert.assertNotNull(status);
+            Assert.assertEquals("ERR10007", status.getCode());
+        }
+    }
+
+    @Test
     public void testWrongMethod() throws Exception {
         // this path is not in petstore swagger specification. get error
         final Http2Client client = Http2Client.getInstance();
@@ -148,7 +179,7 @@ public class OpenApiHandlerTest {
         }
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
-            ClientRequest request = new ClientRequest().setPath("/v1/pets").setMethod(Methods.DELETE);
+            ClientRequest request = new ClientRequest().setPath("/petstore/pets").setMethod(Methods.DELETE);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             connection.sendRequest(request, client.createClientCallback(reference, latch));
             latch.await();
@@ -184,7 +215,7 @@ public class OpenApiHandlerTest {
             connection.getIoThread().execute(new Runnable() {
                 @Override
                 public void run() {
-                    final ClientRequest request = new ClientRequest().setMethod(Methods.POST).setPath("/v1/pets");
+                    final ClientRequest request = new ClientRequest().setMethod(Methods.POST).setPath("/petstore/pets");
                     request.getRequestHeaders().put(Headers.HOST, "localhost");
                     request.getRequestHeaders().put(Headers.CONTENT_TYPE, "application/json");
                     request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
@@ -206,29 +237,30 @@ public class OpenApiHandlerTest {
             Assert.assertEquals("withAuditInfo", body);
         }
     }
-    
+
     @Test
     public void testMapUtils() {
-    	Map<String, String> preferredMap = new HashMap<>();
-    	Map<String, String> alternativeMap = new HashMap<>();
-    	
-    	preferredMap.put("a", "1");
-    	preferredMap.put("b", "2");
-    	
-    	alternativeMap.put("a", "11");
-    	alternativeMap.put("b", "22");
-    	alternativeMap.put("c", "33");
-    	
-    	Map<String, ?> mergedMap = OpenApiHandler.mergeMaps(preferredMap, alternativeMap);
-    	
-    	assertEquals(3, mergedMap.size());
-    	assertEquals("1", mergedMap.get("a"));
-    	assertEquals("2", mergedMap.get("b"));
-    	assertEquals("33", mergedMap.get("c"));
-    	
-    	Map<String, Object> nonNullMap = OpenApiHandler.nonNullMap(null);
-    	
-    	assertNotNull(nonNullMap);
-    	
+        Map<String, String> preferredMap = new HashMap<>();
+        Map<String, String> alternativeMap = new HashMap<>();
+
+        preferredMap.put("a", "1");
+        preferredMap.put("b", "2");
+
+        alternativeMap.put("a", "11");
+        alternativeMap.put("b", "22");
+        alternativeMap.put("c", "33");
+
+        Map<String, ?> mergedMap = OpenApiHandler.mergeMaps(preferredMap, alternativeMap);
+
+        assertEquals(3, mergedMap.size());
+        assertEquals("1", mergedMap.get("a"));
+        assertEquals("2", mergedMap.get("b"));
+        assertEquals("33", mergedMap.get("c"));
+
+        Map<String, Object> nonNullMap = OpenApiHandler.nonNullMap(null);
+
+        assertNotNull(nonNullMap);
+
     }
+
 }

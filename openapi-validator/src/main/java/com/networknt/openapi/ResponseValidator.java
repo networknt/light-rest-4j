@@ -56,11 +56,12 @@ public class ResponseValidator {
      * @param config schema validator configuration
      */
     public ResponseValidator(SchemaValidatorsConfig config) {
-        this.schemaValidator = new SchemaValidator(OpenApiHelper.openApi3);
+        this.schemaValidator = new SchemaValidator(OpenApiHandler.helper.openApi3);
         this.config = config;
     }
 
     public ResponseValidator() {
+        /*
         if(OpenApiHelper.getInstance() == null) {
             String spec = Config.getInstance().getStringFromFile(OPENAPI_YML_CONFIG);
             if(spec == null) {
@@ -71,7 +72,8 @@ public class ResponseValidator {
             }
             OpenApiHelper.init(spec);
         }
-        this.schemaValidator = new SchemaValidator(OpenApiHelper.openApi3);
+        */
+        this.schemaValidator = new SchemaValidator(OpenApiHandler.helper.openApi3);
         this.config = new SchemaValidatorsConfig();
     }
 
@@ -203,14 +205,14 @@ public class ResponseValidator {
      */
     private OpenApiOperation getOpenApiOperation(String uri, String httpMethod) throws URISyntaxException {
         String uriWithoutQuery = new URI(uri).getPath();
-        NormalisedPath requestPath = new ApiNormalisedPath(uriWithoutQuery);
-        Optional<NormalisedPath> maybeApiPath = OpenApiHelper.getInstance().findMatchingApiPath(requestPath);
+        NormalisedPath requestPath = new ApiNormalisedPath(uriWithoutQuery, OpenApiHandler.helper.basePath);
+        Optional<NormalisedPath> maybeApiPath = OpenApiHandler.helper.findMatchingApiPath(requestPath);
         if (!maybeApiPath.isPresent()) {
             return null;
         }
 
         final NormalisedPath openApiPathString = maybeApiPath.get();
-        final Path path = OpenApiHelper.openApi3.getPath(openApiPathString.original());
+        final Path path = OpenApiHandler.helper.openApi3.getPath(openApiPathString.original());
 
         final Operation operation = path.getOperation(httpMethod);
         return new OpenApiOperation(openApiPathString, path, httpMethod, operation);

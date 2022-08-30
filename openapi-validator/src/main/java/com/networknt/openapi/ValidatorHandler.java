@@ -70,6 +70,7 @@ public class ValidatorHandler implements MiddlewareHandler {
     String basePath;
 
     public ValidatorHandler() {
+        /*
         if(OpenApiHelper.getInstance() == null) {
             String spec = Config.getInstance().getStringFromFile(OPENAPI_YML_CONFIG);
             if(spec == null) {
@@ -80,12 +81,13 @@ public class ValidatorHandler implements MiddlewareHandler {
             }
             OpenApiHelper.init(spec);
         }
-        final SchemaValidator schemaValidator = new SchemaValidator(OpenApiHelper.openApi3);
+        */
+        final SchemaValidator schemaValidator = new SchemaValidator(OpenApiHandler.helper.openApi3);
         this.requestValidator = new RequestValidator(schemaValidator);
         this.responseValidator = new ResponseValidator();
         HandlerConfig handlerConfig = (HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG_NAME, HandlerConfig.class);
         // if PathHandlerProvider is used, the chain is defined in the service.yml and no handler.yml available.
-        basePath = handlerConfig == null ? null : handlerConfig.getBasePath();
+        basePath = handlerConfig == null || handlerConfig.getBasePath() == null ? "" : handlerConfig.getBasePath();
     }
 
     @Override

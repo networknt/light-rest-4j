@@ -49,17 +49,18 @@ public class RequestValidatorTest {
     public static void setUp() {
         if(server == null) {
             logger.info("starting server");
+            OpenApiHandler openApiHandler = new OpenApiHandler();
+            BodyHandler bodyHandler = new BodyHandler();
+
             HttpHandler handler = setupRoutings();
             
             ValidatorHandler validatorHandler = new ValidatorHandler();
             validatorHandler.setNext(handler);
             handler = validatorHandler;
 
-            BodyHandler bodyHandler = new BodyHandler();
             bodyHandler.setNext(handler);
             handler = bodyHandler;            
             
-            OpenApiHandler openApiHandler = new OpenApiHandler();
             openApiHandler.setNext(handler);
             handler = openApiHandler;
             

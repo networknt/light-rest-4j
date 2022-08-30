@@ -36,6 +36,9 @@ public class ResponseValidatorTest {
     public void setUp() {
         if(server == null) {
             logger.info("starting server");
+            OpenApiHandler openApiHandler = new OpenApiHandler();
+            BodyHandler bodyHandler = new BodyHandler();
+
             TestValidateResponseHandler testValidateResponseHandler = new TestValidateResponseHandler();
             HttpHandler handler = Handlers.routing()
                     .add(Methods.GET, "/v1/todoItems", testValidateResponseHandler);
@@ -43,11 +46,9 @@ public class ResponseValidatorTest {
             validatorHandler.setNext(handler);
             handler = validatorHandler;
 
-            BodyHandler bodyHandler = new BodyHandler();
             bodyHandler.setNext(handler);
             handler = bodyHandler;
 
-            OpenApiHandler openApiHandler = new OpenApiHandler();
             openApiHandler.setNext(handler);
             handler = openApiHandler;
 

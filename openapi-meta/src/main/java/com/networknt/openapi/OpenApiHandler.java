@@ -67,68 +67,155 @@ public class OpenApiHandler implements MiddlewareHandler {
     String basePath;
     HandlerConfig handlerConfig;
 
+    OpenApiHandlerConfig config;
+    public static Map<String, OpenApiHelper> helperMap;
+    public static OpenApiHelper helper;
+
     private volatile HttpHandler next;
-    public OpenApiHandler() {
+    public OpenApiHandler(OpenApiHandlerConfig cfg) {
+        config = cfg;
         Map<String, Object> inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
-        Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache(CONFIG_NAME);
-        handlerConfig = (HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class);
-        // if PathHandlerProvider is used, the chain is defined in the service.yml and no handler.yml available.
-        basePath = handlerConfig == null ? null : handlerConfig.getBasePath();
-        InjectableSpecValidator validator = SingletonServiceFactory.getBean(InjectableSpecValidator.class);
-        if (validator == null) {
-            validator = new DefaultInjectableSpecValidator();
-        }
-        if (!validator.isValid(openapi, inject)) {
-            logger.error("the original spec and injected spec has error, please check the validator {}", validator.getClass().getName());
-            throw new RuntimeException("inject spec error");
-        }
-        OpenApiHelper.merge(openapi, inject);
-        try {
-            OpenApiHelper.init(Config.getInstance().getMapper().writeValueAsString(openapi));
-        } catch (JsonProcessingException e) {
-            logger.error("merge specification failed");
-            throw new RuntimeException("merge specification failed");
+        if(config.isMultipleSpec()) {
+            // multiple specifications in the same handler.
+            Map<String, Object> pathSpecMapping = config.getPathSpecMapping();
+            helperMap = new HashMap<>();
+            // iterate the mapping to load the specifications.
+            for(Map.Entry<String, Object> entry: pathSpecMapping.entrySet()) {
+                if(logger.isTraceEnabled()) logger.trace("key = " + entry.getKey() + " value = " + entry.getValue());
+                Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache((String)entry.getValue());
+                InjectableSpecValidator validator = SingletonServiceFactory.getBean(InjectableSpecValidator.class);
+                if (validator == null) {
+                    validator = new DefaultInjectableSpecValidator();
+                }
+                if (!validator.isValid(openapi, inject)) {
+                    logger.error("the original spec {} and injected spec has error, please check the validator {}", entry.getValue(), validator.getClass().getName());
+                    throw new RuntimeException("inject spec error for " + entry.getValue());
+                }
+                OpenApiHelper.merge(openapi, inject);
+                try {
+                    helper = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(openapi));
+                    helperMap.put(entry.getKey(), helper);
+                } catch (JsonProcessingException e) {
+                    logger.error("merge specification failed for " + entry.getValue());
+                    throw new RuntimeException("merge specification failed for " + entry.getValue());
+                }
+            }
+        } else {
+            Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache(CONFIG_NAME);
+            handlerConfig = (HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class);
+            // if PathHandlerProvider is used, the chain is defined in the service.yml and no handler.yml available.
+            basePath = handlerConfig == null ? "" : handlerConfig.getBasePath();
+            InjectableSpecValidator validator = SingletonServiceFactory.getBean(InjectableSpecValidator.class);
+            if (validator == null) {
+                validator = new DefaultInjectableSpecValidator();
+            }
+            if (!validator.isValid(openapi, inject)) {
+                logger.error("the original spec and injected spec has error, please check the validator {}", validator.getClass().getName());
+                throw new RuntimeException("inject spec error");
+            }
+            OpenApiHelper.merge(openapi, inject);
+            try {
+                helper = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(openapi));
+                if (basePath == null) {
+                    basePath = helper.openApi3 == null ? "" : helper.basePath;
+                }
+            } catch (JsonProcessingException e) {
+                logger.error("merge specification failed");
+                throw new RuntimeException("merge specification failed");
+            }
         }
     }
 
+    public OpenApiHandler() {
+        this(OpenApiHandlerConfig.load());
+    }
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
+        if(config.isMultipleSpec()) {
+            String p = exchange.getRequestPath();
+            boolean found = false;
+            for(Map.Entry<String, OpenApiHelper> entry: helperMap.entrySet()) {
+                if(p.startsWith(entry.getKey())) {
+                    found = true;
+                    OpenApiHelper h = entry.getValue();
+                    // found the match base path here.
+                    final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), h.basePath);
+                    final Optional<NormalisedPath> maybeApiPath = h.findMatchingApiPath(requestPath);
+                    if (!maybeApiPath.isPresent()) {
+                        setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH, requestPath.normalised());
+                        return;
+                    }
 
-        final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), basePath);
-        final Optional<NormalisedPath> maybeApiPath = OpenApiHelper.getInstance().findMatchingApiPath(requestPath);
-        if (!maybeApiPath.isPresent()) {
-            setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH, requestPath.normalised());
-            return;
+                    final NormalisedPath openApiPathString = maybeApiPath.get();
+                    final Path path = h.openApi3.getPath(openApiPathString.original());
+
+                    final String httpMethod = exchange.getRequestMethod().toString().toLowerCase();
+                    final Operation operation = path.getOperation(httpMethod);
+
+                    if (operation == null) {
+                        setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED, httpMethod, openApiPathString.normalised());
+                        return;
+                    }
+
+                    // This handler can identify the openApiOperation and endpoint only. Other info will be added by JwtVerifyHandler.
+                    final OpenApiOperation openApiOperation = new OpenApiOperation(openApiPathString, path, httpMethod, operation);
+
+                    try {
+                        ParameterDeserializer.deserialize(exchange, openApiOperation);
+                    }catch (Throwable t) {// do not crash the handler
+                        logger.error(t.getMessage(), t);
+                    }
+
+                    String endpoint = openApiPathString.normalised() + "@" + httpMethod.toString().toLowerCase();
+                    Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO) == null
+                            ? new HashMap<>()
+                            : exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
+                    auditInfo.put(Constants.ENDPOINT_STRING, endpoint);
+                    auditInfo.put(Constants.OPENAPI_OPERATION_STRING, openApiOperation);
+                    exchange.putAttachment(AttachmentConstants.AUDIT_INFO, auditInfo);
+                    break;
+                }
+            }
+            if(!found) {
+                setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH, p);
+                return;
+            }
+        } else {
+            final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), basePath);
+            final Optional<NormalisedPath> maybeApiPath = helper.findMatchingApiPath(requestPath);
+            if (!maybeApiPath.isPresent()) {
+                setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH, requestPath.normalised());
+                return;
+            }
+
+            final NormalisedPath openApiPathString = maybeApiPath.get();
+            final Path path = helper.openApi3.getPath(openApiPathString.original());
+
+            final String httpMethod = exchange.getRequestMethod().toString().toLowerCase();
+            final Operation operation = path.getOperation(httpMethod);
+
+            if (operation == null) {
+                setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED, httpMethod, openApiPathString.normalised());
+                return;
+            }
+
+            // This handler can identify the openApiOperation and endpoint only. Other info will be added by JwtVerifyHandler.
+            final OpenApiOperation openApiOperation = new OpenApiOperation(openApiPathString, path, httpMethod, operation);
+
+            try {
+                ParameterDeserializer.deserialize(exchange, openApiOperation);
+            }catch (Throwable t) {// do not crash the handler
+                logger.error(t.getMessage(), t);
+            }
+
+            String endpoint = openApiPathString.normalised() + "@" + httpMethod.toString().toLowerCase();
+            Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO) == null
+                    ? new HashMap<>()
+                    : exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
+            auditInfo.put(Constants.ENDPOINT_STRING, endpoint);
+            auditInfo.put(Constants.OPENAPI_OPERATION_STRING, openApiOperation);
+            exchange.putAttachment(AttachmentConstants.AUDIT_INFO, auditInfo);
         }
-
-        final NormalisedPath openApiPathString = maybeApiPath.get();
-        final Path path = OpenApiHelper.openApi3.getPath(openApiPathString.original());
-
-        final String httpMethod = exchange.getRequestMethod().toString().toLowerCase();
-        final Operation operation = path.getOperation(httpMethod);
-
-        if (operation == null) {
-            setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED, httpMethod, openApiPathString.normalised());
-            return;
-        }
-
-        // This handler can identify the openApiOperation and endpoint only. Other info will be added by JwtVerifyHandler.
-        final OpenApiOperation openApiOperation = new OpenApiOperation(openApiPathString, path, httpMethod, operation);
-        
-        try {
-        	ParameterDeserializer.deserialize(exchange, openApiOperation);
-        }catch (Throwable t) {// do not crash the handler
-        	logger.error(t.getMessage(), t);
-        }
-        
-        String endpoint = openApiPathString.normalised() + "@" + httpMethod.toString().toLowerCase();
-        Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO) == null
-                ? new HashMap<>()
-                : exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
-        auditInfo.put(Constants.ENDPOINT_STRING, endpoint);
-        auditInfo.put(Constants.OPENAPI_OPERATION_STRING, openApiOperation);
-        exchange.putAttachment(AttachmentConstants.AUDIT_INFO, auditInfo);
-
         Handler.next(exchange, next);
     }
 
@@ -146,8 +233,13 @@ public class OpenApiHandler implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        // just check if swagger.json exists or not.
-        return (OpenApiHelper.openApi3 != null);
+        boolean enabled = false;
+        if(config.multipleSpec) {
+            enabled = config.getMappedConfig().size() > 0;
+        } else {
+            enabled = helper.openApi3 != null;
+        }
+        return enabled;
     }
 
     @Override

@@ -83,7 +83,9 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     private volatile HttpHandler next;
 
     public JwtVerifyHandler() {
-        if(OpenApiHelper.getInstance() == null) {
+        // at this moment, the specification(s) should be initialized already with OpenApiHandler.
+        /*
+        if(OpenApiHandler.helper == null) {
             String spec = Config.getInstance().getStringFromFile(OPENAPI_YML_CONFIG);
             if(spec == null) {
                 spec = Config.getInstance().getStringFromFile(OPENAPI_YAML_CONFIG);
@@ -93,10 +95,12 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
             }
             OpenApiHelper.init(spec);
         }
+        */
+
         jwtVerifier = new JwtVerifier(config);
         HandlerConfig handlerConfig = (HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class);
         // if PathHandlerProvider is used, the chain is defined in the service.yml and no handler.yml available.
-        basePath = handlerConfig == null ? null : handlerConfig.getBasePath();
+        basePath = handlerConfig == null || handlerConfig.getBasePath() == null ? "" : handlerConfig.getBasePath();
     }
 
     @Override
@@ -137,20 +141,20 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                 auditInfo.put(Constants.SUBJECT_CLAIMS, claims);
                 String callerId = headerMap.getFirst(HttpStringConstants.CALLER_ID);
                 if(callerId != null) auditInfo.put(Constants.CALLER_ID_STRING, callerId);
-                if(config != null && config.isEnableVerifyScope() && OpenApiHelper.openApi3 != null) {
+                if(config != null && config.isEnableVerifyScope() && OpenApiHandler.helper.openApi3 != null) {
                     if(logger.isTraceEnabled()) logger.trace("verify scope from the primary token when enableVerifyScope is true");
                     Operation operation = null;
                     OpenApiOperation openApiOperation = (OpenApiOperation)auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
                     if(openApiOperation == null) {
                         final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), basePath);
-                        final Optional<NormalisedPath> maybeApiPath = OpenApiHelper.getInstance().findMatchingApiPath(requestPath);
+                        final Optional<NormalisedPath> maybeApiPath = OpenApiHandler.helper.findMatchingApiPath(requestPath);
                         if (!maybeApiPath.isPresent()) {
                             setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH);
                             return;
                         }
 
                         final NormalisedPath swaggerPathString = maybeApiPath.get();
-                        final Path swaggerPath = OpenApiHelper.openApi3.getPath(swaggerPathString.original());
+                        final Path swaggerPath = OpenApiHandler.helper.openApi3.getPath(swaggerPathString.original());
 
                         final String httpMethod = exchange.getRequestMethod().toString().toLowerCase();
                         operation = swaggerPath.getOperation(httpMethod);
@@ -210,7 +214,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 	                    if(securityRequirements != null) {
 	                        for(SecurityRequirement requirement: securityRequirements) {
                                 SecurityParameter securityParameter = null;
-	                            for(String oauth2Name: OpenApiHelper.oauth2Names) {
+	                            for(String oauth2Name: OpenApiHandler.helper.oauth2Names) {
                                     securityParameter = requirement.getRequirement(oauth2Name);
                                     if(securityParameter != null) break;
                                 }

@@ -33,12 +33,18 @@ public class OpenApiEndpointSource implements EndpointSource {
 
     private static final Logger log = LoggerFactory.getLogger(OpenApiEndpointSource.class);
 
+    private OpenApiHelper helper;
+
+    public OpenApiEndpointSource(OpenApiHelper helper) {
+        this.helper = helper;
+    }
+
     @Override
     public Iterable<Endpoint> listEndpoints() {
 
         List<Endpoint> endpoints = new ArrayList<>();
         String basePath = findBasePath();
-        Map<String, Path> paths = OpenApiHelper.openApi3.getPaths();
+        Map<String, Path> paths = helper.openApi3.getPaths();
 
 
         if(log.isInfoEnabled()) log.info("Generating paths from OpenApi spec");
@@ -54,7 +60,7 @@ public class OpenApiEndpointSource implements EndpointSource {
     }
 
     public String findBasePath() {
-        List<Server> servers = OpenApiHelper.openApi3.getServers();
+        List<Server> servers = helper.openApi3.getServers();
         if(servers.isEmpty()) {
             log.warn("No server found in OpenApi spec. Using empty base path for API.");
             return "";
