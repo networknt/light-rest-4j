@@ -67,32 +67,15 @@ public class ValidatorHandler implements MiddlewareHandler {
 
     ResponseValidator responseValidator;
 
-    String basePath;
-
     public ValidatorHandler() {
-        /*
-        if(OpenApiHelper.getInstance() == null) {
-            String spec = Config.getInstance().getStringFromFile(OPENAPI_YML_CONFIG);
-            if(spec == null) {
-                spec = Config.getInstance().getStringFromFile(OPENAPI_YAML_CONFIG);
-                if(spec == null) {
-                    spec = Config.getInstance().getStringFromFile(OPENAPI_JSON_CONFIG);
-                }
-            }
-            OpenApiHelper.init(spec);
-        }
-        */
         final SchemaValidator schemaValidator = new SchemaValidator(OpenApiHandler.helper.openApi3);
         this.requestValidator = new RequestValidator(schemaValidator);
         this.responseValidator = new ResponseValidator();
-        HandlerConfig handlerConfig = (HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG_NAME, HandlerConfig.class);
-        // if PathHandlerProvider is used, the chain is defined in the service.yml and no handler.yml available.
-        basePath = handlerConfig == null || handlerConfig.getBasePath() == null ? "" : handlerConfig.getBasePath();
     }
 
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
-        final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), basePath);
+        final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), OpenApiHandler.getBasePath(exchange.getRequestPath()));
         OpenApiOperation openApiOperation = null;
         Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
         if(auditInfo != null) {

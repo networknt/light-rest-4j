@@ -55,9 +55,6 @@ import java.util.*;
  */
 public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     static final Logger logger = LoggerFactory.getLogger(JwtVerifyHandler.class);
-    static final String OPENAPI_YML_CONFIG = "openapi.yml";
-    static final String OPENAPI_YAML_CONFIG = "openapi.yaml";
-    static final String OPENAPI_JSON_CONFIG = "openapi.json";
 
     static final String HANDLER_CONFIG = "handler";
     static final String OPENAPI_SECURITY_CONFIG = "openapi-security";
@@ -73,7 +70,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
 
     static SecurityConfig config;
-    String basePath;
+
     // make this static variable public so that it can be accessed from the server-info module
     public static JwtVerifier jwtVerifier;
     static {
@@ -83,24 +80,9 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     private volatile HttpHandler next;
 
     public JwtVerifyHandler() {
-        // at this moment, the specification(s) should be initialized already with OpenApiHandler.
-        /*
-        if(OpenApiHandler.helper == null) {
-            String spec = Config.getInstance().getStringFromFile(OPENAPI_YML_CONFIG);
-            if(spec == null) {
-                spec = Config.getInstance().getStringFromFile(OPENAPI_YAML_CONFIG);
-                if(spec == null) {
-                    spec = Config.getInstance().getStringFromFile(OPENAPI_JSON_CONFIG);
-                }
-            }
-            OpenApiHelper.init(spec);
-        }
-        */
-
+        // at this moment, we assume that the OpenApiHandler is fully loaded with a single spec or multiple specs.
+        // And the basePath is the correct one from the OpenApiHandler helper or helperMap if multiple is used.
         jwtVerifier = new JwtVerifier(config);
-        HandlerConfig handlerConfig = (HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class);
-        // if PathHandlerProvider is used, the chain is defined in the service.yml and no handler.yml available.
-        basePath = handlerConfig == null || handlerConfig.getBasePath() == null ? "" : handlerConfig.getBasePath();
     }
 
     @Override
@@ -146,7 +128,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                     Operation operation = null;
                     OpenApiOperation openApiOperation = (OpenApiOperation)auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
                     if(openApiOperation == null) {
-                        final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), basePath);
+                        final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), OpenApiHandler.getBasePath(reqPath));
                         final Optional<NormalisedPath> maybeApiPath = OpenApiHandler.helper.findMatchingApiPath(requestPath);
                         if (!maybeApiPath.isPresent()) {
                             setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH);

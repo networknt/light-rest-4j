@@ -48,6 +48,10 @@ import java.util.Optional;
  * of the request and attached the operation to the request so that security
  * and validator can use it without parsing it.
  *
+ * For subsequent handlers like the JwtVerifierHandler and ValidatorHandler,
+ * they need to get the basePath and the OpenApiHelper for scope verification
+ * and schema validation. Put the helperMap to the exchange for easy sharing.
+ *
  * @author Steve Hu
  */
 public class OpenApiHandler implements MiddlewareHandler {
@@ -64,11 +68,13 @@ public class OpenApiHandler implements MiddlewareHandler {
 
     static final String STATUS_INVALID_REQUEST_PATH = "ERR10007";
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
-    String basePath;
     HandlerConfig handlerConfig;
 
     OpenApiHandlerConfig config;
+    // for multiple specifications use case. The key is the basePath and the value is the instance of OpenApiHelper.
     public static Map<String, OpenApiHelper> helperMap;
+    // for single specification case which covers 99 percent use cases. This is why, we don't put it into the helperMap for
+    // better performance. The subsequent handlers will only need to check the OpenApiHandler config instead of iterate a map.
     public static OpenApiHelper helper;
 
     private volatile HttpHandler next;
@@ -103,8 +109,6 @@ public class OpenApiHandler implements MiddlewareHandler {
         } else {
             Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache(CONFIG_NAME);
             handlerConfig = (HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class);
-            // if PathHandlerProvider is used, the chain is defined in the service.yml and no handler.yml available.
-            basePath = handlerConfig == null ? "" : handlerConfig.getBasePath();
             InjectableSpecValidator validator = SingletonServiceFactory.getBean(InjectableSpecValidator.class);
             if (validator == null) {
                 validator = new DefaultInjectableSpecValidator();
@@ -116,8 +120,9 @@ public class OpenApiHandler implements MiddlewareHandler {
             OpenApiHelper.merge(openapi, inject);
             try {
                 helper = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(openapi));
-                if (basePath == null) {
-                    basePath = helper.openApi3 == null ? "" : helper.basePath;
+                // overwrite the helper.basePath it cannot be derived from the openapi.yaml from the handler.yml
+                if(helper.basePath == null && handlerConfig != null) {
+                    helper.setBasePath(handlerConfig.getBasePath());
                 }
             } catch (JsonProcessingException e) {
                 logger.error("merge specification failed");
@@ -181,7 +186,7 @@ public class OpenApiHandler implements MiddlewareHandler {
                 return;
             }
         } else {
-            final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), basePath);
+            final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), helper.basePath);
             final Optional<NormalisedPath> maybeApiPath = helper.findMatchingApiPath(requestPath);
             if (!maybeApiPath.isPresent()) {
                 setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH, requestPath.normalised());
@@ -333,5 +338,26 @@ public class OpenApiHandler implements MiddlewareHandler {
     	
     	return deserializedValueOnly?nonNullMap(deserializedCookieParamters)
     			:mergeMaps(deserializedCookieParamters, exchange.getRequestCookies());
-    } 
+    }
+
+    // this is used to get the basePath from the OpenApiHandler regardless single specification or multiple specifications.
+    public static String getBasePath(String requestPath) {
+        String basePath = "";
+        // check single first.
+        if(OpenApiHandler.helper != null) {
+            basePath = OpenApiHandler.helper.basePath;
+            if(logger.isTraceEnabled()) logger.trace("Got basePath for single spec from helper " + basePath);
+        } else {
+            // based on the requestPath to find the right helper in the helperMap.
+            for(Map.Entry<String, OpenApiHelper> entry: OpenApiHandler.helperMap.entrySet()) {
+                if (requestPath.startsWith(entry.getKey())) {
+                    basePath = entry.getKey();
+                    if(logger.isTraceEnabled()) logger.trace("Got basePath for multiple specs from helperMap " + basePath);
+                    break;
+                }
+            }
+        }
+        return basePath;
+    }
+
 }
