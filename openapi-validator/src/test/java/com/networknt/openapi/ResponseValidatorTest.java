@@ -96,7 +96,8 @@ public class ResponseValidatorTest {
             if(exchange.getAttachment(BodyHandler.REQUEST_BODY) != null) {
                 responseBody = Config.getInstance().getMapper().writeValueAsString(exchange.getAttachment(BodyHandler.REQUEST_BODY));
             }
-            ResponseValidator validator = new ResponseValidator();
+            final SchemaValidator schemaValidator = new SchemaValidator(OpenApiHandler.helper.openApi3);
+            ResponseValidator validator = new ResponseValidator(schemaValidator);
             Status status = validator.validateResponseContent(responseBody, exchange);
             if(status == null) {
                 exchange.getResponseSender().send("good");

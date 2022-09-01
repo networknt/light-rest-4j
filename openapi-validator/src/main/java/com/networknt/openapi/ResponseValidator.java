@@ -51,29 +51,8 @@ public class ResponseValidator {
     private static final String DEFAULT_STATUS_CODE = "default";
     private static final Logger logger = LoggerFactory.getLogger(ResponseValidator.class);
 
-    /**
-     * Construct a new request validator with the given schema validator.
-     * @param config schema validator configuration
-     */
-    public ResponseValidator(SchemaValidatorsConfig config) {
-        this.schemaValidator = new SchemaValidator(OpenApiHandler.helper.openApi3);
-        this.config = config;
-    }
-
-    public ResponseValidator() {
-        /*
-        if(OpenApiHelper.getInstance() == null) {
-            String spec = Config.getInstance().getStringFromFile(OPENAPI_YML_CONFIG);
-            if(spec == null) {
-                spec = Config.getInstance().getStringFromFile(OPENAPI_YAML_CONFIG);
-                if(spec == null) {
-                    spec = Config.getInstance().getStringFromFile(OPENAPI_JSON_CONFIG);
-                }
-            }
-            OpenApiHelper.init(spec);
-        }
-        */
-        this.schemaValidator = new SchemaValidator(OpenApiHandler.helper.openApi3);
+    public ResponseValidator(SchemaValidator schemaValidator) {
+        this.schemaValidator = requireNonNull(schemaValidator, "A schema validator is required");
         this.config = new SchemaValidatorsConfig();
     }
 

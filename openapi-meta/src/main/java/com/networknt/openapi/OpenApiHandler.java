@@ -99,8 +99,8 @@ public class OpenApiHandler implements MiddlewareHandler {
                 }
                 OpenApiHelper.merge(openapi, inject);
                 try {
-                    helper = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(openapi));
-                    helperMap.put(entry.getKey(), helper);
+                    OpenApiHelper h = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(openapi));
+                    helperMap.put(entry.getKey(), h);
                 } catch (JsonProcessingException e) {
                     logger.error("merge specification failed for " + entry.getValue());
                     throw new RuntimeException("merge specification failed for " + entry.getValue());
@@ -358,6 +358,24 @@ public class OpenApiHandler implements MiddlewareHandler {
             }
         }
         return basePath;
+    }
+
+    // this is used to get the helper instance matches to the request path from the OpenApiHandler regardless single specification or multiple specifications.
+    public static OpenApiHelper getHelper(String requestPath) {
+        OpenApiHelper helper = null;
+        // check single first.
+        if(OpenApiHandler.helper != null) {
+            helper = OpenApiHandler.helper;
+        } else {
+            // based on the requestPath to find the right helper in the helperMap.
+            for(Map.Entry<String, OpenApiHelper> entry: OpenApiHandler.helperMap.entrySet()) {
+                if (requestPath.startsWith(entry.getKey())) {
+                    helper = entry.getValue();
+                    break;
+                }
+            }
+        }
+        return helper;
     }
 
 }

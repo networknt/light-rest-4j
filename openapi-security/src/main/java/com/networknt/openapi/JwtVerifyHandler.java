@@ -123,20 +123,21 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                 auditInfo.put(Constants.SUBJECT_CLAIMS, claims);
                 String callerId = headerMap.getFirst(HttpStringConstants.CALLER_ID);
                 if(callerId != null) auditInfo.put(Constants.CALLER_ID_STRING, callerId);
-                if(config != null && config.isEnableVerifyScope() && OpenApiHandler.helper.openApi3 != null) {
+                if(config != null && config.isEnableVerifyScope()) {
                     if(logger.isTraceEnabled()) logger.trace("verify scope from the primary token when enableVerifyScope is true");
+
                     Operation operation = null;
                     OpenApiOperation openApiOperation = (OpenApiOperation)auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
                     if(openApiOperation == null) {
                         final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), OpenApiHandler.getBasePath(reqPath));
-                        final Optional<NormalisedPath> maybeApiPath = OpenApiHandler.helper.findMatchingApiPath(requestPath);
+                        final Optional<NormalisedPath> maybeApiPath = OpenApiHandler.getHelper(reqPath).findMatchingApiPath(requestPath);
                         if (!maybeApiPath.isPresent()) {
                             setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH);
                             return;
                         }
 
                         final NormalisedPath swaggerPathString = maybeApiPath.get();
-                        final Path swaggerPath = OpenApiHandler.helper.openApi3.getPath(swaggerPathString.original());
+                        final Path swaggerPath = OpenApiHandler.getHelper(reqPath).openApi3.getPath(swaggerPathString.original());
 
                         final String httpMethod = exchange.getRequestMethod().toString().toLowerCase();
                         operation = swaggerPath.getOperation(httpMethod);
@@ -196,7 +197,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 	                    if(securityRequirements != null) {
 	                        for(SecurityRequirement requirement: securityRequirements) {
                                 SecurityParameter securityParameter = null;
-	                            for(String oauth2Name: OpenApiHandler.helper.oauth2Names) {
+	                            for(String oauth2Name: OpenApiHandler.getHelper(reqPath).oauth2Names) {
                                     securityParameter = requirement.getRequirement(oauth2Name);
                                     if(securityParameter != null) break;
                                 }

@@ -1,0 +1,9 @@
+# openapi-handler.yml
+# This configuration file is used to support multiple OpenAPI specifications in the same light-rest-4j instance.
+# An indicator to allow multiple openapi specifications. Default to false which only allow one spec named openapi.yml or openapi.yaml or openapi.json.
+multipleSpec: ${openapi-handler.multipleSpec:true}
+# Path to spec mapping. One or more base paths can map to the same specifications. The key is the base path and the value is the specification name.
+# If users want to use multiple specification files in the same instance, each specification must have a unique base path and it must be set as key.
+pathSpecMapping:
+  /petstore: openapi-petstore
+  /market: openapi-market
