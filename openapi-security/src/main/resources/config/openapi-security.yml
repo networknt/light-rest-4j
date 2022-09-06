@@ -21,6 +21,10 @@ enableVerifyJwtScopeToken: ${openapi-security.enableVerifyJwtScopeToken:true}
 # doesn't support long-lived token for dev environment or test automation.
 ignoreJwtExpiry: ${openapi-security.ignoreJwtExpiry:false}
 
+# set true if you want to allow http 1/1 connections to be upgraded to http/2 using the UPGRADE method (h2c).
+# By default this is set to false for security reasons. If you choose to enable it make sure you can handle http/2 w/o tls.
+enableH2c: ${openapi-security.enableH2c:false}
+
 # User for test only. should be always be false on official environment.
 enableMockJwt: ${openapi-security.enableMockJwt:false}
 

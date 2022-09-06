@@ -58,7 +58,7 @@ public class JwtVerifyHandlerTest {
 
     @BeforeClass
     public static void setUp() {
-        if(server == null) {
+        if (server == null) {
             logger.info("starting server");
             HttpHandler handler = getTestHandler();
             JwtVerifyHandler jwtVerifyHandler = new JwtVerifyHandler();
@@ -75,7 +75,7 @@ public class JwtVerifyHandlerTest {
 
     @AfterClass
     public static void tearDown() throws Exception {
-        if(server != null) {
+        if (server != null) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ignored) {
@@ -92,9 +92,9 @@ public class JwtVerifyHandlerTest {
                     Map<String, Object> examples = new HashMap<>();
                     examples.put("application/xml", StringEscapeUtils.unescapeHtml4("&lt;Pet&gt;  &lt;id&gt;123456&lt;/id&gt;  &lt;name&gt;doggie&lt;/name&gt;  &lt;photoUrls&gt;    &lt;photoUrls&gt;string&lt;/photoUrls&gt;  &lt;/photoUrls&gt;  &lt;tags&gt;  &lt;/tags&gt;  &lt;status&gt;string&lt;/status&gt;&lt;/Pet&gt;"));
                     examples.put("application/json", StringEscapeUtils.unescapeHtml4("{  &quot;photoUrls&quot; : [ &quot;aeiou&quot; ],  &quot;name&quot; : &quot;doggie&quot;,  &quot;id&quot; : 123456789,  &quot;category&quot; : {    &quot;name&quot; : &quot;aeiou&quot;,    &quot;id&quot; : 123456789  },  &quot;tags&quot; : [ {    &quot;name&quot; : &quot;aeiou&quot;,    &quot;id&quot; : 123456789  } ],  &quot;status&quot; : &quot;aeiou&quot;}"));
-                    if(examples.size() > 0) {
+                    if (examples.size() > 0) {
                         exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-                        exchange.getResponseSender().send((String)examples.get("application/json"));
+                        exchange.getResponseSender().send((String) examples.get("application/json"));
                     } else {
                         exchange.endExchange();
                     }
@@ -127,7 +127,7 @@ public class JwtVerifyHandlerTest {
         }
         int statusCode = reference.get().getResponseCode();
         Assert.assertEquals(200, statusCode);
-        if(statusCode == 200) {
+        if (statusCode == 200) {
             Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
         }
     }
@@ -160,7 +160,7 @@ public class JwtVerifyHandlerTest {
         }
         int statusCode = reference.get().getResponseCode();
         Assert.assertEquals(200, statusCode);
-        if(statusCode == 200) {
+        if (statusCode == 200) {
             Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
         }
     }
@@ -193,7 +193,7 @@ public class JwtVerifyHandlerTest {
         }
         int statusCode = reference.get().getResponseCode();
         Assert.assertEquals(200, statusCode);
-        if(statusCode == 200) {
+        if (statusCode == 200) {
             Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
         }
     }
@@ -226,7 +226,7 @@ public class JwtVerifyHandlerTest {
         }
         int statusCode = reference.get().getResponseCode();
         Assert.assertEquals(200, statusCode);
-        if(statusCode == 200) {
+        if (statusCode == 200) {
             Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
         }
     }
@@ -256,7 +256,7 @@ public class JwtVerifyHandlerTest {
         }
         int statusCode = reference.get().getResponseCode();
         Assert.assertEquals(403, statusCode);
-        if(statusCode == 403) {
+        if (statusCode == 403) {
             Status status = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY), Status.class);
             Assert.assertNotNull(status);
             Assert.assertEquals("ERR10005", status.getCode());
@@ -289,11 +289,11 @@ public class JwtVerifyHandlerTest {
         }
         int statusCode = reference.get().getResponseCode();
         Assert.assertEquals(200, statusCode);
-        if(statusCode == 200) {
+        if (statusCode == 200) {
             Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
         }
     }
-    
+
     @Test
     public void testUnmatchedScopeInScopeToken() throws Exception {
         final Http2Client client = Http2Client.getInstance();
@@ -320,10 +320,45 @@ public class JwtVerifyHandlerTest {
         }
         int statusCode = reference.get().getResponseCode();
         Assert.assertEquals(403, statusCode);
-        if(statusCode == 403) {
+        if (statusCode == 403) {
             Status status = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY), Status.class);
             Assert.assertNotNull(status);
             Assert.assertEquals("ERR10006", status.getCode());
         }
-    }        
+    }
+
+    @Test
+    public void testH2CDisabledRequest() throws Exception {
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
+            request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgwNTEzNjU1MSwianRpIjoiTVJiZHdlQ295eG13a2ZUM3lVWGloQSIsImlhdCI6MTQ4OTc3NjU1MSwibmJmIjoxNDg5Nzc2NDMxLCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6ImVyaWMiLCJ1c2VyX3R5cGUiOiJFTVBMT1lFRSIsImNsaWVudF9pZCI6ImY3ZDQyMzQ4LWM2NDctNGVmYi1hNTJkLTRjNTc4NzQyMWU3MiIsInNjb3BlIjpbIkFUTVAxMDAwLnciLCJBVE1QMTAwMC5yIl19.VOEggO6UIMHNJLrxShGivCh7sGyHiz7h9FqDjlKwywGP9xKbVTTODy2-FitUaS1Y2vjiHlJ0TNyxmj1SO11YwYnJlW1zn-6vfKWKI70DyvRwsvSX_8Z2fj0jPUiBqezwKRtLCHSsmiEpMrW6YQHYw0qzZ9kkMhiH2uFpZNCekOQWL1piRn1xVQkUmeFiTDvJQESHadFzw-9x0klO7-SxgKeHHDroxnpbLv2j795oMTB1gM_wJP6HO_M-gK6N1Uh6zssfnbyFReRNWkhZFOp3Y8DvwpfKhqXIVGUc_5WsO9M-y66icClVNl5zwLSmjsrNtqZkmeBCwQ6skBnRLfMocQ");
+            request.getRequestHeaders().put(HttpStringConstants.SCOPE_TOKEN, "Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgwNTEzNjU1MSwianRpIjoiTVJiZHdlQ295eG13a2ZUM3lVWGloQSIsImlhdCI6MTQ4OTc3NjU1MSwibmJmIjoxNDg5Nzc2NDMxLCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6ImVyaWMiLCJ1c2VyX3R5cGUiOiJFTVBMT1lFRSIsImNsaWVudF9pZCI6ImY3ZDQyMzQ4LWM2NDctNGVmYi1hNTJkLTRjNTc4NzQyMWU3MiIsInNjb3BlIjpbIkFUTVAxMDAwLnciLCJBVE1QMTAwMC5yIl19.VOEggO6UIMHNJLrxShGivCh7sGyHiz7h9FqDjlKwywGP9xKbVTTODy2-FitUaS1Y2vjiHlJ0TNyxmj1SO11YwYnJlW1zn-6vfKWKI70DyvRwsvSX_8Z2fj0jPUiBqezwKRtLCHSsmiEpMrW6YQHYw0qzZ9kkMhiH2uFpZNCekOQWL1piRn1xVQkUmeFiTDvJQESHadFzw-9x0klO7-SxgKeHHDroxnpbLv2j795oMTB1gM_wJP6HO_M-gK6N1Uh6zssfnbyFReRNWkhZFOp3Y8DvwpfKhqXIVGUc_5WsO9M-y66icClVNl5zwLSmjsrNtqZkmeBCwQ6skBnRLfMocQ");
+            request.getRequestHeaders().put(Headers.CONNECTION, "upgrade");
+            request.getRequestHeaders().put(Headers.UPGRADE, "foo/2");
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        Assert.assertEquals(405, statusCode);
+        if (statusCode == 405) {
+            Status status = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY), Status.class);
+            Assert.assertNotNull(status);
+            Assert.assertEquals("ERR10008", status.getCode());
+        }
+    }
 }
