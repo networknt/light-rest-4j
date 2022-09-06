@@ -41,7 +41,7 @@ import java.util.*;
  * fine-grained authorization on the business domain. In the request chain, it will check a list of conditions (rule-based authorization) at
  * the endpoint level. In the response chain, a list of rules/conditions will be checked to filter the response to remove some rows and/or
  * some columns.
- *
+ * <p>
  * This handler is depending on the yaml-rule from light-4j of networknt and all rules for the service will be loaded during the startup time
  * with a startup hook and this handler will use the cached rules and data to do local calculation for the best performance.
  *
@@ -49,7 +49,7 @@ import java.util.*;
  */
 public class AccessControlHandler implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(AccessControlHandler.class);
-    static  AccessControlConfig config = (AccessControlConfig) Config.getInstance().getJsonObjectConfig(AccessControlConfig.CONFIG_NAME, AccessControlConfig.class);
+    static AccessControlConfig config = (AccessControlConfig) Config.getInstance().getJsonObjectConfig(AccessControlConfig.CONFIG_NAME, AccessControlConfig.class);
     static final String ACCESS_CONTROL_ERROR = "ERR10067";
     static final String ACCESS_CONTROL_MISSING = "ERR10069";
     static final String STARTUP_HOOK_NOT_LOADED = "ERR11019";
@@ -57,71 +57,126 @@ public class AccessControlHandler implements MiddlewareHandler {
     static final String RESPONSE_FILTER = "response-filter";
     static final String RULE_ID = "ruleId";
     private volatile HttpHandler next;
-    private RuleEngine engine;
+    private final RuleEngine engine;
 
     public AccessControlHandler() {
-        if (logger.isInfoEnabled()) logger.info("AccessControlHandler is loaded.");
+        if (logger.isInfoEnabled())
+            logger.info("AccessControlHandler is loaded.");
+
         engine = new RuleEngine(RuleLoaderStartupHook.rules, null);
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
+
         Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
+
         // This map is the input for the rule. For different access control rules, the input might be different.
         // so we just put as many objects into the map in case the rule needs it for the access control calculation.
-        HeaderMap requestHeaders = exchange.getRequestHeaders();
-        Map<String, Deque<String>> queryParameters = exchange.getQueryParameters();
-        Map<String, Deque<String>> pathParameters = exchange.getPathParameters();
-        Map<String, Object> objMap = new HashMap<>();
-        objMap.put("auditInfo", auditInfo); // Jwt info is in this object.
-        objMap.put("headers", requestHeaders);
-        objMap.put("queryParameters", queryParameters);
-        objMap.put("pathParameters", pathParameters);
-        HttpMethod httpMethod = HttpMethod.resolve(exchange.getRequestMethod().toString());
-        objMap.put("method", httpMethod.toString());
-        if(httpMethod == HttpMethod.POST || httpMethod == HttpMethod.PUT || httpMethod == HttpMethod.PATCH) {
-            Map<String, Object> bodyMap = (Map<String, Object>)exchange.getAttachment(BodyHandler.REQUEST_BODY);
-            objMap.put("requestBody", bodyMap);
-        }
+        Map<String, Object> ruleEnginePayload = new HashMap<>();
+
         // need to get the rule/rules to execute from the RuleLoaderStartupHook. First, get the endpoint.
-        String endpoint = (String)auditInfo.get("endpoint");
+        String endpoint = (String) auditInfo.get("endpoint");
+        this.populateRuleEnginePayload(exchange, auditInfo, ruleEnginePayload);
+
         // checked the RuleLoaderStartupHook to ensure it is loaded. If not, return an error to the caller.
-        if(RuleLoaderStartupHook.endpointRules == null) {
+        if (RuleLoaderStartupHook.endpointRules == null) {
             logger.error("RuleLoaderStartupHook endpointRules is null");
             setExchangeStatus(exchange, STARTUP_HOOK_NOT_LOADED, "RuleLoaderStartupHook");
+            return;
         }
+
         // get the access rules (maybe multiple) based on the endpoint.
-        Map<String, List> requestRules = (Map<String, List>)RuleLoaderStartupHook.endpointRules.get(endpoint);
+        Map<String, List<Map<String, Object>>> requestRules = (Map<String, List<Map<String, Object>>>) RuleLoaderStartupHook.endpointRules.get(endpoint);
+
         // if there is no access rule for this endpoint, check the default deny flag in the config.
-        if(requestRules == null ) {
-            if(config.defaultDeny) {
+        if (requestRules == null) {
+            if (config.defaultDeny) {
                 logger.error("Access control rule is missing and default deny is true for endpoint " + endpoint);
                 setExchangeStatus(exchange, ACCESS_CONTROL_MISSING, endpoint);
             } else {
                 next(exchange);
             }
         } else {
-            boolean finalResult = true;
-            List<Map<String, Object>> accessRules = requestRules.get(REQUEST_ACCESS);
-            Map<String, Object> result = null;
-            String ruleId = null;
-            // iterate the rules and execute them in sequence. Allow access only when all rules return true.
-            for(Map<String, Object> ruleMap: accessRules) {
-                ruleId = (String)ruleMap.get(RULE_ID);
-                objMap.putAll(ruleMap);
-                result = engine.executeRule(ruleId, objMap);
-                boolean res = (Boolean)result.get(RuleConstants.RESULT);
-                if(!res) {
-                    finalResult = false;
-                    break;
-                }
+            this.executeRules(exchange, ruleEnginePayload, requestRules);
+        }
+    }
+
+    /**
+     * Populate the rule engine payload with basic request information.
+     *
+     * @param exchange - current exchange.
+     * @param auditInfo - audit info.
+     * @param ruleEnginePayload - hashmap for all basic request info.
+     */
+    protected void populateRuleEnginePayload(HttpServerExchange exchange, Map<String, Object> auditInfo, Map<String, Object> ruleEnginePayload) {
+        HeaderMap requestHeaders = exchange.getRequestHeaders();
+        HttpMethod httpMethod = HttpMethod.resolve(exchange.getRequestMethod().toString());
+        Map<String, Deque<String>> queryParameters = exchange.getQueryParameters();
+        Map<String, Deque<String>> pathParameters = exchange.getPathParameters();
+
+        ruleEnginePayload.put("auditInfo", auditInfo); // Jwt info is in this object.
+        ruleEnginePayload.put("headers", requestHeaders);
+        ruleEnginePayload.put("queryParameters", queryParameters);
+        ruleEnginePayload.put("pathParameters", pathParameters);
+        ruleEnginePayload.put("method", httpMethod.toString());
+
+        this.addBodyData(exchange, httpMethod, ruleEnginePayload);
+    }
+
+
+    /**
+     * Execute all the rules defined.
+     *
+     * @param exchange - current exchange
+     * @param ruleEnginePayload - rulePayload
+     * @param requestRules - rule(s) defined for the endpoint
+     * @throws Exception - Rule engine exception
+     */
+    protected void executeRules(HttpServerExchange exchange, Map<String, Object> ruleEnginePayload, Map<String, List<Map<String, Object>>> requestRules) throws Exception {
+        boolean finalResult = true;
+        List<Map<String, Object>> accessRules = requestRules.get(REQUEST_ACCESS);
+        Map result = null;
+        String ruleId = null;
+
+        // iterate the rules and execute them in sequence. Allow access only when all rules return true.
+        for (Map<String, Object> ruleMap : accessRules) {
+            ruleId = (String) ruleMap.get(RULE_ID);
+            ruleEnginePayload.putAll(ruleMap);
+            result = engine.executeRule(ruleId, ruleEnginePayload);
+            boolean res = (Boolean) result.get(RuleConstants.RESULT);
+            if (!res) {
+                finalResult = false;
+                break;
             }
-            if(finalResult) {
-                next(exchange);
-            } else {
-                logger.error(JsonMapper.toJson(result));
-                setExchangeStatus(exchange, ACCESS_CONTROL_ERROR, ruleId);
+        }
+        if (finalResult) {
+            this.next(exchange);
+        } else {
+            logger.error(JsonMapper.toJson(result));
+            setExchangeStatus(exchange, ACCESS_CONTROL_ERROR, ruleId);
+        }
+    }
+
+    /**
+     * Grabs body data from request (if it has one defined),
+     * and pushes it into the rule engine payload.
+     *
+     * @param exchange - current exchange
+     * @param httpMethod - httpMethod for request
+     * @param ruleEnginePayload - the payload rule engine requires
+     */
+    @SuppressWarnings("unchecked")
+    protected void addBodyData(HttpServerExchange exchange, HttpMethod httpMethod, Map<String, Object> ruleEnginePayload) {
+        if (httpMethod == HttpMethod.POST || httpMethod == HttpMethod.PUT || httpMethod == HttpMethod.PATCH) {
+            Map<String, Object> bodyMap = (Map<String, Object>) exchange.getAttachment(BodyHandler.REQUEST_BODY);
+            if(bodyMap != null) {
+                ruleEnginePayload.put("requestBody", bodyMap);
+            } else if (logger.isTraceEnabled()) {
+                logger.trace("Could not get body from body handler");
             }
+
         }
     }
 
