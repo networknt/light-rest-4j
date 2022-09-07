@@ -17,11 +17,9 @@
 package com.networknt.openapi;
 
 import com.networknt.config.Config;
-import com.networknt.config.JsonMapper;
 import com.networknt.exception.ExpiredTokenException;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
-import com.networknt.handler.config.HandlerConfig;
 import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.httpstring.HttpStringConstants;
 import com.networknt.oas.model.Operation;
@@ -152,7 +150,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                 if (callerId != null)
                     auditInfo.put(Constants.CALLER_ID_STRING, callerId);
 
-                if (config != null && config.isEnableVerifyScope() && OpenApiHelper.openApi3 != null) {
+                if (config != null && config.isEnableVerifyScope()) {
                     if (logger.isTraceEnabled())
                         logger.trace("verify scope from the primary token when enableVerifyScope is true");
 
@@ -242,7 +240,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
         Operation operation;
         if (openApiOperation == null) {
             final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), basePath);
-            final Optional<NormalisedPath> maybeApiPath = OpenApiHelper.getInstance().findMatchingApiPath(requestPath);
+            final Optional<NormalisedPath> maybeApiPath = OpenApiHandler.getHelper(exchange.getRequestPath()).findMatchingApiPath(requestPath);
 
             if (maybeApiPath.isEmpty()) {
                 setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH);
@@ -250,7 +248,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
             }
 
             final NormalisedPath swaggerPathString = maybeApiPath.get();
-            final Path swaggerPath = OpenApiHelper.openApi3.getPath(swaggerPathString.original());
+            final Path swaggerPath = OpenApiHandler.getHelper(exchange.getRequestPath()).openApi3.getPath(swaggerPathString.original());
             final String httpMethod = exchange.getRequestMethod().toString().toLowerCase();
 
             operation = swaggerPath.getOperation(httpMethod);
@@ -341,7 +339,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                 for (SecurityRequirement requirement : securityRequirements) {
                     SecurityParameter securityParameter = null;
 
-                    for (String oauth2Name : OpenApiHelper.oauth2Names) {
+                    for (String oauth2Name : OpenApiHandler.getHelper(exchange.getRequestPath()).oauth2Names) {
                         securityParameter = requirement.getRequirement(oauth2Name);
                         if (securityParameter != null) break;
                     }
