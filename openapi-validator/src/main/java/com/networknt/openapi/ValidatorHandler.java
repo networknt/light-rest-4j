@@ -28,9 +28,11 @@ import com.networknt.utility.ModuleRegistry;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import org.jose4j.http.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Map;
 
 
@@ -62,35 +64,34 @@ public class ValidatorHandler implements MiddlewareHandler {
     }
 
     private volatile HttpHandler next;
-
+    // keep the single requestValidator instance as it covers 99 percent of use cases for best performance.
     RequestValidator requestValidator;
+    Map<String, RequestValidator> requestValidatorMap;
 
     ResponseValidator responseValidator;
-
-    String basePath;
+    Map<String, ResponseValidator> responseValidatorMap;
 
     public ValidatorHandler() {
-        if(OpenApiHelper.getInstance() == null) {
-            String spec = Config.getInstance().getStringFromFile(OPENAPI_YML_CONFIG);
-            if(spec == null) {
-                spec = Config.getInstance().getStringFromFile(OPENAPI_YAML_CONFIG);
-                if(spec == null) {
-                    spec = Config.getInstance().getStringFromFile(OPENAPI_JSON_CONFIG);
-                }
+        if(OpenApiHandler.helper != null) {
+            final SchemaValidator schemaValidator = new SchemaValidator(OpenApiHandler.helper.openApi3);
+            this.requestValidator = new RequestValidator(schemaValidator);
+            this.responseValidator = new ResponseValidator(schemaValidator);
+        } else {
+            requestValidatorMap = new HashMap<>();
+            responseValidatorMap = new HashMap<>();
+            for(Map.Entry<String, OpenApiHelper> entry: OpenApiHandler.helperMap.entrySet()) {
+                final SchemaValidator schemaValidator = new SchemaValidator(entry.getValue().openApi3);
+                RequestValidator reqV = new RequestValidator(schemaValidator);
+                requestValidatorMap.put(entry.getKey(), reqV);
+                ResponseValidator resV = new ResponseValidator(schemaValidator);
+                responseValidatorMap.put(entry.getKey(), resV);
             }
-            OpenApiHelper.init(spec);
         }
-        final SchemaValidator schemaValidator = new SchemaValidator(OpenApiHelper.openApi3);
-        this.requestValidator = new RequestValidator(schemaValidator);
-        this.responseValidator = new ResponseValidator();
-        HandlerConfig handlerConfig = (HandlerConfig)Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG_NAME, HandlerConfig.class);
-        // if PathHandlerProvider is used, the chain is defined in the service.yml and no handler.yml available.
-        basePath = handlerConfig == null ? null : handlerConfig.getBasePath();
     }
 
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
-        final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), basePath);
+        final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), OpenApiHandler.getBasePath(exchange.getRequestPath()));
         OpenApiOperation openApiOperation = null;
         Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
         if(auditInfo != null) {
@@ -100,7 +101,8 @@ public class ValidatorHandler implements MiddlewareHandler {
             setExchangeStatus(exchange, STATUS_MISSING_OPENAPI_OPERATION);
             return;
         }
-        Status status = requestValidator.validateRequest(requestPath, exchange, openApiOperation);
+        RequestValidator reqV = getRequestValidator(exchange.getRequestPath());
+        Status status = reqV.validateRequest(requestPath, exchange, openApiOperation);
         if(status != null) {
             setExchangeStatus(exchange, status);
             if(config.logError) {
@@ -119,12 +121,43 @@ public class ValidatorHandler implements MiddlewareHandler {
         exchange.addResponseWrapper((factory, exchange12) -> new StoreResponseStreamSinkConduit(factory.create(), exchange12));
 
         exchange.addExchangeCompleteListener((exchange1, nextListener) ->{
-            Status status = responseValidator.validateResponse(exchange, openApiOperation);
+            ResponseValidator resV = getResponseValidator(exchange.getRequestPath());
+            Status status = resV.validateResponse(exchange, openApiOperation);
             if(status != null) {
                 logger.error("Response validation error: {} \n with response body: {}", status.getDescription(), new String(exchange.getAttachment(StoreResponseStreamSinkConduit.RESPONSE)));
             }
             nextListener.proceed();
         });
+    }
+
+    private RequestValidator getRequestValidator(String requestPath) {
+        RequestValidator validator = null;
+        if(this.requestValidator != null) {
+            validator = this.requestValidator;
+        } else {
+            for(Map.Entry<String, RequestValidator> entry: requestValidatorMap.entrySet()) {
+                if (requestPath.startsWith(entry.getKey())) {
+                    validator = entry.getValue();
+                    break;
+                }
+            }
+        }
+        return validator;
+    }
+
+    private ResponseValidator getResponseValidator(String requestPath) {
+        ResponseValidator validator = null;
+        if(this.responseValidator != null) {
+            validator = this.responseValidator;
+        } else {
+            for(Map.Entry<String, ResponseValidator> entry: responseValidatorMap.entrySet()) {
+                if (requestPath.startsWith(entry.getKey())) {
+                    validator = entry.getValue();
+                    break;
+                }
+            }
+        }
+        return validator;
     }
 
     @Override

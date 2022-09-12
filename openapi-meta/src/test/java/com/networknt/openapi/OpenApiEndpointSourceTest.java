@@ -31,27 +31,29 @@ import org.junit.Test;
 import com.networknt.handler.config.EndpointSource;
 
 public class OpenApiEndpointSourceTest {
+    private static OpenApiHelper helper;
 	private static final Set<String> EXPECTED = new HashSet<>(Arrays.asList(
             "/v1/pets@get",
             "/v1/pets@post",
             "/v1/pets/{petId}@get",
             "/v1/pets/{petId}@delete"
         ));
+
     static {
         String spec = Config.getInstance().getStringFromFile("openapi.yaml");
-        OpenApiHelper.init(spec);
+        helper = new OpenApiHelper(spec);
     }
 
     @Test
     public void testFindBasePath() {
-        OpenApiEndpointSource source = new OpenApiEndpointSource();
+        OpenApiEndpointSource source = new OpenApiEndpointSource(helper);
         String basePath = source.findBasePath();
         Assert.assertEquals("/v1", basePath);
     }
 
     @Test
     public void testPetstoreEndpoints() {
-        OpenApiEndpointSource source = new OpenApiEndpointSource();
+        OpenApiEndpointSource source = new OpenApiEndpointSource(helper);
         Iterable<EndpointSource.Endpoint> endpoints = source.listEndpoints();
 
         // Extract a set of string representations of endpoints

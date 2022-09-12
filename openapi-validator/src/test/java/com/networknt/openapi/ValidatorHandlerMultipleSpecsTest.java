@@ -1,27 +1,11 @@
-/*
- * Copyright (c) 2016 Network New Technologies Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.networknt.openapi;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.networknt.body.BodyHandler;
 import com.networknt.client.Http2Client;
 import com.networknt.config.Config;
-import com.networknt.status.Status;
 import com.networknt.exception.ClientException;
+import com.networknt.status.Status;
 import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.client.ClientConnection;
@@ -52,12 +36,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-/**
- * Created by steve on 01/09/16.
- */
-public class ValidatorHandlerTest {
-
-    static final Logger logger = LoggerFactory.getLogger(ValidatorHandlerTest.class);
+public class ValidatorHandlerMultipleSpecsTest {
+    static final Logger logger = LoggerFactory.getLogger(ValidatorHandlerMultipleSpecsTest.class);
 
     static Undertow server = null;
 
@@ -71,7 +51,7 @@ public class ValidatorHandlerTest {
     public void setUp() {
         if(server == null) {
             logger.info("starting server");
-            OpenApiHandler openApiHandler = new OpenApiHandler();
+            OpenApiHandler openApiHandler = new OpenApiHandler(OpenApiHandlerConfig.load("openapi-handler-multiple"));
             BodyHandler bodyHandler = new BodyHandler();
 
             HttpHandler handler = getPetStoreHandler();
@@ -123,11 +103,11 @@ public class ValidatorHandlerTest {
     RoutingHandler getPetStoreHandler() {
         ForwardRequestHandler forwardHandler = new ForwardRequestHandler();
         return Handlers.routing()
-                .add(Methods.POST, "/v1/pets", exchange -> exchange.getResponseSender().send("addPet"))
-                .add(Methods.GET, "/v1/pets/{petId}", exchange -> exchange.getResponseSender().send("getPetById"))
-                .add(Methods.DELETE, "/v1/pets/{petId}", exchange -> exchange.getResponseSender().send("deletePetById"))
-                .add(Methods.GET, "/v1/todoItems", forwardHandler)
-                .add(Methods.GET, "/v1/pets", exchange -> {
+                .add(Methods.POST, "/petstore/pets", exchange -> exchange.getResponseSender().send("addPet"))
+                .add(Methods.GET, "/petstore/pets/{petId}", exchange -> exchange.getResponseSender().send("getPetById"))
+                .add(Methods.DELETE, "/petstore/pets/{petId}", exchange -> exchange.getResponseSender().send("deletePetById"))
+                .add(Methods.GET, "/petstore/todoItems", forwardHandler)
+                .add(Methods.GET, "/petstore/pets", exchange -> {
                     if (exchange.getQueryParameters() != null && exchange.getQueryParameters().containsKey("arr")) {
                         exchange.getResponseSender().send("getPets" + ", the query parameter = " + exchange.getQueryParameters() + ", length = " + exchange.getQueryParameters().get("arr").size());
                     } else {
@@ -179,7 +159,7 @@ public class ValidatorHandlerTest {
         }
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
-            ClientRequest request = new ClientRequest().setPath("/v1/pets").setMethod(Methods.DELETE);
+            ClientRequest request = new ClientRequest().setPath("/petstore/pets").setMethod(Methods.DELETE);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             connection.sendRequest(request, client.createClientCallback(reference, latch));
             latch.await();
@@ -257,7 +237,7 @@ public class ValidatorHandlerTest {
             connection.getIoThread().execute(new Runnable() {
                 @Override
                 public void run() {
-                    final ClientRequest request = new ClientRequest().setMethod(Methods.POST).setPath("/v1/pets");
+                    final ClientRequest request = new ClientRequest().setMethod(Methods.POST).setPath("/petstore/pets");
                     request.getRequestHeaders().put(Headers.HOST, "localhost");
                     request.getRequestHeaders().put(Headers.CONTENT_TYPE, "application/json");
                     request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
@@ -300,7 +280,7 @@ public class ValidatorHandlerTest {
             connection.getIoThread().execute(new Runnable() {
                 @Override
                 public void run() {
-                    final ClientRequest request = new ClientRequest().setMethod(Methods.POST).setPath("/v1/pets");
+                    final ClientRequest request = new ClientRequest().setMethod(Methods.POST).setPath("/petstore/pets");
                     request.getRequestHeaders().put(Headers.HOST, "localhost");
                     request.getRequestHeaders().put(Headers.CONTENT_TYPE, "application/json");
                     request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
@@ -344,7 +324,7 @@ public class ValidatorHandlerTest {
             connection.getIoThread().execute(new Runnable() {
                 @Override
                 public void run() {
-                    final ClientRequest request = new ClientRequest().setMethod(Methods.POST).setPath("/v1/pets");
+                    final ClientRequest request = new ClientRequest().setMethod(Methods.POST).setPath("/petstore/pets");
                     request.getRequestHeaders().put(Headers.HOST, "localhost");
                     request.getRequestHeaders().put(Headers.CONTENT_TYPE, "application/json");
                     request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
@@ -381,7 +361,7 @@ public class ValidatorHandlerTest {
         }
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
-            ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
+            ClientRequest request = new ClientRequest().setPath("/petstore/pets/111").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             connection.sendRequest(request, client.createClientCallback(reference, latch));
             latch.await();
@@ -412,7 +392,7 @@ public class ValidatorHandlerTest {
         }
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
-            ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.DELETE);
+            ClientRequest request = new ClientRequest().setPath("/petstore/pets/111").setMethod(Methods.DELETE);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             connection.sendRequest(request, client.createClientCallback(reference, latch));
             latch.await();
@@ -444,7 +424,7 @@ public class ValidatorHandlerTest {
         }
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
-            ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.DELETE);
+            ClientRequest request = new ClientRequest().setPath("/petstore/pets/111").setMethod(Methods.DELETE);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(new HttpString("key"), "key");
             connection.sendRequest(request, client.createClientCallback(reference, latch));
@@ -490,7 +470,7 @@ public class ValidatorHandlerTest {
         }
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
-            ClientRequest request = new ClientRequest().setPath("/v1/pets?all=false").setMethod(Methods.GET);
+            ClientRequest request = new ClientRequest().setPath("/petstore/pets?all=false").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(new HttpString("accessId"), "accessId");
             request.getRequestHeaders().put(new HttpString("requestId"), "requestId");
@@ -518,7 +498,7 @@ public class ValidatorHandlerTest {
         }
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
-            ClientRequest request = new ClientRequest().setPath("/v1/pets?arr=1&arr=2&arr=3").setMethod(Methods.GET);
+            ClientRequest request = new ClientRequest().setPath("/petstore/pets?arr=1&arr=2&arr=3").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(new HttpString("accessId"), "accessId");
             request.getRequestHeaders().put(new HttpString("requestId"), "requestId");
@@ -612,7 +592,7 @@ public class ValidatorHandlerTest {
         }
         CompletableFuture<ClientResponse> future;
         try {
-            request.setPath("/v1/todoItems").setMethod(Methods.GET);
+            request.setPath("/petstore/todoItems").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
             request.getRequestHeaders().put(Headers.CONTENT_TYPE, "application/json");
@@ -654,4 +634,5 @@ public class ValidatorHandlerTest {
                 .filter( s -> s.contains("Response validation error"))
                 .collect(Collectors.toList());
     }
+
 }

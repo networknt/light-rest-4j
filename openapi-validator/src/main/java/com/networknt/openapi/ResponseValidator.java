@@ -51,27 +51,8 @@ public class ResponseValidator {
     private static final String DEFAULT_STATUS_CODE = "default";
     private static final Logger logger = LoggerFactory.getLogger(ResponseValidator.class);
 
-    /**
-     * Construct a new request validator with the given schema validator.
-     * @param config schema validator configuration
-     */
-    public ResponseValidator(SchemaValidatorsConfig config) {
-        this.schemaValidator = new SchemaValidator(OpenApiHelper.openApi3);
-        this.config = config;
-    }
-
-    public ResponseValidator() {
-        if(OpenApiHelper.getInstance() == null) {
-            String spec = Config.getInstance().getStringFromFile(OPENAPI_YML_CONFIG);
-            if(spec == null) {
-                spec = Config.getInstance().getStringFromFile(OPENAPI_YAML_CONFIG);
-                if(spec == null) {
-                    spec = Config.getInstance().getStringFromFile(OPENAPI_JSON_CONFIG);
-                }
-            }
-            OpenApiHelper.init(spec);
-        }
-        this.schemaValidator = new SchemaValidator(OpenApiHelper.openApi3);
+    public ResponseValidator(SchemaValidator schemaValidator) {
+        this.schemaValidator = requireNonNull(schemaValidator, "A schema validator is required");
         this.config = new SchemaValidatorsConfig();
     }
 
@@ -203,14 +184,14 @@ public class ResponseValidator {
      */
     private OpenApiOperation getOpenApiOperation(String uri, String httpMethod) throws URISyntaxException {
         String uriWithoutQuery = new URI(uri).getPath();
-        NormalisedPath requestPath = new ApiNormalisedPath(uriWithoutQuery);
-        Optional<NormalisedPath> maybeApiPath = OpenApiHelper.getInstance().findMatchingApiPath(requestPath);
+        NormalisedPath requestPath = new ApiNormalisedPath(uriWithoutQuery, OpenApiHandler.helper.basePath);
+        Optional<NormalisedPath> maybeApiPath = OpenApiHandler.helper.findMatchingApiPath(requestPath);
         if (!maybeApiPath.isPresent()) {
             return null;
         }
 
         final NormalisedPath openApiPathString = maybeApiPath.get();
-        final Path path = OpenApiHelper.openApi3.getPath(openApiPathString.original());
+        final Path path = OpenApiHandler.helper.openApi3.getPath(openApiPathString.original());
 
         final Operation operation = path.getOperation(httpMethod);
         return new OpenApiOperation(openApiPathString, path, httpMethod, operation);
