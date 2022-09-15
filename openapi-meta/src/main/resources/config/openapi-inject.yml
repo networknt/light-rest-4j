@@ -64,6 +64,17 @@ paths:
       description: to modify the logging settings
       requestBody:
         description: to update logging settings
+        content:
+          application/json:
+            schema:
+              type: "array"
+              items:
+                type: "object"
+                properties:
+                  name:
+                    type: "string"
+                  level:
+                    type: "string"
         required: true
       security:
         - admin-scope:
