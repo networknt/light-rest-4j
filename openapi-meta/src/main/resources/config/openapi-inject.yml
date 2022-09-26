@@ -1,6 +1,6 @@
 openapi: 3.0.0
 paths:
-  /health/${server.serviceId}:
+  /adm/health/${server.serviceId}:
     get:
       description: pass through to the liveness endpoint that belongs to backend api
       security:
@@ -10,7 +10,7 @@ paths:
             - admin
             # for each business to access their own admin endpoints
             - ${server.serviceId}/admin
-  /server/info:
+  /adm/server/info:
     get:
       description: get the proxy server info and corresponding backend service info
       security:
@@ -21,7 +21,7 @@ paths:
             # for each business to access their own admin endpoints
             - ${server.serviceId}/admin
 
-  /chaosmonkey:
+  /adm/chaosmonkey:
     get:
       description: to get the current chaosmonkey settings
       security:
@@ -31,7 +31,7 @@ paths:
             - admin
             # for each business to access their own admin endpoints
             - ${server.serviceId}/admin
-  /chaosmonkey/{assault}:
+  /adm/chaosmonkey/{assault}:
     post:
       description: to update chaosmonkey settings
       requestBody:
@@ -50,7 +50,7 @@ paths:
             # for each business to access their own admin endpoints
             - ${server.serviceId}/admin
 
-  /logger:
+  /adm/logger:
     get:
       description: to get the current logging settings
       security:
@@ -84,7 +84,7 @@ paths:
             # for each business to access their own admin endpoints
             - ${server.serviceId}/admin
 
-  /logger/content:
+  /adm/logger/content:
     get:
       description: to get the content of the logs from this service.
       security:
@@ -92,7 +92,7 @@ paths:
             - admin
             - ${server.serviceId}/admin
 
-  /modules:
+  /adm/modules:
     get:
       description: to get the all registered modules and handlers to form a dropdown for module config reload
       security:
@@ -120,7 +120,7 @@ paths:
             - admin
             # for each business to access their own admin endpoints
             - ${server.serviceId}/admin
-  /shutdown:
+  /adm/shutdown:
     delete:
       summary: "Shutdown the service instance to force a restart."
       description: "Returns a JSON body of shutdown time"
