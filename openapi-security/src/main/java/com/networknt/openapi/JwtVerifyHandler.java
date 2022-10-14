@@ -90,9 +90,13 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     @Override
     @SuppressWarnings("unchecked")
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
+        String reqPath = exchange.getRequestPath();
+        // if request path is in the skipPathPrefixes in the config, call the next handler directly to skip the security check.
+        if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(s -> reqPath.startsWith(s))) {
+            Handler.next(exchange, next);
+        }
         Map<String, Object> auditInfo = null;
         HeaderMap headerMap = exchange.getRequestHeaders();
-        String reqPath = exchange.getRequestPath();
         String authorization = headerMap.getFirst(Headers.AUTHORIZATION);
 
         if (logger.isTraceEnabled() && authorization != null)
@@ -102,8 +106,6 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 
         boolean ignoreExpiry = config.isIgnoreJwtExpiry();
         String jwt = JwtVerifier.getJwtFromAuthorization(authorization);
-
-
 
         if (jwt != null) {
 
