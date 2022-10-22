@@ -1,5 +1,28 @@
 # Change Log
 
+## [2.1.2](https://github.com/networknt/light-rest-4j/tree/2.1.2) (2022-10-22)
+
+
+**Merged pull requests:**
+
+
+- fixes \#238 skip the security for request path in skipPathPrefixes in … [\#239](https://github.com/networknt/light-rest-4j/pull/239) ([stevehu](https://github.com/stevehu))
+- fixes \#236 update the openapi-inject.yml to add adm prefix for admin … [\#237](https://github.com/networknt/light-rest-4j/pull/237) ([stevehu](https://github.com/stevehu))
+- Fix to /logger POST requestBody schema [\#235](https://github.com/networknt/light-rest-4j/pull/235) ([DiogoFKT](https://github.com/DiogoFKT))
+- Issue231 [\#232](https://github.com/networknt/light-rest-4j/pull/232) ([stevehu](https://github.com/stevehu))
+- Added h2c check [\#234](https://github.com/networknt/light-rest-4j/pull/234) ([KalevGonvick](https://github.com/KalevGonvick))
+- fixes \#229 remove one trace statement to resolve the exception [\#230](https://github.com/networknt/light-rest-4j/pull/230) ([stevehu](https://github.com/stevehu))
+- fixes \#225 pass in request path to verifyJwt to support mulitple OAut… [\#226](https://github.com/networknt/light-rest-4j/pull/226) ([stevehu](https://github.com/stevehu))
+- fixes \#223 add a debug statement to the JWT verification handler to o… [\#224](https://github.com/networknt/light-rest-4j/pull/224) ([stevehu](https://github.com/stevehu))
+- fixes \#221 update the JwtVerifierHandler to add more logging statements [\#222](https://github.com/networknt/light-rest-4j/pull/222) ([stevehu](https://github.com/stevehu))
+- fixes \#219 update openapi-security.yml to use JsonWebKeySet for keyRe… [\#220](https://github.com/networknt/light-rest-4j/pull/220) ([stevehu](https://github.com/stevehu))
+- fixes \#217 add providerId to the security.yml for oauth key service [\#218](https://github.com/networknt/light-rest-4j/pull/218) ([stevehu](https://github.com/stevehu))
+- fixes \#215 update default openapi-validator.yml with openapi-validato… [\#216](https://github.com/networknt/light-rest-4j/pull/216) ([stevehu](https://github.com/stevehu))
+- fixes \#213 update the JwtVerifierHandler to use SecurityConfig [\#214](https://github.com/networknt/light-rest-4j/pull/214) ([stevehu](https://github.com/stevehu))
+- fixes \#211 allow basic authentication header or others to be wrapped … [\#212](https://github.com/networknt/light-rest-4j/pull/212) ([stevehu](https://github.com/stevehu))
+- fixes \#209 add default dummy openapi.yml to ensure that inject works … [\#210](https://github.com/networknt/light-rest-4j/pull/210) ([stevehu](https://github.com/stevehu))
+- fixes \#207 add a default openapi-inject for portal integration in ope… [\#208](https://github.com/networknt/light-rest-4j/pull/208) ([stevehu](https://github.com/stevehu))
+- fixes \#205 update specui and add favicon handler to enhance the swagg… [\#206](https://github.com/networknt/light-rest-4j/pull/206) ([stevehu](https://github.com/stevehu))
 ## [2.1.1](https://github.com/networknt/light-rest-4j/tree/2.1.1) (2022-04-26)
 
 
