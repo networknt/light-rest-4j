@@ -102,7 +102,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
         String authorization = headerMap.getFirst(Headers.AUTHORIZATION);
 
         if (logger.isTraceEnabled() && authorization != null)
-            logger.trace("Authorization header = " + authorization.substring(0, 20));
+            logger.trace("Authorization header = " + authorization.substring(0, 10));
 
         authorization = this.getScopeToken(authorization, headerMap);
 
@@ -112,7 +112,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
         if (jwt != null) {
 
             if (logger.isTraceEnabled())
-                logger.trace("parsed jwt from authorization = " + jwt.substring(0, 20));
+                logger.trace("parsed jwt from authorization = " + jwt.substring(0, 10));
 
             try {
 
@@ -211,7 +211,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
             // get the jwt token from the X-Scope-Token header in this case and allow the verification done with the secondary token.
             returnToken = headerMap.getFirst(HttpStringConstants.SCOPE_TOKEN);
             if (logger.isTraceEnabled() && returnToken != null)
-                logger.trace("The replaced authorization from X-Scope-Token header = " + returnToken.substring(0, 20));
+                logger.trace("The replaced authorization from X-Scope-Token header = " + returnToken.substring(0, 10));
         }
         return returnToken;
     }
@@ -285,7 +285,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     protected boolean hasValidSecondaryScopes(HttpServerExchange exchange, String scopeJwt, List<String> secondaryScopes, boolean ignoreExpiry, String reqPath, Map<String, Object> auditInfo) {
         if (scopeJwt != null) {
             if (logger.isTraceEnabled())
-                logger.trace("start verifying scope token = " + scopeJwt.substring(0, 20));
+                logger.trace("start verifying scope token = " + scopeJwt.substring(0, 10));
 
             try {
                 JwtClaims scopeClaims = jwtVerifier.verifyJwt(scopeJwt, ignoreExpiry, true, reqPath);
