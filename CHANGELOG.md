@@ -1,5 +1,12 @@
 # Change Log
 
+## [2.1.3](https://github.com/networknt/light-rest-4j/tree/2.1.3) (2022-11-10)
+
+
+**Merged pull requests:**
+
+
+- fixes \#241 change the substring to output only 10 chars [\#242](https://github.com/networknt/light-rest-4j/pull/242) ([stevehu](https://github.com/stevehu))
 ## [2.1.2](https://github.com/networknt/light-rest-4j/tree/2.1.2) (2022-10-22)
 
 
