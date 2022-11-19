@@ -46,22 +46,12 @@ import java.util.Map;
 public class ValidatorHandler implements MiddlewareHandler {
     public static final String OPENAPI_CONFIG_NAME = "openapi-validator";
     public static final String CONFIG_NAME = "validator";
-    public static final String OPENAPI_YML_CONFIG = "openapi.yml";
-    public static final String OPENAPI_YAML_CONFIG = "openapi.yaml";
-    public static final String OPENAPI_JSON_CONFIG = "openapi.json";
-    public static final String HANDLER_CONFIG_NAME = "handler";
 
     static final String STATUS_MISSING_OPENAPI_OPERATION = "ERR10012";
 
     static final Logger logger = LoggerFactory.getLogger(ValidatorHandler.class);
 
     static ValidatorConfig config;
-    static {
-        config = (ValidatorConfig)Config.getInstance().getJsonObjectConfig(OPENAPI_CONFIG_NAME, ValidatorConfig.class);
-        if(config == null) {
-            config = (ValidatorConfig)Config.getInstance().getJsonObjectConfig(CONFIG_NAME, ValidatorConfig.class);
-        }
-    }
 
     private volatile HttpHandler next;
     // keep the single requestValidator instance as it covers 99 percent of use cases for best performance.
@@ -72,6 +62,11 @@ public class ValidatorHandler implements MiddlewareHandler {
     Map<String, ResponseValidator> responseValidatorMap;
 
     public ValidatorHandler() {
+        config = ValidatorConfig.load(OPENAPI_CONFIG_NAME);
+        if(config == null) {
+            config = ValidatorConfig.load(CONFIG_NAME);
+        }
+
         if(OpenApiHandler.helper != null) {
             final SchemaValidator schemaValidator = new SchemaValidator(OpenApiHandler.helper.openApi3);
             this.requestValidator = new RequestValidator(schemaValidator);
@@ -91,6 +86,14 @@ public class ValidatorHandler implements MiddlewareHandler {
 
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
+        String reqPath = exchange.getRequestPath();
+        // if request path is in the skipPathPrefixes in the config, call the next handler directly to skip the validation.
+        if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(s -> reqPath.startsWith(s))) {
+            if(logger.isTraceEnabled()) logger.trace("Skip request path base on skipPathPrefixes for " + reqPath);
+            Handler.next(exchange, next);
+            return;
+        }
+
         final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), OpenApiHandler.getBasePath(exchange.getRequestPath()));
         OpenApiOperation openApiOperation = null;
         Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
@@ -179,14 +182,15 @@ public class ValidatorHandler implements MiddlewareHandler {
 
     @Override
     public void register() {
-        ModuleRegistry.registerModule(ValidatorHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(OPENAPI_CONFIG_NAME), null);
+        ModuleRegistry.registerModule(ValidatorHandler.class.getName(), config.getMappedConfig(), null);
     }
 
     @Override
     public void reload() {
-        config = (ValidatorConfig)Config.getInstance().getJsonObjectConfig(OPENAPI_CONFIG_NAME, ValidatorConfig.class);
+        config.reload(OPENAPI_CONFIG_NAME);
         if(config == null) {
-            config = (ValidatorConfig)Config.getInstance().getJsonObjectConfig(CONFIG_NAME, ValidatorConfig.class);
+            config.reload(CONFIG_NAME);
         }
+        ModuleRegistry.registerModule(ValidatorHandler.class.getName(), config.getMappedConfig(), null);
     }
 }
