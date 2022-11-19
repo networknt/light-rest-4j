@@ -49,7 +49,7 @@ import java.util.*;
  */
 public class AccessControlHandler implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(AccessControlHandler.class);
-    static AccessControlConfig config = (AccessControlConfig) Config.getInstance().getJsonObjectConfig(AccessControlConfig.CONFIG_NAME, AccessControlConfig.class);
+    static AccessControlConfig config;
     static final String ACCESS_CONTROL_ERROR = "ERR10067";
     static final String ACCESS_CONTROL_MISSING = "ERR10069";
     static final String STARTUP_HOOK_NOT_LOADED = "ERR11019";
@@ -60,15 +60,22 @@ public class AccessControlHandler implements MiddlewareHandler {
     private final RuleEngine engine;
 
     public AccessControlHandler() {
+        config = AccessControlConfig.load();
+        engine = new RuleEngine(RuleLoaderStartupHook.rules, null);
         if (logger.isInfoEnabled())
             logger.info("AccessControlHandler is loaded.");
-
-        engine = new RuleEngine(RuleLoaderStartupHook.rules, null);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
+        String reqPath = exchange.getRequestPath();
+        // if request path is in the skipPathPrefixes in the config, call the next handler directly to skip the security check.
+        if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(s -> reqPath.startsWith(s))) {
+            if(logger.isTraceEnabled()) logger.trace("Skip request path base on skipPathPrefixes for " + reqPath);
+            Handler.next(exchange, next);
+            return;
+        }
 
         Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
 
@@ -203,11 +210,12 @@ public class AccessControlHandler implements MiddlewareHandler {
 
     @Override
     public void register() {
-        ModuleRegistry.registerModule(AccessControlHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(AccessControlConfig.CONFIG_NAME), null);
+        ModuleRegistry.registerModule(AccessControlHandler.class.getName(), config.getMappedConfig(), null);
     }
 
     @Override
     public void reload() {
-        config = (AccessControlConfig) Config.getInstance().getJsonObjectConfig(AccessControlConfig.CONFIG_NAME, AccessControlConfig.class);
+        config.reload();
+        ModuleRegistry.registerModule(AccessControlHandler.class.getName(), config.getMappedConfig(), null);
     }
 }
