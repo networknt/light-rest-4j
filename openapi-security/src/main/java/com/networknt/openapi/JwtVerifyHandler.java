@@ -72,18 +72,14 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     // make this static variable public so that it can be accessed from the server-info module
     public static JwtVerifier jwtVerifier;
 
-
     String basePath;
-
-    static {
-        config = SecurityConfig.load(OPENAPI_SECURITY_CONFIG);
-    }
 
     private volatile HttpHandler next;
 
     public JwtVerifyHandler() {
         // at this moment, we assume that the OpenApiHandler is fully loaded with a single spec or multiple specs.
         // And the basePath is the correct one from the OpenApiHandler helper or helperMap if multiple is used.
+        config = SecurityConfig.load(OPENAPI_SECURITY_CONFIG);
         jwtVerifier = new JwtVerifier(config);
     }
 
@@ -439,6 +435,8 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     @Override
     public void reload() {
         config.reload(OPENAPI_SECURITY_CONFIG);
+        jwtVerifier = new JwtVerifier(config);
+        ModuleRegistry.registerModule(JwtVerifyHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(OPENAPI_SECURITY_CONFIG), null);
     }
 
     @Override
