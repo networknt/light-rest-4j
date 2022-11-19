@@ -70,7 +70,7 @@ public class OpenApiHandler implements MiddlewareHandler {
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
     HandlerConfig handlerConfig;
 
-    OpenApiHandlerConfig config;
+    static OpenApiHandlerConfig config;
     // for multiple specifications use case. The key is the basePath and the value is the instance of OpenApiHelper.
     public static Map<String, OpenApiHelper> helperMap;
     // for single specification case which covers 99 percent use cases. This is why, we don't put it into the helperMap for
