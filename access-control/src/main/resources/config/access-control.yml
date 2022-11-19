@@ -6,3 +6,9 @@ enabled: ${access-control.enabled:true}
 # this default action by setting this config value to false. If true, the handle will force users to
 # define the rules for each endpoint when the access control handler is enabled.
 defaultDeny: ${access-control.defaultDeny:true}
+# Define a list of path prefixes to skip the access-control to ease the configuration for the handler.yml
+# so that users can define some endpoint without fine-grained access-control security even through it uses
+# the default chain. This is useful if some endpoints want to skip the fine-grained access control in the
+# application. The format is a list of strings separated with commas or a JSON list in values.yml definition
+# from config server, or you can use yaml format in externalized access-control.yml file.
+skipPathPrefixes: ${access-control.skipPathPrefixes:}
