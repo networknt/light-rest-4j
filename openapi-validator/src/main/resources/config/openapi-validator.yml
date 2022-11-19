@@ -15,3 +15,11 @@ validateResponse: ${openapi-validator.validateResponse:false}
 # If handleNullableField is set to false && incoming field is nullable && value is field: null --> it is up to the type 
 # validator using the SchemaValidator to handle it.
 handleNullableField: ${openapi-validator.handleNullableField:true}
+
+# Define a list of path prefixes to skip the validation to ease the configuration for the
+# handler.yml so that users can define some endpoints without validation even through it uses
+# the default chain. This is particularly useful in the light-gateway use case as the same
+# instance might be shared with multiple consumers and providers with different validation
+# requirement. The format is a list of strings separated with commas or a JSON list in
+# values.yml definition from config server, or you can use yaml format in this file.
+skipPathPrefixes: ${openapi-validator.skipPathPrefixes:}
