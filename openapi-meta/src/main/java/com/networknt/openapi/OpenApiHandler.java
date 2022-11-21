@@ -136,6 +136,7 @@ public class OpenApiHandler implements MiddlewareHandler {
     }
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
+        if (logger.isDebugEnabled()) logger.trace("OpenApiHandler.handleRequest starts.");
         if(config.isMultipleSpec()) {
             String p = exchange.getRequestPath();
             boolean found = false;
@@ -148,6 +149,7 @@ public class OpenApiHandler implements MiddlewareHandler {
                     final Optional<NormalisedPath> maybeApiPath = h.findMatchingApiPath(requestPath);
                     if (!maybeApiPath.isPresent()) {
                         setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH, requestPath.normalised());
+                        if (logger.isDebugEnabled()) logger.trace("OpenApiHandler.handleRequest ends with an error.");
                         return;
                     }
 
@@ -159,6 +161,7 @@ public class OpenApiHandler implements MiddlewareHandler {
 
                     if (operation == null) {
                         setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED, httpMethod, openApiPathString.normalised());
+                        if (logger.isDebugEnabled()) logger.trace("OpenApiHandler.handleRequest ends with an error.");
                         return;
                     }
 
@@ -183,6 +186,7 @@ public class OpenApiHandler implements MiddlewareHandler {
             }
             if(!found) {
                 setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH, p);
+                if (logger.isDebugEnabled()) logger.trace("OpenApiHandler.handleRequest ends with an error.");
                 return;
             }
         } else {
@@ -190,6 +194,7 @@ public class OpenApiHandler implements MiddlewareHandler {
             final Optional<NormalisedPath> maybeApiPath = helper.findMatchingApiPath(requestPath);
             if (!maybeApiPath.isPresent()) {
                 setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH, requestPath.normalised());
+                if (logger.isDebugEnabled()) logger.trace("OpenApiHandler.handleRequest ends with an error.");
                 return;
             }
 
@@ -201,6 +206,7 @@ public class OpenApiHandler implements MiddlewareHandler {
 
             if (operation == null) {
                 setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED, httpMethod, openApiPathString.normalised());
+                if (logger.isDebugEnabled()) logger.trace("OpenApiHandler.handleRequest ends with an error.");
                 return;
             }
 
@@ -221,6 +227,7 @@ public class OpenApiHandler implements MiddlewareHandler {
             auditInfo.put(Constants.OPENAPI_OPERATION_STRING, openApiOperation);
             exchange.putAttachment(AttachmentConstants.AUDIT_INFO, auditInfo);
         }
+        if (logger.isDebugEnabled()) logger.trace("OpenApiHandler.handleRequest ends.");
         Handler.next(exchange, next);
     }
 

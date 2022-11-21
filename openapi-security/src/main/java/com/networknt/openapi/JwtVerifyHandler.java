@@ -86,11 +86,13 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     @Override
     @SuppressWarnings("unchecked")
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
+        if (logger.isDebugEnabled()) logger.trace("JwtVerifyHandler.handleRequest starts.");
         String reqPath = exchange.getRequestPath();
         // if request path is in the skipPathPrefixes in the config, call the next handler directly to skip the security check.
         if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(s -> reqPath.startsWith(s))) {
             if(logger.isTraceEnabled()) logger.trace("Skip request path base on skipPathPrefixes for " + reqPath);
             Handler.next(exchange, next);
+            if (logger.isDebugEnabled()) logger.trace("JwtVerifyHandler.handleRequest ends.");
             return;
         }
         Map<String, Object> auditInfo = null;
@@ -142,6 +144,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 
                 if (!config.isEnableH2c() && this.checkForH2CRequest(headerMap)) {
                     setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED);
+                    if (logger.isDebugEnabled()) logger.trace("JwtVerifyHandler.handleRequest ends with an error.");
                     return;
                 }
 
@@ -175,17 +178,20 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                 }
                 if (logger.isTraceEnabled())
                     logger.trace("complete JWT verification for request path = " + exchange.getRequestURI());
-
+                if (logger.isDebugEnabled()) logger.trace("JwtVerifyHandler.handleRequest ends.");
                 Handler.next(exchange, next);
             } catch (InvalidJwtException e) {
                 // only log it and unauthorized is returned.
                 logger.error("InvalidJwtException: ", e);
+                if (logger.isDebugEnabled()) logger.trace("JwtVerifyHandler.handleRequest ends with an error.");
                 setExchangeStatus(exchange, STATUS_INVALID_AUTH_TOKEN);
             } catch (ExpiredTokenException e) {
                 logger.error("ExpiredTokenException", e);
+                if (logger.isDebugEnabled()) logger.trace("JwtVerifyHandler.handleRequest ends with an error.");
                 setExchangeStatus(exchange, STATUS_AUTH_TOKEN_EXPIRED);
             }
         } else {
+            if (logger.isDebugEnabled()) logger.trace("JwtVerifyHandler.handleRequest ends with an error.");
             setExchangeStatus(exchange, STATUS_MISSING_AUTH_TOKEN);
         }
     }

@@ -86,10 +86,11 @@ public class ValidatorHandler implements MiddlewareHandler {
 
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
+        if (logger.isDebugEnabled()) logger.trace("ValidatorHandler.handleRequest starts.");
         String reqPath = exchange.getRequestPath();
         // if request path is in the skipPathPrefixes in the config, call the next handler directly to skip the validation.
         if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(s -> reqPath.startsWith(s))) {
-            if(logger.isTraceEnabled()) logger.trace("Skip request path base on skipPathPrefixes for " + reqPath);
+            if (logger.isDebugEnabled()) logger.trace("ValidatorHandler.handleRequest ends with skipped path " + reqPath);
             Handler.next(exchange, next);
             return;
         }
@@ -101,12 +102,14 @@ public class ValidatorHandler implements MiddlewareHandler {
             openApiOperation = (OpenApiOperation)auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
         }
         if(openApiOperation == null) {
+            if (logger.isDebugEnabled()) logger.trace("ValidatorHandler.handleRequest ends with an error.");
             setExchangeStatus(exchange, STATUS_MISSING_OPENAPI_OPERATION);
             return;
         }
         RequestValidator reqV = getRequestValidator(exchange.getRequestPath());
         Status status = reqV.validateRequest(requestPath, exchange, openApiOperation);
         if(status != null) {
+            if (logger.isDebugEnabled()) logger.trace("ValidatorHandler.handleRequest ends with an error.");
             setExchangeStatus(exchange, status);
             if(config.logError) {
                 logger.error("There is an Validation Error:");
@@ -117,6 +120,7 @@ public class ValidatorHandler implements MiddlewareHandler {
         if(config.validateResponse) {
             validateResponse(exchange, openApiOperation);
         }
+        if (logger.isDebugEnabled()) logger.trace("ValidatorHandler.handleRequest ends.");
         Handler.next(exchange, next);
     }
 

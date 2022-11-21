@@ -69,10 +69,12 @@ public class AccessControlHandler implements MiddlewareHandler {
     @Override
     @SuppressWarnings("unchecked")
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
+        if (logger.isDebugEnabled()) logger.trace("AccessControlHandler.handleRequest starts.");
         String reqPath = exchange.getRequestPath();
         // if request path is in the skipPathPrefixes in the config, call the next handler directly to skip the security check.
         if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(s -> reqPath.startsWith(s))) {
             if(logger.isTraceEnabled()) logger.trace("Skip request path base on skipPathPrefixes for " + reqPath);
+            if (logger.isDebugEnabled()) logger.trace("AccessControlHandler.handleRequest ends with path skipped.");
             Handler.next(exchange, next);
             return;
         }
@@ -91,6 +93,7 @@ public class AccessControlHandler implements MiddlewareHandler {
         if (RuleLoaderStartupHook.endpointRules == null) {
             logger.error("RuleLoaderStartupHook endpointRules is null");
             setExchangeStatus(exchange, STARTUP_HOOK_NOT_LOADED, "RuleLoaderStartupHook");
+            if (logger.isDebugEnabled()) logger.trace("AccessControlHandler.handleRequest ends with an error.");
             return;
         }
 
@@ -101,8 +104,10 @@ public class AccessControlHandler implements MiddlewareHandler {
         if (requestRules == null) {
             if (config.defaultDeny) {
                 logger.error("Access control rule is missing and default deny is true for endpoint " + endpoint);
+                if (logger.isDebugEnabled()) logger.trace("AccessControlHandler.handleRequest ends with an error.");
                 setExchangeStatus(exchange, ACCESS_CONTROL_MISSING, endpoint);
             } else {
+                if (logger.isDebugEnabled()) logger.trace("AccessControlHandler.handleRequest ends.");
                 next(exchange);
             }
         } else {
