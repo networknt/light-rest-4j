@@ -212,7 +212,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 
             // get the jwt token from the X-Scope-Token header in this case and allow the verification done with the secondary token.
             returnToken = headerMap.getFirst(HttpStringConstants.SCOPE_TOKEN);
-            if (logger.isTraceEnabled() && returnToken != null)
+            if (logger.isTraceEnabled() && returnToken != null && returnToken.length() > 10)
                 logger.trace("The replaced authorization from X-Scope-Token header = " + returnToken.substring(0, 10));
         }
         return returnToken;
