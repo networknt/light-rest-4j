@@ -1,5 +1,18 @@
 # Change Log
 
+## [2.1.4](https://github.com/networknt/light-rest-4j/tree/2.1.4) (2022-11-30)
+
+
+**Merged pull requests:**
+
+
+- fixes \#256 NPE when scope token is an empty string in JwtVerifyHandler [\#257](https://github.com/networknt/light-rest-4j/pull/257) ([stevehu](https://github.com/stevehu))
+- fixes \#254 update the starts and ends to debug level [\#255](https://github.com/networknt/light-rest-4j/pull/255) ([stevehu](https://github.com/stevehu))
+- fixes \#252 add debug for begin and end of middleware handler for perf… [\#253](https://github.com/networknt/light-rest-4j/pull/253) ([stevehu](https://github.com/stevehu))
+- Issue250 [\#251](https://github.com/networknt/light-rest-4j/pull/251) ([stevehu](https://github.com/stevehu))
+- fixes \#248 update JwtVerifyHandler to support config reload [\#249](https://github.com/networknt/light-rest-4j/pull/249) ([stevehu](https://github.com/stevehu))
+- fixes \#246 change OpenApiHandler to make the OpenApiHandlerConfig static [\#247](https://github.com/networknt/light-rest-4j/pull/247) ([stevehu](https://github.com/stevehu))
+- fixes \#244 update access-control to refactor the config class and add… [\#245](https://github.com/networknt/light-rest-4j/pull/245) ([stevehu](https://github.com/stevehu))
 ## [2.1.3](https://github.com/networknt/light-rest-4j/tree/2.1.3) (2022-11-10)
 
 
