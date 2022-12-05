@@ -86,13 +86,19 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     @Override
     @SuppressWarnings("unchecked")
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
-        if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest starts.");
+
+        if (logger.isDebugEnabled())
+            logger.debug("JwtVerifyHandler.handleRequest starts.");
+
         String reqPath = exchange.getRequestPath();
+
         // if request path is in the skipPathPrefixes in the config, call the next handler directly to skip the security check.
-        if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(s -> reqPath.startsWith(s))) {
-            if(logger.isTraceEnabled()) logger.trace("Skip request path base on skipPathPrefixes for " + reqPath);
+        if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(reqPath::startsWith)) {
+            if(logger.isTraceEnabled())
+                logger.trace("Skip request path base on skipPathPrefixes for " + reqPath);
             Handler.next(exchange, next);
-            if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends.");
+            if (logger.isDebugEnabled())
+                logger.debug("JwtVerifyHandler.handleRequest ends.");
             return;
         }
         Map<String, Object> auditInfo = null;
@@ -105,6 +111,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
         authorization = this.getScopeToken(authorization, headerMap);
 
         boolean ignoreExpiry = config.isIgnoreJwtExpiry();
+
         String jwt = JwtVerifier.getJwtFromAuthorization(authorization);
 
         if (jwt != null) {
@@ -168,31 +175,47 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                     String scopeHeader = headerMap.getFirst(HttpStringConstants.SCOPE_TOKEN);
                     String scopeJwt = JwtVerifier.getJwtFromAuthorization(scopeHeader);
                     List<String> secondaryScopes = new ArrayList<>();
+
                     if(!this.hasValidSecondaryScopes(exchange, scopeJwt, secondaryScopes, ignoreExpiry, reqPath, auditInfo)) {
                         return;
                     }
                     if(!this.hasValidScope(exchange, scopeHeader, secondaryScopes, claims, operation)) {
                         return;
                     }
-
                 }
                 if (logger.isTraceEnabled())
                     logger.trace("complete JWT verification for request path = " + exchange.getRequestURI());
-                if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends.");
+
+                if (logger.isDebugEnabled())
+                    logger.debug("JwtVerifyHandler.handleRequest ends.");
+
                 Handler.next(exchange, next);
             } catch (InvalidJwtException e) {
+
                 // only log it and unauthorized is returned.
                 logger.error("InvalidJwtException: ", e);
-                if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
+
+                if (logger.isDebugEnabled())
+                    logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
+
                 setExchangeStatus(exchange, STATUS_INVALID_AUTH_TOKEN);
+                exchange.endExchange();
             } catch (ExpiredTokenException e) {
+
                 logger.error("ExpiredTokenException", e);
-                if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
+
+                if (logger.isDebugEnabled())
+                    logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
+
                 setExchangeStatus(exchange, STATUS_AUTH_TOKEN_EXPIRED);
+                exchange.endExchange();
             }
         } else {
-            if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
+            if (logger.isDebugEnabled())
+                logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
+
             setExchangeStatus(exchange, STATUS_MISSING_AUTH_TOKEN);
+            exchange.endExchange();
         }
     }
 
@@ -208,10 +231,11 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
         String returnToken = authorization;
         // in the gateway case, the authorization header might be a basic header for the native API or other authentication headers.
         // this will allow the Basic authentication be wrapped up with a JWT token between proxy client and proxy server for native.
-        if (returnToken != null && !returnToken.startsWith("Bearer ")) {
+        if (returnToken != null && !returnToken.substring(0, 6).equalsIgnoreCase("Bearer")) {
 
             // get the jwt token from the X-Scope-Token header in this case and allow the verification done with the secondary token.
             returnToken = headerMap.getFirst(HttpStringConstants.SCOPE_TOKEN);
+
             if (logger.isTraceEnabled() && returnToken != null && returnToken.length() > 10)
                 logger.trace("The replaced authorization from X-Scope-Token header = " + returnToken.substring(0, 10));
         }
@@ -220,11 +244,9 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 
     /**
      * Checks to see if the current exchange type is Upgrade.
-     *
      * Two conditions required for a valid upgrade request.
      * - 'Connection' header is set to 'upgrade'.
      * - 'Upgrade' is present.
-     *
      *
      * @param headerMap - map containing all exchange headers
      * @return - returns true if the request is an Upgrade request.
@@ -261,6 +283,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 
             if (operation == null) {
                 setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED, httpMethod, swaggerPathString.normalised());
+                exchange.endExchange();
                 return null;
             }
 
@@ -311,13 +334,20 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                 }
                 auditInfo.put(Constants.SCOPE_CLIENT_ID_STRING, scopeClaims.getStringClaimValue(Constants.CLIENT_ID_STRING));
                 auditInfo.put(Constants.ACCESS_CLAIMS, scopeClaims);
-            } catch (InvalidJwtException | MalformedClaimException e) {
+            } catch (InvalidJwtException e) {
                 logger.error("InvalidJwtException", e);
                 setExchangeStatus(exchange, STATUS_INVALID_SCOPE_TOKEN);
+                exchange.endExchange();
+                return false;
+            } catch (MalformedClaimException e) {
+                logger.error("MalformedClaimException", e);
+                setExchangeStatus(exchange, STATUS_INVALID_AUTH_TOKEN);
+                exchange.endExchange();
                 return false;
             } catch (ExpiredTokenException e) {
                 logger.error("ExpiredTokenException", e);
                 setExchangeStatus(exchange, STATUS_SCOPE_TOKEN_EXPIRED);
+                exchange.endExchange();
                 return false;
             }
         }
@@ -363,6 +393,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                 if (logger.isTraceEnabled()) logger.trace("validate the scope with scope token");
                 if (secondaryScopes == null || !matchedScopes(secondaryScopes, specScopes)) {
                     setExchangeStatus(exchange, STATUS_SCOPE_TOKEN_SCOPE_MISMATCH, secondaryScopes, specScopes);
+                    exchange.endExchange();
                     return false;
                 }
             } else {
@@ -388,10 +419,12 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                 } catch (MalformedClaimException e) {
                     logger.error("MalformedClaimException", e);
                     setExchangeStatus(exchange, STATUS_INVALID_AUTH_TOKEN);
+                    exchange.endExchange();
                     return false;
                 }
                 if (!matchedScopes(primaryScopes, specScopes)) {
                     setExchangeStatus(exchange, STATUS_AUTH_TOKEN_SCOPE_MISMATCH, primaryScopes, specScopes);
+                    exchange.endExchange();
                     return false;
                 }
             }
