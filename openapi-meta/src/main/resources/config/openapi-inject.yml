@@ -1,6 +1,6 @@
 openapi: 3.0.0
 paths:
-  /adm/health/${server.serviceId}:
+  /adm/health/${server.serviceId:com.networknt.placeholder-1.0.0}:
     get:
       description: pass through to the liveness endpoint that belongs to backend api
       security:
@@ -9,7 +9,7 @@ paths:
             # for control pane to access all businesses' admin endpoints
             - admin
             # for each business to access their own admin endpoints
-            - ${server.serviceId}/admin
+            - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
   /adm/server/info:
     get:
       description: get the proxy server info and corresponding backend service info
@@ -19,7 +19,7 @@ paths:
             # for control pane to access all businesses' admin endpoints
             - admin
             # for each business to access their own admin endpoints
-            - ${server.serviceId}/admin
+            - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
 
   /adm/chaosmonkey:
     get:
@@ -30,7 +30,7 @@ paths:
             # for control pane to access all businesses' admin endpoints
             - admin
             # for each business to access their own admin endpoints
-            - ${server.serviceId}/admin
+            - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
   /adm/chaosmonkey/{assault}:
     post:
       description: to update chaosmonkey settings
@@ -48,7 +48,7 @@ paths:
             # for control pane to access all businesses' admin endpoints
             - admin
             # for each business to access their own admin endpoints
-            - ${server.serviceId}/admin
+            - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
 
   /adm/logger:
     get:
@@ -59,7 +59,7 @@ paths:
             # for control pane to access all businesses' admin endpoints
             - admin
             # for each business to access their own admin endpoints
-            - ${server.serviceId}/admin
+            - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
     post:
       description: to modify the logging settings
       requestBody:
@@ -82,7 +82,7 @@ paths:
             # for control pane to access all businesses' admin endpoints
             - admin
             # for each business to access their own admin endpoints
-            - ${server.serviceId}/admin
+            - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
 
   /adm/logger/content:
     get:
@@ -90,7 +90,7 @@ paths:
       security:
         - admin-scope:
             - admin
-            - ${server.serviceId}/admin
+            - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
 
   /adm/modules:
     get:
@@ -101,7 +101,7 @@ paths:
             # for control pane to access all businesses' admin endpoints
             - admin
             # for each business to access their own admin endpoints
-            - ${server.serviceId}/admin
+            - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
     post:
       description: to trigger the config reload for all modules or specified modules selected on control pane
       requestBody:
@@ -119,7 +119,7 @@ paths:
             # for control pane to access all businesses' admin endpoints
             - admin
             # for each business to access their own admin endpoints
-            - ${server.serviceId}/admin
+            - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
   /adm/shutdown:
     delete:
       summary: "Shutdown the service instance to force a restart."
@@ -131,7 +131,7 @@ paths:
             # for control pane to access all businesses' admin endpoints
             - admin
             # for each business to access their own admin endpoints
-            - ${server.serviceId}/admin
+            - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
 
 components:
   securitySchemes:
