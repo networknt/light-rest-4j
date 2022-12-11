@@ -7,6 +7,6 @@ public class OpenApiHandlerConfigTest {
     @Test
     public void testLoadConfig() {
         OpenApiHandlerConfig config = OpenApiHandlerConfig.load();
-        Assert.assertEquals(2, config.getMappedConfig().size());
+        Assert.assertEquals(3, config.getMappedConfig().size());
     }
 }

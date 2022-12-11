@@ -184,7 +184,7 @@ public class OpenApiHandler implements MiddlewareHandler {
                     break;
                 }
             }
-            if(!found) {
+            if(!found && !config.isIgnoreInvalidPath()) {
                 setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH, p);
                 if (logger.isDebugEnabled()) logger.debug("OpenApiHandler.handleRequest ends with an error.");
                 return;
@@ -193,8 +193,13 @@ public class OpenApiHandler implements MiddlewareHandler {
             final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), helper.basePath);
             final Optional<NormalisedPath> maybeApiPath = helper.findMatchingApiPath(requestPath);
             if (!maybeApiPath.isPresent()) {
-                setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH, requestPath.normalised());
-                if (logger.isDebugEnabled()) logger.debug("OpenApiHandler.handleRequest ends with an error.");
+                if(config.isIgnoreInvalidPath()) {
+                    if (logger.isDebugEnabled()) logger.debug("OpenApiHandler.handleRequest ends with ignoreInvalidPath.");
+                    Handler.next(exchange, next);
+                } else {
+                    setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH, requestPath.normalised());
+                    if (logger.isDebugEnabled()) logger.debug("OpenApiHandler.handleRequest ends with an error.");
+                }
                 return;
             }
 
