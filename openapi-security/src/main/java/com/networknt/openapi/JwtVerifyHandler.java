@@ -20,6 +20,7 @@ import com.networknt.config.Config;
 import com.networknt.exception.ExpiredTokenException;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
+import com.networknt.handler.config.HandlerConfig;
 import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.httpstring.HttpStringConstants;
 import com.networknt.oas.model.Operation;
@@ -81,6 +82,9 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
         // And the basePath is the correct one from the OpenApiHandler helper or helperMap if multiple is used.
         config = SecurityConfig.load(OPENAPI_SECURITY_CONFIG);
         jwtVerifier = new JwtVerifier(config);
+        // in case that the specification doesn't exist, get the basePath from the handler.yml for endpoint lookup.
+        HandlerConfig handlerConfig = (HandlerConfig) Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class);
+        this.basePath = handlerConfig == null ? "/" : handlerConfig.getBasePath();
     }
 
     @Override
@@ -168,6 +172,12 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                     OpenApiOperation openApiOperation = (OpenApiOperation) auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
                     Operation operation = this.getOperation(exchange, openApiOperation, auditInfo);
                     if(operation == null) {
+                        if(config.isSkipVerifyScopeWithoutSpec()) {
+                            if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends without verifying scope due to spec.");
+                            Handler.next(exchange, next);
+                        } else {
+                            // this will return an error message to the client.
+                        }
                         return;
                     }
 
@@ -271,7 +281,9 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
             final Optional<NormalisedPath> maybeApiPath = OpenApiHandler.getHelper(exchange.getRequestPath()).findMatchingApiPath(requestPath);
 
             if (maybeApiPath.isEmpty()) {
-                setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH);
+                if(!config.isSkipVerifyScopeWithoutSpec()) {
+                    setExchangeStatus(exchange, STATUS_INVALID_REQUEST_PATH);
+                }
                 return null;
             }
 
