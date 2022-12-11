@@ -12,9 +12,11 @@ public class OpenApiHandlerConfig {
     private static final Logger logger = LoggerFactory.getLogger(OpenApiHandlerConfig.class);
     public static final String CONFIG_NAME = "openapi-handler";
     private static final String MULTIPLE_SPEC = "multipleSpec";
+    private static final String IGNORE_INVALID_PATH = "ignoreInvalidPath";
     private static final String PATH_SPEC_MAPPING = "pathSpecMapping";
 
     boolean multipleSpec;
+    boolean ignoreInvalidPath;
     Map<String, Object> pathSpecMapping;
 
     private Config config;
@@ -57,11 +59,15 @@ public class OpenApiHandlerConfig {
     public boolean isMultipleSpec() {
         return multipleSpec;
     }
-
+    public boolean isIgnoreInvalidPath() { return ignoreInvalidPath; }
     private void setConfigData() {
         Object object = mappedConfig.get(MULTIPLE_SPEC);
         if (object != null && (Boolean) object) {
             multipleSpec = (Boolean)object;
+        }
+        object = mappedConfig.get(IGNORE_INVALID_PATH);
+        if (object != null && (Boolean) object) {
+            ignoreInvalidPath = (Boolean)object;
         }
     }
 
