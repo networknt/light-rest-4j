@@ -168,6 +168,16 @@
             </dependency>
             <dependency>
                 <groupId>com.networknt</groupId>
+                <artifactId>basic-auth</artifactId>
+                <version>${version.light-4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.networknt</groupId>
+                <artifactId>api-key</artifactId>
+                <version>${version.light-4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.networknt</groupId>
                 <artifactId>client</artifactId>
                 <version>${version.light-4j}</version>
             </dependency>

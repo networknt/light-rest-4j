@@ -1,0 +1,42 @@
+# server.yml
+server.enableHttps: false
+server.enableHttp2: false
+server.enableHttp: true
+server.httpPort: 7080
+
+
+# handler.yml
+handler.basePath: /
+handler.handlers:
+  - com.networknt.openapi.OpenApiHandler@specification
+  - com.networknt.openapi.JwtVerifyHandler@jwt
+  - com.networknt.basicauth.BasicAuthHandler@basic
+  - com.networknt.openapi.UnifiedSecurityHandler@unified
+  - com.networknt.apikey.ApiKeyHandler@apikey
+
+handler.chains.default:
+  - specification
+  - unified
+
+# basic-auth.yml
+basic.users:
+  - username: user1
+    password: user1pass
+    paths:
+      - /v1/address
+      - /v1/salesforce
+  - username: user2
+    password: CRYPT:08eXg9TmK604+w06RaBlsPQbplU1F1Ez5pkBO/hNr8w=
+    paths:
+      - /v2/pet
+      - /v2/address
+      - /v2/party
+
+# apikey.yml
+apikey.pathPrefixAuths:
+  - pathPrefix: /v1/test1
+    headerName: x-gateway-apikey
+    apiKey: abcdefg
+  - pathPrefix: /v1/test2
+    headerName: x-apikey
+    apiKey: CRYPT:08eXg9TmK604+w06RaBlsPQbplU1F1Ez5pkBO/hNr8w=

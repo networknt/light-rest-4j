@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2016 Network New Technologies Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.networknt.openapi;
 
 import com.networknt.client.Http2Client;
@@ -21,7 +5,6 @@ import com.networknt.config.Config;
 import com.networknt.exception.ClientException;
 import com.networknt.httpstring.HttpStringConstants;
 import com.networknt.status.Status;
-import com.networknt.exception.ClientException;
 import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.client.ClientConnection;
@@ -32,11 +15,9 @@ import io.undertow.server.RoutingHandler;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.text.StringEscapeUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.IoUtils;
@@ -48,43 +29,19 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * Created by steve on 01/09/16.
- */
-public class JwtVerifyHandlerTest {
-    static final Logger logger = LoggerFactory.getLogger(JwtVerifyHandlerTest.class);
+import static java.nio.charset.StandardCharsets.UTF_8;
 
-    static Undertow server = null;
+public class UnifiedSecurityHandlerTest {
+    static final Logger logger = LoggerFactory.getLogger(UnifiedSecurityHandlerTest.class);
 
-    @BeforeClass
-    public static void setUp() {
-        if (server == null) {
-            logger.info("starting server");
-            HttpHandler handler = getTestHandler();
-            JwtVerifyHandler jwtVerifyHandler = new JwtVerifyHandler();
-            jwtVerifyHandler.setNext(handler);
-            OpenApiHandler openApiHandler = new OpenApiHandler();
-            openApiHandler.setNext(jwtVerifyHandler);
-            server = Undertow.builder()
-                    .addHttpListener(7081, "localhost")
-                    .setHandler(openApiHandler)
-                    .build();
-            server.start();
-        }
-    }
+    @ClassRule
+    public static TestServer server = TestServer.getInstance();
 
-    @AfterClass
-    public static void tearDown() throws Exception {
-        if (server != null) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException ignored) {
-
-            }
-            server.stop();
-            logger.info("The server is stopped.");
-        }
-    }
+    static final boolean enableHttp2 = server.getServerConfig().isEnableHttp2();
+    static final boolean enableHttps = server.getServerConfig().isEnableHttps();
+    static final int httpPort = server.getServerConfig().getHttpPort();
+    static final int httpsPort = server.getServerConfig().getHttpsPort();
+    static final String url = enableHttp2 || enableHttps ? "https://localhost:" + httpsPort : "http://localhost:" + httpPort;
 
     static RoutingHandler getTestHandler() {
         return Handlers.routing()
@@ -101,22 +58,43 @@ public class JwtVerifyHandlerTest {
                 })
                 .add(Methods.GET, "/v1/pets", exchange -> exchange.getResponseSender().send("get"));
     }
+    private static String encodeCredentialsFullFormat(String username, String password, String separator) {
+        String cred;
+        if(password != null) {
+            cred = username + separator + password;
+        } else {
+            cred = username;
+        }
+        String encodedValue;
+        byte[] encodedBytes = Base64.encodeBase64(cred.getBytes(UTF_8));
+        encodedValue = new String(encodedBytes, UTF_8);
+        return encodedValue;
+    }
 
+    private static String encodeCredentials(String username, String password) {
+        return encodeCredentialsFullFormat(username, password, ":");
+    }
+
+    /**
+     * Send a request without authorization header but put the request path prefix into the anonymousPrefixes list. We are expecting
+     * 200 status code as all the security methods bypassed.
+     *
+     * @throws Exception
+     */
     @Test
-    public void testWithCorrectScopeInIdToken() throws Exception {
+    public void testAnonymousPrefix() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
         try {
-            connection = client.connect(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+            connection = client.connect(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
         } catch (Exception e) {
             throw new ClientException(e);
         }
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
-            ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
+            ClientRequest request = new ClientRequest().setPath("/v1/dogs/111").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
-            request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTgwNTEzNjU1MSwianRpIjoiV0Z1VVZneE83dmxKUm5XUlllMjE1dyIsImlhdCI6MTQ4OTc3NjU1MSwibmJmIjoxNDg5Nzc2NDMxLCJ2ZXJzaW9uIjoiMS4wIiwidXNlcl9pZCI6InN0ZXZlIiwidXNlcl90eXBlIjoiRU1QTE9ZRUUiLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzIiLCJzY29wZSI6WyJ3cml0ZTpwZXRzIiwicmVhZDpwZXRzIl19.ZDlD_JbtHMqfx8EWOlOXI0zFGjB_pJ6yXWpxoE03o2yQnCUq1zypaDTJWSiy-BPIiQAxwDV09L3SN7RsOcgJ3y2LLFhgqIXhcHoePxoz52LPOeeiihG2kcrgBm-_VMq0uUykLrD-ljSmmSm1Hai_dx0WiYGAEJf-TiD1mgzIUTlhogYrjFKlp2NaYHxr7yjzEGefKv4DWdjtlEMmX_cXkqPgxra_omzyxeWE-n0b7f_r7Hr5HkxnmZ23gkZcvFXfVWKEp2t0_dYmNCbSVDavAjNanvmWsNThYNglFRvF0lm8kl7jkfMO1pTa0WLcBLvOO2y_jRWjieFCrc0ksbIrXA");
             connection.sendRequest(request, client.createClientCallback(reference, latch));
             latch.await();
         } catch (Exception e) {
@@ -133,23 +111,24 @@ public class JwtVerifyHandlerTest {
     }
 
     /**
-     * Test comma seperated scopes with the key 'scp'
+     * Test basic header to ensure that BasicAuthHandler is invoked and the validation is done correctly. For this request,
+     * we have passed the right credentials to the basic header and we are expecting 200 response.
      */
     @Test
-    public void testWithCorrectCommaSeperatedScpClaimScopeInIdToken() throws Exception {
+    public void testWithBasicHeader() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
         try {
-            connection = client.connect(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+            connection = client.connect(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
         } catch (Exception e) {
             throw new ClientException(e);
         }
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
-            ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
+            ClientRequest request = new ClientRequest().setPath("/v1/salesforce").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
-            request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer eyJraWQiOiIxMDAiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MTkxOTc4NjIxNiwianRpIjoicGlxZjE4QlhvbzFja0lraFJNMEVSQSIsImlhdCI6MTYwNDQyNjIxNiwibmJmIjoxNjA0NDI2MDk2LCJ2ZXJzaW9uIjoiMS4wIiwiY2xpZW50X2lkIjoiZjdkNDIzNDgtYzY0Ny00ZWZiLWE1MmQtNGM1Nzg3NDIxZTczIiwic2NwIjpbIndyaXRlOnBldHMiLCJyZWFkOnBldHMiXX0.U1JoPHEMXqbmCa_3aABzIN4DKmX702Q7BQxyzmr7yCLWRD4jqAvacdk-F6_mdYmxBXF8KY-sEO4AifaJA2picr5DPIabbbDtSEr9vrd3HaDMXx3c5CyiTg1U0DVmJh__OP8GJdVVhKVnrj36bvY_xLrWE9cbgTnRp4XMhWwHYHTVGNo6qP_vRRRMTZD4elNlbMxLnmfIy0XM5k3WuoEteJnRnG9ePJaGnRGcd6WkYWW1lfFD-YO2seNA4eegzouaV1qc7dpmYXuaXo5DvUr-oHcj1Aj6Q7XBAoZsXWbS8LhHH-dn_bJFzJnWA420p6wrEeJKDhdm4AWtzrAKxRQpYw");
+            request.getRequestHeaders().put(Headers.AUTHORIZATION, "BASIC " + encodeCredentials("user1", "user1pass"));
             connection.sendRequest(request, client.createClientCallback(reference, latch));
             latch.await();
         } catch (Exception e) {
@@ -166,15 +145,196 @@ public class JwtVerifyHandlerTest {
     }
 
     /**
-     * Test space seperated scopes with the key 'scp'
+     * Test basic authentication with a wrong password and expecting an error message with 401 status code.
+     * @throws Exception
      */
     @Test
-    public void testWithCorrectSpaceSeperatedScpClaimScopeInIdToken() throws Exception {
+    public void testWithBasicHeaderWithWrongPassword() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
         try {
-            connection = client.connect(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+            connection = client.connect(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/v1/salesforce").setMethod(Methods.GET);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
+            request.getRequestHeaders().put(Headers.AUTHORIZATION, "BASIC " + encodeCredentials("user1", "wrong"));
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
+        logger.debug("statusCode = " + statusCode);
+        logger.debug("responseBody = " + responseBody);
+        Assert.assertEquals(401, statusCode);
+        if (statusCode == 401) {
+            Assert.assertTrue(responseBody.contains("INVALID_USERNAME_OR_PASSWORD"));
+        }
+    }
+
+    /**
+     * Test basic authentication with a basic prefix and a space for the authorization header. Expecting an error message with
+     * status code 401.
+     * @throws Exception
+     */
+    @Test
+    public void testBasicWithSpace() throws Exception {
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/v1/salesforce").setMethod(Methods.GET);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
+            request.getRequestHeaders().put(Headers.AUTHORIZATION, "BASIC ");
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
+        logger.debug("statusCode = " + statusCode);
+        logger.debug("responseBody = " + responseBody);
+        Assert.assertEquals(401, statusCode);
+        if (statusCode == 401) {
+            Assert.assertTrue(responseBody.contains("INVALID_AUTHORIZATION_HEADER"));
+        }
+    }
+
+    /**
+     * Test apikey header to ensure that ApiKeyHandler is invoked and expect the right response.
+     */
+    @Test
+    public void testWithApiKeyHeader() throws Exception {
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/v1/test1").setMethod(Methods.GET);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
+            request.getRequestHeaders().put(new HttpString("x-gateway-apikey"), "abcdefg");
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        Assert.assertEquals(200, statusCode);
+        if (statusCode == 200) {
+            Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
+        }
+    }
+
+    /**
+     * Test apikey header to ensure that ApiKeyHandler is invoked and expect an error response as the apikey is wrong
+     */
+    @Test
+    public void testWithApiKeyHeaderWongKey() throws Exception {
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/v1/test1").setMethod(Methods.GET);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
+            request.getRequestHeaders().put(new HttpString("x-gateway-apikey"), "wrong");
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
+        logger.debug("statusCode = " + statusCode);
+        logger.debug("responseBody = " + responseBody);
+        Assert.assertEquals(401, statusCode);
+        if (statusCode == 401) {
+            Assert.assertTrue(responseBody.contains("API_KEY_MISMATCH"));
+        }
+    }
+
+    /**
+     * Test a path that is not configured in the pathPrefixAuths. Expect an error response.
+     * @throws Exception
+     */
+    @Test
+    public void testWrongPathNotConfigured() throws Exception {
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/wrong").setMethod(Methods.GET);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
+        logger.debug("statusCode = " + statusCode);
+        logger.debug("responseBody = " + responseBody);
+        Assert.assertEquals(400, statusCode);
+        if (statusCode == 400) {
+            Assert.assertTrue(responseBody.contains("MISSING_PATH_PREFIX_AUTH"));
+        }
+    }
+
+
+    /**
+     * Test space separated scopes with the key 'scp'
+     */
+    @Test
+    public void testWithCorrectSpaceSeparatedScpClaimScopeInIdToken() throws Exception {
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
         } catch (Exception e) {
             throw new ClientException(e);
         }
@@ -198,16 +358,17 @@ public class JwtVerifyHandlerTest {
         }
     }
 
+
     /**
-     * Test space seperated scopes with the key 'scope'
+     * Test space separated scopes with the key 'scope'
      */
     @Test
-    public void testWithCorrectSpaceSeperatedScopeClaimScopeInIdToken() throws Exception {
+    public void testWithCorrectSpaceSeparatedScopeClaimScopeInIdToken() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
         try {
-            connection = client.connect(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+            connection = client.connect(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
         } catch (Exception e) {
             throw new ClientException(e);
         }
@@ -237,7 +398,7 @@ public class JwtVerifyHandlerTest {
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
         try {
-            connection = client.connect(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+            connection = client.connect(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
         } catch (Exception e) {
             throw new ClientException(e);
         }
@@ -269,7 +430,7 @@ public class JwtVerifyHandlerTest {
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
         try {
-            connection = client.connect(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+            connection = client.connect(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
         } catch (Exception e) {
             throw new ClientException(e);
         }
@@ -300,7 +461,7 @@ public class JwtVerifyHandlerTest {
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
         try {
-            connection = client.connect(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+            connection = client.connect(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
         } catch (Exception e) {
             throw new ClientException(e);
         }
@@ -333,7 +494,7 @@ public class JwtVerifyHandlerTest {
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
         try {
-            connection = client.connect(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+            connection = client.connect(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
         } catch (Exception e) {
             throw new ClientException(e);
         }
@@ -361,4 +522,5 @@ public class JwtVerifyHandlerTest {
             Assert.assertEquals("ERR10008", status.getCode());
         }
     }
+
 }

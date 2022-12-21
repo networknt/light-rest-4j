@@ -7,6 +7,18 @@ info:
 servers:
   - url: http://petstore.swagger.io/v1
 paths:
+  /wrong:
+    get:
+      summary: List of wrong
+      operationId: listWrong
+  /test1:
+    get:
+      summary: List of test1
+      operationId: listTest1
+  /salesforce:
+    get:
+      summary: List salesforce
+      operationId: listSalesforce
   /pets:
     get:
       summary: List all pets
@@ -76,6 +88,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /dogs/{dogId}:
+    get:
+      summary: Info for a specific pet
+      operationId: showPetById
+      parameters:
+        - name: dogId
+          in: path
+          required: true
+          description: The id of the dog to retrieve
+          schema:
+            type: string
+
   /pets/{petId}:
     get:
       summary: Info for a specific pet
