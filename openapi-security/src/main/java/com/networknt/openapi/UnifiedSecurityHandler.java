@@ -60,6 +60,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
             boolean found = false;
             // iterate each entry to check enabled security methods.
             for(UnifiedPathPrefixAuth pathPrefixAuth: config.getPathPrefixAuths()) {
+                if(logger.isTraceEnabled()) logger.trace("Check with requestPath = " + reqPath + " prefix = " + pathPrefixAuth.getPathPrefix());
                 if(reqPath.startsWith(pathPrefixAuth.getPathPrefix())) {
                     found = true;
                     if(logger.isTraceEnabled()) logger.trace("Found with requestPath = " + reqPath + " prefix = " + pathPrefixAuth.getPathPrefix());
@@ -113,8 +114,9 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                 }
 
                             } else {
-                                logger.error("Invalid/Unsupported authorization header {}", authorization.substring(0, 10));
-                                setExchangeStatus(exchange, INVALID_AUTHORIZATION_HEADER, authorization.substring(0, 10));
+                                String s = authorization.length() > 10 ? authorization.substring(0, 10) : authorization;
+                                logger.error("Invalid/Unsupported authorization header {}", s);
+                                setExchangeStatus(exchange, INVALID_AUTHORIZATION_HEADER, s);
                                 exchange.endExchange();
                                 return;
                             }
@@ -173,13 +175,13 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
 
     @Override
     public void register() {
-        ModuleRegistry.registerModule(UnifiedSecurityHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(UnifiedSecurityHandler.CONFIG_NAME), null);
+        ModuleRegistry.registerModule(UnifiedSecurityHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(UnifiedSecurityConfig.CONFIG_NAME), null);
     }
 
     @Override
     public void reload() {
         config.reload();
-        ModuleRegistry.registerModule(UnifiedSecurityHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(UnifiedSecurityHandler.CONFIG_NAME), null);
+        ModuleRegistry.registerModule(UnifiedSecurityHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(UnifiedSecurityConfig.CONFIG_NAME), null);
     }
 
 }
