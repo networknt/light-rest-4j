@@ -105,11 +105,19 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                 logger.debug("JwtVerifyHandler.handleRequest ends.");
             return;
         }
+        // only UnifiedSecurityHandler will have the jwkServiceIds as the third parameter.
+        if(handleJwt(exchange, null, reqPath, null)) {
+            if(logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends.");
+            Handler.next(exchange, next);
+        }
+    }
+
+    public boolean handleJwt(HttpServerExchange exchange, String pathPrefix, String reqPath, List<String> jwkServiceIds) throws Exception {
         Map<String, Object> auditInfo = null;
         HeaderMap headerMap = exchange.getRequestHeaders();
         String authorization = headerMap.getFirst(Headers.AUTHORIZATION);
 
-        if (logger.isTraceEnabled() && authorization != null)
+        if (logger.isTraceEnabled() && authorization != null && authorization.length() > 10)
             logger.trace("Authorization header = " + authorization.substring(0, 10));
 
         authorization = this.getScopeToken(authorization, headerMap);
@@ -125,7 +133,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 
             try {
 
-                JwtClaims claims = jwtVerifier.verifyJwt(jwt, ignoreExpiry, true, reqPath);
+                JwtClaims claims = jwtVerifier.verifyJwt(jwt, ignoreExpiry, true, pathPrefix, reqPath, jwkServiceIds);
 
                 if (logger.isTraceEnabled())
                     logger.trace("claims = " + claims.toJson());
@@ -156,7 +164,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                 if (!config.isEnableH2c() && this.checkForH2CRequest(headerMap)) {
                     setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED);
                     if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
-                    return;
+                    return false;
                 }
 
                 String callerId = headerMap.getFirst(HttpStringConstants.CALLER_ID);
@@ -178,7 +186,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                         } else {
                             // this will return an error message to the client.
                         }
-                        return;
+                        return false;
                     }
 
                     /* validate scope from operation */
@@ -186,11 +194,11 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                     String scopeJwt = JwtVerifier.getJwtFromAuthorization(scopeHeader);
                     List<String> secondaryScopes = new ArrayList<>();
 
-                    if(!this.hasValidSecondaryScopes(exchange, scopeJwt, secondaryScopes, ignoreExpiry, reqPath, auditInfo)) {
-                        return;
+                    if(!this.hasValidSecondaryScopes(exchange, scopeJwt, secondaryScopes, ignoreExpiry, pathPrefix, reqPath, jwkServiceIds, auditInfo)) {
+                        return false;
                     }
                     if(!this.hasValidScope(exchange, scopeHeader, secondaryScopes, claims, operation)) {
-                        return;
+                        return false;
                     }
                 }
                 if (logger.isTraceEnabled())
@@ -199,7 +207,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                 if (logger.isDebugEnabled())
                     logger.debug("JwtVerifyHandler.handleRequest ends.");
 
-                Handler.next(exchange, next);
+                return true;
             } catch (InvalidJwtException e) {
 
                 // only log it and unauthorized is returned.
@@ -227,8 +235,8 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
             setExchangeStatus(exchange, STATUS_MISSING_AUTH_TOKEN);
             exchange.endExchange();
         }
+        return true;
     }
-
     /**
      * Get authToken from X-Scope-Token header.
      * This covers situations where there is a secondary auth token.
@@ -319,13 +327,13 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
      * @param reqPath - the request path as string
      * @return - return true if the secondary scopes are valid or if there are no secondary scopes.
      */
-    protected boolean hasValidSecondaryScopes(HttpServerExchange exchange, String scopeJwt, List<String> secondaryScopes, boolean ignoreExpiry, String reqPath, Map<String, Object> auditInfo) {
+    protected boolean hasValidSecondaryScopes(HttpServerExchange exchange, String scopeJwt, List<String> secondaryScopes, boolean ignoreExpiry, String pathPrefix, String reqPath, List<String> jwkServiceIds, Map<String, Object> auditInfo) {
         if (scopeJwt != null) {
             if (logger.isTraceEnabled())
                 logger.trace("start verifying scope token = " + scopeJwt.substring(0, 10));
 
             try {
-                JwtClaims scopeClaims = jwtVerifier.verifyJwt(scopeJwt, ignoreExpiry, true, reqPath);
+                JwtClaims scopeClaims = jwtVerifier.verifyJwt(scopeJwt, ignoreExpiry, true, pathPrefix, reqPath, jwkServiceIds);
                 Object scopeClaim = scopeClaims.getClaimValue(Constants.SCOPE_STRING);
 
                 if (scopeClaim instanceof String) {

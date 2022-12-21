@@ -56,6 +56,18 @@
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
+            <artifactId>basic-auth</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>api-key</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
             <artifactId>json-overlay</artifactId>
         </dependency>
         <dependency>
