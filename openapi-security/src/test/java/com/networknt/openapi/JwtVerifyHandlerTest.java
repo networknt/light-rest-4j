@@ -361,4 +361,40 @@ public class JwtVerifyHandlerTest {
             Assert.assertEquals("ERR10008", status.getCode());
         }
     }
+
+    @Test
+    public void testEmptyAuthorizationHeader() throws Exception {
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
+            request.getRequestHeaders().put(Headers.AUTHORIZATION, "");
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        logger.debug("statusCode = " + statusCode);
+        String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
+        logger.debug("responseBody = " + responseBody);
+        Assert.assertEquals(401, statusCode);
+        if (statusCode == 401) {
+            Status status = Config.getInstance().getMapper().readValue(responseBody, Status.class);
+            Assert.assertNotNull(status);
+            Assert.assertEquals("ERR10000", status.getCode());
+        }
+    }
+
 }
