@@ -119,7 +119,13 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 
         if (logger.isTraceEnabled() && authorization != null && authorization.length() > 10)
             logger.trace("Authorization header = " + authorization.substring(0, 10));
-
+        // if an empty authorization header or a value length less than 6 ("Basic "), return an error
+        if(authorization == null || authorization.trim().length() < 6) {
+            setExchangeStatus(exchange, STATUS_INVALID_AUTH_TOKEN);
+            exchange.endExchange();
+            if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
+            return false;
+        }
         authorization = this.getScopeToken(authorization, headerMap);
 
         boolean ignoreExpiry = config.isIgnoreJwtExpiry();
