@@ -1,5 +1,19 @@
 # Change Log
 
+## [2.1.5](https://github.com/networknt/light-rest-4j/tree/2.1.5) (2023-01-04)
+
+
+**Merged pull requests:**
+
+
+- fixes \#272 Return an error message if the authorization header is an … [\#273](https://github.com/networknt/light-rest-4j/pull/273) ([stevehu](https://github.com/stevehu))
+- fixes \#270 update the UnifiedSecurityHandler to register with the rig… [\#271](https://github.com/networknt/light-rest-4j/pull/271) ([stevehu](https://github.com/stevehu))
+- fixes \#268 Add a UnifiedSecurityHandler for light-gateway [\#269](https://github.com/networknt/light-rest-4j/pull/269) ([stevehu](https://github.com/stevehu))
+- fixes \#266 add skipVerifyScopeWithoutSpec flag to openapi-security.yml [\#267](https://github.com/networknt/light-rest-4j/pull/267) ([stevehu](https://github.com/stevehu))
+- fixes \#264 add ignoreInvalidPath flag to OpenApiHandler config [\#265](https://github.com/networknt/light-rest-4j/pull/265) ([stevehu](https://github.com/stevehu))
+- fixes \#262 update openapi-security.yml to add jwtCacheFullSize [\#263](https://github.com/networknt/light-rest-4j/pull/263) ([stevehu](https://github.com/stevehu))
+- fixes \#260 update the openapi-inject.yml to have the placeholder serv… [\#261](https://github.com/networknt/light-rest-4j/pull/261) ([stevehu](https://github.com/stevehu))
+- Fixed casing issue + added some response /request flushing on error [\#259](https://github.com/networknt/light-rest-4j/pull/259) ([KalevGonvick](https://github.com/KalevGonvick))
 ## [2.1.4](https://github.com/networknt/light-rest-4j/tree/2.1.4) (2022-11-30)
 
 
