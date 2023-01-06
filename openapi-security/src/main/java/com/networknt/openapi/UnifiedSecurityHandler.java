@@ -91,8 +91,13 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                     exchange.endExchange();
                                     return;
                                 } else {
-                                    handler.handleBasicAuth(exchange, reqPath, authorization);
-                                    break;
+                                    if(handler.handleBasicAuth(exchange, reqPath, authorization)) {
+                                        // verification is passed, go to the next handler in the chain
+                                        break;
+                                    } else {
+                                        // verification is not passed and an error is returned. Don't call the next handler.
+                                        return;
+                                    }
                                 }
                             } else if (BEARER_PREFIX.equalsIgnoreCase(authorization.substring(0, 6))) {
                                 Map<String, HttpHandler> handlers = Handler.getHandlers();
@@ -108,7 +113,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                         // verification is passed, go to the next handler in the chain.
                                         break;
                                     } else {
-                                        // verification is not passed and an error is returned.
+                                        // verification is not passed and an error is returned. Don't call the next handler.
                                         return;
                                     }
                                 }
@@ -130,8 +135,13 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                             exchange.endExchange();
                             return;
                         } else {
-                            handler.handleApiKey(exchange, reqPath);
-                            break;
+                            if(handler.handleApiKey(exchange, reqPath)) {
+                                // the APIKey handler successfully verified the credentials. Need to break here so that the next handler can be called.
+                                break;
+                            } else {
+                                // verification is not passed and an error is returned. need to bypass the next handler.
+                                return;
+                            }
                         }
 
                     }
