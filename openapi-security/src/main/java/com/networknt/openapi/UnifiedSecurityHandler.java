@@ -52,8 +52,6 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
             if(logger.isTraceEnabled())
                 logger.trace("Skip request path base on anonymousPrefixes for " + reqPath);
             Handler.next(exchange, next);
-            if (logger.isDebugEnabled())
-                logger.debug("UnifiedSecurityHandler.handleRequest ends.");
             return;
         }
         if(config.getPathPrefixAuths() != null) {
