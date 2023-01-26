@@ -121,11 +121,11 @@ public class OpenApiHandler implements MiddlewareHandler {
 
                 helper = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(openapi));
 
-                // overwrite the helper.basePath it cannot be derived from the openapi.yaml from the handler.yml
-                if (helper.basePath.isEmpty() && handlerConfig != null) {
+                // overwrite the helper.basePath if it cannot be derived from the openapi.yaml from the handler.yml
+                // if the basePath is not null. The default value if openapi.yml doesn't have basePath is "".
+                if (helper.basePath.isEmpty() && handlerConfig != null && handlerConfig.getBasePath() != null) {
                     helper.setBasePath(handlerConfig.getBasePath());
                 }
-
             } catch (JsonProcessingException e) {
                 logger.error("merge specification failed");
                 throw new RuntimeException("merge specification failed");
