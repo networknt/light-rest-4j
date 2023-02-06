@@ -1,5 +1,15 @@
 # Change Log
 
+## [2.1.6](https://github.com/networknt/light-rest-4j/tree/2.1.6) (2023-02-06)
+
+
+**Merged pull requests:**
+
+
+- fixes \#278 overwrite the basePath from handler.yml if it is not null [\#280](https://github.com/networknt/light-rest-4j/pull/280) ([stevehu](https://github.com/stevehu))
+- basePath property fix [\#279](https://github.com/networknt/light-rest-4j/pull/279) ([KalevGonvick](https://github.com/KalevGonvick))
+- fixes \#276 remove unused debug statement in UnifiedSecurityHandler [\#277](https://github.com/networknt/light-rest-4j/pull/277) ([stevehu](https://github.com/stevehu))
+- fixes \#274 update unified security handler to handle the basic and ap… [\#275](https://github.com/networknt/light-rest-4j/pull/275) ([stevehu](https://github.com/stevehu))
 ## [2.1.5](https://github.com/networknt/light-rest-4j/tree/2.1.5) (2023-01-04)
 
 
