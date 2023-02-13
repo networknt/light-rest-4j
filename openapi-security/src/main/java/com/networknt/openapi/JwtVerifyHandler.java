@@ -120,128 +120,134 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
         if (logger.isTraceEnabled() && authorization != null && authorization.length() > 10)
             logger.trace("Authorization header = " + authorization.substring(0, 10));
         // if an empty authorization header or a value length less than 6 ("Basic "), return an error
-        if(authorization == null || authorization.trim().length() < 6) {
+        if(authorization == null ) {
+            setExchangeStatus(exchange, STATUS_MISSING_AUTH_TOKEN);
+            exchange.endExchange();
+            if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
+            return false;
+        } else if(authorization.trim().length() < 6) {
             setExchangeStatus(exchange, STATUS_INVALID_AUTH_TOKEN);
             exchange.endExchange();
             if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
             return false;
-        }
-        authorization = this.getScopeToken(authorization, headerMap);
+        } else {
+            authorization = this.getScopeToken(authorization, headerMap);
 
-        boolean ignoreExpiry = config.isIgnoreJwtExpiry();
+            boolean ignoreExpiry = config.isIgnoreJwtExpiry();
 
-        String jwt = JwtVerifier.getJwtFromAuthorization(authorization);
+            String jwt = JwtVerifier.getJwtFromAuthorization(authorization);
 
-        if (jwt != null) {
-
-            if (logger.isTraceEnabled())
-                logger.trace("parsed jwt from authorization = " + jwt.substring(0, 10));
-
-            try {
-
-                JwtClaims claims = jwtVerifier.verifyJwt(jwt, ignoreExpiry, true, pathPrefix, reqPath, jwkServiceIds);
+            if (jwt != null) {
 
                 if (logger.isTraceEnabled())
-                    logger.trace("claims = " + claims.toJson());
+                    logger.trace("parsed jwt from authorization = " + jwt.substring(0, 10));
 
-                /* if no auditInfo has been set previously, we populate here */
-                auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
-                if (auditInfo == null) {
-                    auditInfo = new HashMap<>();
-                    exchange.putAttachment(AttachmentConstants.AUDIT_INFO, auditInfo);
-                }
+                try {
 
-                String clientId = claims.getStringClaimValue(Constants.CLIENT_ID_STRING);
-                String userId = claims.getStringClaimValue(Constants.USER_ID_STRING);
+                    JwtClaims claims = jwtVerifier.verifyJwt(jwt, ignoreExpiry, true, pathPrefix, reqPath, jwkServiceIds);
 
-                // try to get the cid as some OAuth tokens name it as cid like Okta.
-                if (clientId == null)
-                    clientId = claims.getStringClaimValue(Constants.CID_STRING);
-
-
-                // try to get the uid as some OAuth tokens name it as uid like Okta.
-                if (userId == null)
-                    userId = claims.getStringClaimValue(Constants.UID_STRING);
-
-                auditInfo.put(Constants.USER_ID_STRING, userId);
-                auditInfo.put(Constants.SUBJECT_CLAIMS, claims);
-                auditInfo.put(Constants.CLIENT_ID_STRING, clientId);
-
-                if (!config.isEnableH2c() && this.checkForH2CRequest(headerMap)) {
-                    setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED);
-                    if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
-                    return false;
-                }
-
-                String callerId = headerMap.getFirst(HttpStringConstants.CALLER_ID);
-
-                if (callerId != null)
-                    auditInfo.put(Constants.CALLER_ID_STRING, callerId);
-
-                if (config != null && config.isEnableVerifyScope()) {
                     if (logger.isTraceEnabled())
-                        logger.trace("verify scope from the primary token when enableVerifyScope is true");
+                        logger.trace("claims = " + claims.toJson());
 
-                    /* get openapi operation */
-                    OpenApiOperation openApiOperation = (OpenApiOperation) auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
-                    Operation operation = this.getOperation(exchange, openApiOperation, auditInfo);
-                    if(operation == null) {
-                        if(config.isSkipVerifyScopeWithoutSpec()) {
-                            if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends without verifying scope due to spec.");
-                            Handler.next(exchange, next);
-                        } else {
-                            // this will return an error message to the client.
+                    /* if no auditInfo has been set previously, we populate here */
+                    auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
+                    if (auditInfo == null) {
+                        auditInfo = new HashMap<>();
+                        exchange.putAttachment(AttachmentConstants.AUDIT_INFO, auditInfo);
+                    }
+
+                    String clientId = claims.getStringClaimValue(Constants.CLIENT_ID_STRING);
+                    String userId = claims.getStringClaimValue(Constants.USER_ID_STRING);
+
+                    // try to get the cid as some OAuth tokens name it as cid like Okta.
+                    if (clientId == null)
+                        clientId = claims.getStringClaimValue(Constants.CID_STRING);
+
+
+                    // try to get the uid as some OAuth tokens name it as uid like Okta.
+                    if (userId == null)
+                        userId = claims.getStringClaimValue(Constants.UID_STRING);
+
+                    auditInfo.put(Constants.USER_ID_STRING, userId);
+                    auditInfo.put(Constants.SUBJECT_CLAIMS, claims);
+                    auditInfo.put(Constants.CLIENT_ID_STRING, clientId);
+
+                    if (!config.isEnableH2c() && this.checkForH2CRequest(headerMap)) {
+                        setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED);
+                        if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
+                        return false;
+                    }
+
+                    String callerId = headerMap.getFirst(HttpStringConstants.CALLER_ID);
+
+                    if (callerId != null)
+                        auditInfo.put(Constants.CALLER_ID_STRING, callerId);
+
+                    if (config != null && config.isEnableVerifyScope()) {
+                        if (logger.isTraceEnabled())
+                            logger.trace("verify scope from the primary token when enableVerifyScope is true");
+
+                        /* get openapi operation */
+                        OpenApiOperation openApiOperation = (OpenApiOperation) auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
+                        Operation operation = this.getOperation(exchange, openApiOperation, auditInfo);
+                        if(operation == null) {
+                            if(config.isSkipVerifyScopeWithoutSpec()) {
+                                if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends without verifying scope due to spec.");
+                                Handler.next(exchange, next);
+                            } else {
+                                // this will return an error message to the client.
+                            }
+                            return false;
                         }
-                        return false;
-                    }
 
-                    /* validate scope from operation */
-                    String scopeHeader = headerMap.getFirst(HttpStringConstants.SCOPE_TOKEN);
-                    String scopeJwt = JwtVerifier.getJwtFromAuthorization(scopeHeader);
-                    List<String> secondaryScopes = new ArrayList<>();
+                        /* validate scope from operation */
+                        String scopeHeader = headerMap.getFirst(HttpStringConstants.SCOPE_TOKEN);
+                        String scopeJwt = JwtVerifier.getJwtFromAuthorization(scopeHeader);
+                        List<String> secondaryScopes = new ArrayList<>();
 
-                    if(!this.hasValidSecondaryScopes(exchange, scopeJwt, secondaryScopes, ignoreExpiry, pathPrefix, reqPath, jwkServiceIds, auditInfo)) {
-                        return false;
+                        if(!this.hasValidSecondaryScopes(exchange, scopeJwt, secondaryScopes, ignoreExpiry, pathPrefix, reqPath, jwkServiceIds, auditInfo)) {
+                            return false;
+                        }
+                        if(!this.hasValidScope(exchange, scopeHeader, secondaryScopes, claims, operation)) {
+                            return false;
+                        }
                     }
-                    if(!this.hasValidScope(exchange, scopeHeader, secondaryScopes, claims, operation)) {
-                        return false;
-                    }
+                    if (logger.isTraceEnabled())
+                        logger.trace("complete JWT verification for request path = " + exchange.getRequestURI());
+
+                    if (logger.isDebugEnabled())
+                        logger.debug("JwtVerifyHandler.handleRequest ends.");
+
+                    return true;
+                } catch (InvalidJwtException e) {
+
+                    // only log it and unauthorized is returned.
+                    logger.error("InvalidJwtException: ", e);
+
+                    if (logger.isDebugEnabled())
+                        logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
+
+                    setExchangeStatus(exchange, STATUS_INVALID_AUTH_TOKEN);
+                    exchange.endExchange();
+                } catch (ExpiredTokenException e) {
+
+                    logger.error("ExpiredTokenException", e);
+
+                    if (logger.isDebugEnabled())
+                        logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
+
+                    setExchangeStatus(exchange, STATUS_AUTH_TOKEN_EXPIRED);
+                    exchange.endExchange();
                 }
-                if (logger.isTraceEnabled())
-                    logger.trace("complete JWT verification for request path = " + exchange.getRequestURI());
-
-                if (logger.isDebugEnabled())
-                    logger.debug("JwtVerifyHandler.handleRequest ends.");
-
-                return true;
-            } catch (InvalidJwtException e) {
-
-                // only log it and unauthorized is returned.
-                logger.error("InvalidJwtException: ", e);
-
+            } else {
                 if (logger.isDebugEnabled())
                     logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
 
-                setExchangeStatus(exchange, STATUS_INVALID_AUTH_TOKEN);
-                exchange.endExchange();
-            } catch (ExpiredTokenException e) {
-
-                logger.error("ExpiredTokenException", e);
-
-                if (logger.isDebugEnabled())
-                    logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
-
-                setExchangeStatus(exchange, STATUS_AUTH_TOKEN_EXPIRED);
+                setExchangeStatus(exchange, STATUS_MISSING_AUTH_TOKEN);
                 exchange.endExchange();
             }
-        } else {
-            if (logger.isDebugEnabled())
-                logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
-
-            setExchangeStatus(exchange, STATUS_MISSING_AUTH_TOKEN);
-            exchange.endExchange();
+            return true;
         }
-        return true;
     }
     /**
      * Get authToken from X-Scope-Token header.
@@ -286,6 +292,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
      *
      * @param exchange - the current exchange
      * @param openApiOperation - the openapi operation (from spec)
+     * @param auditInfo A map of audit info properties
      * @return - return Operation
      */
     protected Operation getOperation(HttpServerExchange exchange, OpenApiOperation openApiOperation, Map<String, Object> auditInfo) {
@@ -330,7 +337,10 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
      * @param scopeJwt - the scope found in jwt
      * @param secondaryScopes - Initially an empty list that is then filled with the secondary scopes if there are any.
      * @param ignoreExpiry - if we ignore expiry or not (mostly for testing)
+     * @param pathPrefix - request path prefix
      * @param reqPath - the request path as string
+     * @param jwkServiceIds - a list of serviceIds for jwk loading
+     * @param auditInfo - a map of audit info properties
      * @return - return true if the secondary scopes are valid or if there are no secondary scopes.
      */
     protected boolean hasValidSecondaryScopes(HttpServerExchange exchange, String scopeJwt, List<String> secondaryScopes, boolean ignoreExpiry, String pathPrefix, String reqPath, List<String> jwkServiceIds, Map<String, Object> auditInfo) {
