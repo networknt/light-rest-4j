@@ -7,6 +7,8 @@
 
 
 - fixes \#281 separate the authorization header null and less than 6 [\#282](https://github.com/networknt/light-rest-4j/pull/282) ([stevehu](https://github.com/stevehu))
+
+
 ## [2.1.6](https://github.com/networknt/light-rest-4j/tree/2.1.6) (2023-02-06)
 
 
