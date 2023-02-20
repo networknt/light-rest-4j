@@ -6,6 +6,7 @@ public class UnifiedPathPrefixAuth {
     String pathPrefix;
     boolean basic;
     boolean jwt;
+    boolean swt;
     boolean apikey;
     List<String> jwkServiceIds;
 
@@ -31,6 +32,14 @@ public class UnifiedPathPrefixAuth {
 
     public void setJwt(boolean jwt) {
         this.jwt = jwt;
+    }
+
+    public boolean isSwt() {
+        return swt;
+    }
+
+    public void setSwt(boolean swt) {
+        this.swt = swt;
     }
 
     public boolean isApikey() {

@@ -40,6 +40,10 @@
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
+            <artifactId>client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
             <artifactId>utility</artifactId>
         </dependency>
         <dependency>
@@ -99,11 +103,6 @@
             <artifactId>jose4j</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>client</artifactId>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>

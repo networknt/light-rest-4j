@@ -20,6 +20,7 @@ public class UnifiedSecurityConfig {
     public static final String PREFIX = "prefix";
     public static final String BASIC = "basic";
     public static final String JWT = "jwt";
+    public static final String SWT = "swt";
     public static final String APIKEY = "apikey";
     public static final String JWK_SERVICE_IDS = "jwkServiceIds";
 
@@ -147,6 +148,7 @@ public class UnifiedSecurityConfig {
                     unifiedPathPrefixAuth.setPathPrefix((String)value.get(PREFIX));
                     unifiedPathPrefixAuth.setBasic(value.get(BASIC) == null ? false : (Boolean)value.get(BASIC));
                     unifiedPathPrefixAuth.setJwt(value.get(JWT) == null ? false : (Boolean)value.get(JWT));
+                    unifiedPathPrefixAuth.setSwt(value.get(SWT) == null ? false : (Boolean)value.get(SWT));
                     unifiedPathPrefixAuth.setApikey(value.get(APIKEY) == null ? false : (Boolean)value.get(APIKEY));
                     Object ids = value.get(JWK_SERVICE_IDS);
                     if(ids instanceof String) {

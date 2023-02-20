@@ -135,7 +135,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 
             boolean ignoreExpiry = config.isIgnoreJwtExpiry();
 
-            String jwt = JwtVerifier.getJwtFromAuthorization(authorization);
+            String jwt = JwtVerifier.getTokenFromAuthorization(authorization);
 
             if (jwt != null) {
 
@@ -172,7 +172,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                     auditInfo.put(Constants.SUBJECT_CLAIMS, claims);
                     auditInfo.put(Constants.CLIENT_ID_STRING, clientId);
 
-                    if (!config.isEnableH2c() && this.checkForH2CRequest(headerMap)) {
+                    if (!config.isEnableH2c() && jwtVerifier.checkForH2CRequest(headerMap)) {
                         setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED);
                         if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
                         return false;
@@ -202,7 +202,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 
                         /* validate scope from operation */
                         String scopeHeader = headerMap.getFirst(HttpStringConstants.SCOPE_TOKEN);
-                        String scopeJwt = JwtVerifier.getJwtFromAuthorization(scopeHeader);
+                        String scopeJwt = JwtVerifier.getTokenFromAuthorization(scopeHeader);
                         List<String> secondaryScopes = new ArrayList<>();
 
                         if(!this.hasValidSecondaryScopes(exchange, scopeJwt, secondaryScopes, ignoreExpiry, pathPrefix, reqPath, jwkServiceIds, auditInfo)) {
@@ -272,20 +272,6 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
         return returnToken;
     }
 
-    /**
-     * Checks to see if the current exchange type is Upgrade.
-     * Two conditions required for a valid upgrade request.
-     * - 'Connection' header is set to 'upgrade'.
-     * - 'Upgrade' is present.
-     *
-     * @param headerMap - map containing all exchange headers
-     * @return - returns true if the request is an Upgrade request.
-     */
-    protected boolean checkForH2CRequest(HeaderMap headerMap) {
-        return  headerMap.getFirst(Headers.UPGRADE) != null
-                && headerMap.getFirst(Headers.CONNECTION) != null
-                && headerMap.getFirst(Headers.CONNECTION).equalsIgnoreCase("upgrade");
-    }
 
     /**
      * Gets the operation from the spec. If not defined or defined incorrectly, return null.
