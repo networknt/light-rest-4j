@@ -167,6 +167,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /oauth/introspection:
+    post:
+      summary: Introspect a token for SwtVerifyHandler
+      operationId: introspectToken
+      tags:
+        - token
+      security:
+        - petstore_auth:
+            - read:pets
+            - write:pets
+      responses:
+        '201':
+          description: Null response
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 components:
   securitySchemes:
     petstore_auth:

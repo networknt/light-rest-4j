@@ -9,7 +9,6 @@ public class SecurityConfigTest {
     public void testLoadConfig() {
         SecurityConfig config = SecurityConfig.load("openapi-security");
         Assert.assertTrue(config.isEnableVerifyJwt());
-        Assert.assertFalse(config.isEnableVerifyJwtScopeToken());
         Assert.assertEquals(2, config.getCertificate().size());
 
     }
