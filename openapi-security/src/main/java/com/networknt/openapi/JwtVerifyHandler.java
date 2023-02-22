@@ -37,6 +37,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderMap;
 import io.undertow.util.Headers;
+import io.undertow.util.HttpString;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.consumer.InvalidJwtException;
@@ -210,6 +211,16 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                         }
                         if(!this.hasValidScope(exchange, scopeHeader, secondaryScopes, claims, operation)) {
                             return false;
+                        }
+                    }
+                    // pass through claims through request headers after verification is done.
+                    if(config.getPassThroughClaims() != null && config.getPassThroughClaims().size() > 0) {
+                        for(Map.Entry<String, String> entry: config.getPassThroughClaims().entrySet()) {
+                            String key = entry.getKey();
+                            String header = entry.getValue();
+                            Object value = claims.getClaimValue(key);
+                            if(logger.isTraceEnabled()) logger.trace("pass through header {} with value {}", header, value);
+                            headerMap.put(new HttpString(header), value.toString());
                         }
                     }
                     if (logger.isTraceEnabled())

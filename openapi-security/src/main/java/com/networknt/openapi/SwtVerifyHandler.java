@@ -22,9 +22,11 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderMap;
 import io.undertow.util.Headers;
+import io.undertow.util.HttpString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Field;
 import java.util.*;
 
 /**
@@ -189,6 +191,18 @@ public class SwtVerifyHandler implements MiddlewareHandler {
                         }
                         if(!this.hasValidScope(exchange, scopeHeader, secondaryScopes, tokenInfo, operation)) {
                             return false;
+                        }
+                    }
+                    // pass through claims through request headers after verification is done.
+                    if(config.getPassThroughClaims() != null && config.getPassThroughClaims().size() > 0) {
+                        for(Map.Entry<String, String> entry: config.getPassThroughClaims().entrySet()) {
+                            String key = entry.getKey();
+                            String header = entry.getValue();
+                            Field field = tokenInfo.getClass().getDeclaredField(key);
+                            field.setAccessible(true);
+                            Object value = field.get(tokenInfo);
+                            if(logger.isTraceEnabled()) logger.trace("pass through header {} with value {}", header, value);
+                            headerMap.put(new HttpString(header), value.toString());
                         }
                     }
                     if (logger.isTraceEnabled())

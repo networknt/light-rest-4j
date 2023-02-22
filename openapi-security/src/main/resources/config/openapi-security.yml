@@ -95,3 +95,18 @@ providerId: ${openapi-security.providerId:}
 # requirement. The format is a list of strings separated with commas or a JSON list in
 # values.yml definition from config server, or you can use yaml format in this file.
 skipPathPrefixes: ${openapi-security.skipPathPrefixes:}
+
+# When light-gateway or http-sidecar is used for security, sometimes, we need to pass some
+# claims from the JWT or SWT to the backend API for further verification or audit. You can
+# select some claims to pass to the backend API with HTTP headers. The format is a map of
+# claim in the token and a header name that the downstream API is expecting. You can use
+# both JSON or YAML format.
+# When SwtVerifyHandler is used, the claim names are in https://github.com/networknt/light-4j/blob/master/client/src/main/java/com/networknt/client/oauth/TokenInfo.java
+# When JwtVerifyHandler is used, the claim names is the JwtClaims claimName.
+# YAML
+# openapi-security.passThroughClaims:
+#   clientId: client_id
+#   tokenType: token_type
+# JSON
+# openapi-security.passThroughClaims: {"clientId":"client_id","tokenType":"token_type"}
+passThroughClaims: ${openapi-security.passThroughClaims:}
