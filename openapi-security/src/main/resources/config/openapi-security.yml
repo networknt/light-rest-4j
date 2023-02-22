@@ -13,7 +13,7 @@ enableVerifyJwt: ${openapi-security.enableVerifyJwt:true}
 # if this flag is false. It should only be set to false on the dev environment for testing
 # purposes. If you have some endpoints that want to skip the SWT verification, you can put the
 # request path prefix in skipPathPrefixes.
-enableVerifySwt: ${openapi-security.enableVerifySwt:true}
+enableVerifySwt: ${openapi-security.enableVerifySwt:false}
 
 # Extract JWT scope token from the X-Scope-Token header and validate the JWT token
 enableExtractScopeToken: ${openapi-security.enableExtractScopeToken:true}
