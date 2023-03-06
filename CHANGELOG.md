@@ -1,5 +1,14 @@
 # Change Log
 
+## [2.1.8](https://github.com/networknt/light-rest-4j/tree/2.1.8) (2023-03-06)
+
+
+**Merged pull requests:**
+
+
+- fixes \#287 update the security.yml to add passThroughClaims [\#288](https://github.com/networknt/light-rest-4j/pull/288) ([stevehu](https://github.com/stevehu))
+- fixes \#285 make enableVerifySwt to false by default in openapi-securi… [\#286](https://github.com/networknt/light-rest-4j/pull/286) ([stevehu](https://github.com/stevehu))
+- fixes \#283 add SwtVerifyHandler and test case to support token info i… [\#284](https://github.com/networknt/light-rest-4j/pull/284) ([stevehu](https://github.com/stevehu))
 ## [2.1.7](https://github.com/networknt/light-rest-4j/tree/2.1.7) (2023-02-14)
 
 
