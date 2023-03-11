@@ -23,7 +23,7 @@ public class UnifiedSecurityConfig {
     public static final String SWT = "swt";
     public static final String APIKEY = "apikey";
     public static final String JWK_SERVICE_IDS = "jwkServiceIds";
-
+    public static final String SWT_SERVICE_IDS = "swtServiceIds";
     boolean enabled;
     List<String> anonymousPrefixes;
     List<UnifiedPathPrefixAuth> pathPrefixAuths;
@@ -150,8 +150,8 @@ public class UnifiedSecurityConfig {
                     unifiedPathPrefixAuth.setJwt(value.get(JWT) == null ? false : (Boolean)value.get(JWT));
                     unifiedPathPrefixAuth.setSwt(value.get(SWT) == null ? false : (Boolean)value.get(SWT));
                     unifiedPathPrefixAuth.setApikey(value.get(APIKEY) == null ? false : (Boolean)value.get(APIKEY));
-                    Object ids = value.get(JWK_SERVICE_IDS);
-                    if(ids instanceof String) {
+                    Object jwkIds = value.get(JWK_SERVICE_IDS);
+                    if(jwkIds instanceof String) {
                         String s = (String)value.get(JWK_SERVICE_IDS);
                         if(s.startsWith("[")) {
                             // json format
@@ -164,9 +164,27 @@ public class UnifiedSecurityConfig {
                             // comma separated
                             unifiedPathPrefixAuth.setJwkServiceIds(Arrays.asList(s.split("\\s*,\\s*")));
                         }
-                    } else if(ids instanceof List ) {
+                    } else if(jwkIds instanceof List ) {
                         // it must be a json array.
-                        unifiedPathPrefixAuth.setJwkServiceIds((List)ids);
+                        unifiedPathPrefixAuth.setJwkServiceIds((List)jwkIds);
+                    }
+                    Object swtIds = value.get(SWT_SERVICE_IDS);
+                    if(swtIds instanceof String) {
+                        String s = (String)value.get(SWT_SERVICE_IDS);
+                        if(s.startsWith("[")) {
+                            // json format
+                            try {
+                                unifiedPathPrefixAuth.setSwtServiceIds(Config.getInstance().getMapper().readValue(s, new TypeReference<List<String>>() {}));
+                            } catch (Exception e) {
+                                throw new ConfigException("could not parse the swtServiceIds json with a list of strings.");
+                            }
+                        } else {
+                            // comma separated
+                            unifiedPathPrefixAuth.setSwtServiceIds(Arrays.asList(s.split("\\s*,\\s*")));
+                        }
+                    } else if(swtIds instanceof List ) {
+                        // it must be a json array.
+                        unifiedPathPrefixAuth.setSwtServiceIds((List)swtIds);
                     }
                     pathPrefixAuths.add(unifiedPathPrefixAuth);
                 }

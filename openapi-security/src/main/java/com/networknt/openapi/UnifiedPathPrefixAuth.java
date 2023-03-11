@@ -9,6 +9,7 @@ public class UnifiedPathPrefixAuth {
     boolean swt;
     boolean apikey;
     List<String> jwkServiceIds;
+    List<String> swtServiceIds;
 
     public String getPathPrefix() {
         return pathPrefix;
@@ -56,5 +57,13 @@ public class UnifiedPathPrefixAuth {
 
     public void setJwkServiceIds(List<String> jwkServiceIds) {
         this.jwkServiceIds = jwkServiceIds;
+    }
+
+    public List<String> getSwtServiceIds() {
+        return swtServiceIds;
+    }
+
+    public void setSwtServiceIds(List<String> swtServiceIds) {
+        this.swtServiceIds = swtServiceIds;
     }
 }
