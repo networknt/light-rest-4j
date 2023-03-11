@@ -6,6 +6,7 @@ import com.networknt.config.Config;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.utility.ModuleRegistry;
+import com.networknt.utility.StringUtils;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -99,8 +100,50 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                     }
                                 }
                             } else if (BEARER_PREFIX.equalsIgnoreCase(authorization.substring(0, 6))) {
+                                // in the case that a bearer token is used, there are three scenarios: both jwt and swt are true, only jwt is true and only swt is true
+                                // in the first case, we need to identify if the token is jwt or swt before calling the right handler to verify it.
                                 Map<String, HttpHandler> handlers = Handler.getHandlers();
-                                if(pathPrefixAuth.isJwt()) {
+                                if(pathPrefixAuth.isJwt() && pathPrefixAuth.isSwt()) {
+                                    // both jwt and swt are enabled.
+                                    boolean isJwt = StringUtils.isJwtToken(authorization);
+                                    if(logger.isTraceEnabled()) logger.trace("Both jwt and swt are true and check token is jwt = {}", isJwt);
+                                    if(isJwt) {
+                                        JwtVerifyHandler handler = (JwtVerifyHandler) handlers.get(JWT);
+                                        if (handler == null) {
+                                            logger.error("Cannot find JwtVerifyHandler with alias name jwt.");
+                                            setExchangeStatus(exchange, HANDLER_NOT_FOUND, "com.networknt.openapi.JwtVerifyHandler@jwt");
+                                            exchange.endExchange();
+                                            return;
+                                        } else {
+                                            // get the jwkServiceIds list.
+                                            if (handler.handleJwt(exchange, pathPrefixAuth.getPathPrefix(), reqPath, pathPrefixAuth.getJwkServiceIds())) {
+                                                // verification is passed, go to the next handler in the chain.
+                                                break;
+                                            } else {
+                                                // verification is not passed and an error is returned. Don't call the next handler.
+                                                return;
+                                            }
+                                        }
+                                    } else {
+                                        SwtVerifyHandler handler = (SwtVerifyHandler) handlers.get(SWT);
+                                        if (handler == null) {
+                                            logger.error("Cannot find SwtVerifyHandler with alias name swt.");
+                                            setExchangeStatus(exchange, HANDLER_NOT_FOUND, "com.networknt.openapi.SwtVerifyHandler@swt");
+                                            exchange.endExchange();
+                                            return;
+                                        } else {
+                                            // get the jwkServiceIds list.
+                                            if (handler.handleSwt(exchange, reqPath, pathPrefixAuth.getSwtServiceIds())) {
+                                                // verification is passed, go to the next handler in the chain.
+                                                break;
+                                            } else {
+                                                // verification is not passed and an error is returned. Don't call the next handler.
+                                                return;
+                                            }
+                                        }
+                                    }
+                                } else if(pathPrefixAuth.isJwt()) {
+                                    // only jwt is enabled
                                     JwtVerifyHandler handler = (JwtVerifyHandler) handlers.get(JWT);
                                     if (handler == null) {
                                         logger.error("Cannot find JwtVerifyHandler with alias name jwt.");
@@ -118,7 +161,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                         }
                                     }
                                 } else {
-                                    // this must be swt token
+                                    // only swt is enabled
                                     SwtVerifyHandler handler = (SwtVerifyHandler) handlers.get(SWT);
                                     if (handler == null) {
                                         logger.error("Cannot find SwtVerifyHandler with alias name swt.");
@@ -127,7 +170,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                         return;
                                     } else {
                                         // get the jwkServiceIds list.
-                                        if (handler.handleSwt(exchange, reqPath, pathPrefixAuth.getJwkServiceIds())) {
+                                        if (handler.handleSwt(exchange, reqPath, pathPrefixAuth.getSwtServiceIds())) {
                                             // verification is passed, go to the next handler in the chain.
                                             break;
                                         } else {
@@ -183,6 +226,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
         if(logger.isDebugEnabled()) logger.debug("UnifiedSecurityHandler.handleRequest ends.");
         Handler.next(exchange, next);
     }
+
 
     @Override
     public HttpHandler getNext() {
