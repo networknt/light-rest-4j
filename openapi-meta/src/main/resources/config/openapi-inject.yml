@@ -1,6 +1,16 @@
 openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Light-4j OpenAPI Admin
 paths:
   /adm/health/${server.serviceId:com.networknt.placeholder-1.0.0}:
+    parameters:
+      - name: server.serviceId:com.networknt.placeholder-1.0.0
+        in: path
+        description: Service Id
+        required: true
+        schema:
+          type: string
     get:
       description: pass through to the liveness endpoint that belongs to backend api
       security:
@@ -10,6 +20,9 @@ paths:
             - admin
             # for each business to access their own admin endpoints
             - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
+      responses:
+        '200':
+          description: A string OK will be returned.
   /adm/server/info:
     get:
       description: get the proxy server info and corresponding backend service info
@@ -20,6 +33,13 @@ paths:
             - admin
             # for each business to access their own admin endpoints
             - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
+      responses:
+        '200':
+          description: A JSON object of server info
+          content:
+            application/json:
+              schema:
+                type: object
 
   /adm/chaosmonkey:
     get:
@@ -31,9 +51,25 @@ paths:
             - admin
             # for each business to access their own admin endpoints
             - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
+      responses:
+        '200':
+          description: A JSON object of Chaos Monkey configuration
+          content:
+            application/json:
+              schema:
+                type: object
+            
   /adm/chaosmonkey/{assault}:
     post:
       description: to update chaosmonkey settings
+      parameters:
+        - name: assault
+          in: path
+          description: Service Id
+          required: true
+          schema:
+            type: string
+      
       requestBody:
         description: to update chaosmonkey settings
         required: true
@@ -49,6 +85,13 @@ paths:
             - admin
             # for each business to access their own admin endpoints
             - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
+      responses:
+        '200':
+          description: A JSON object of Chaos Monkey configuration
+          content:
+            application/json:
+              schema:
+                type: object
 
   /adm/logger:
     get:
@@ -60,6 +103,14 @@ paths:
             - admin
             # for each business to access their own admin endpoints
             - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
+      responses:
+        '200':
+          description: A JSON object of loggers
+          content:
+            application/json:
+              schema:
+                type: object
+            
     post:
       description: to modify the logging settings
       requestBody:
@@ -83,6 +134,13 @@ paths:
             - admin
             # for each business to access their own admin endpoints
             - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
+      responses:
+        '200':
+          description: A JSON object of loggers
+          content:
+            application/json:
+              schema:
+                type: object
 
   /adm/logger/content:
     get:
@@ -91,6 +149,13 @@ paths:
         - admin-scope:
             - admin
             - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
+      responses:
+        '200':
+          description: A JSON object of loggers
+          content:
+            application/json:
+              schema:
+                type: object
 
   /adm/modules:
     get:
@@ -102,6 +167,13 @@ paths:
             - admin
             # for each business to access their own admin endpoints
             - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
+      responses:
+        '200':
+          description: A JSON object of loggers
+          content:
+            application/json:
+              schema:
+                type: object
     post:
       description: to trigger the config reload for all modules or specified modules selected on control pane
       requestBody:
@@ -120,6 +192,14 @@ paths:
             - admin
             # for each business to access their own admin endpoints
             - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
+      responses:
+        '200':
+          description: A JSON object of loggers
+          content:
+            application/json:
+              schema:
+                type: object
+            
   /adm/shutdown:
     delete:
       summary: "Shutdown the service instance to force a restart."
@@ -132,6 +212,13 @@ paths:
             - admin
             # for each business to access their own admin endpoints
             - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
+      responses:
+        '200':
+          description: A JSON object of loggers
+          content:
+            application/json:
+              schema:
+                type: object
 
 components:
   securitySchemes:
@@ -140,5 +227,6 @@ components:
       description: This API uses OAuth 2 with the client credential grant flow.
       flows:
         clientCredentials:
+          tokenUrl: 'https://localhost:6882/token'
           scopes:
             admin: admin scope to access admin endpoints
