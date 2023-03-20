@@ -152,7 +152,8 @@ public class SwtVerifyHandler implements MiddlewareHandler {
                     }
                     String clientId = tokenInfo.getClientId();
                     auditInfo.put(Constants.CLIENT_ID_STRING, clientId);
-
+                    String issuer = tokenInfo.getIss();
+                    auditInfo.put(Constants.ISSUER_CLAIMS, issuer);
                     if (!config.isEnableH2c() && swtVerifier.checkForH2CRequest(headerMap)) {
                         setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED);
                         if (logger.isDebugEnabled()) logger.debug("SwtVerifyHandler.handleRequest ends with an error.");

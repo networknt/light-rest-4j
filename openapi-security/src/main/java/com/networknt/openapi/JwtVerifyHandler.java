@@ -159,7 +159,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 
                     String clientId = claims.getStringClaimValue(Constants.CLIENT_ID_STRING);
                     String userId = claims.getStringClaimValue(Constants.USER_ID_STRING);
-
+                    String issuer = claims.getStringClaimValue(Constants.ISS_STRING);
                     // try to get the cid as some OAuth tokens name it as cid like Okta.
                     if (clientId == null)
                         clientId = claims.getStringClaimValue(Constants.CID_STRING);
@@ -172,6 +172,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                     auditInfo.put(Constants.USER_ID_STRING, userId);
                     auditInfo.put(Constants.SUBJECT_CLAIMS, claims);
                     auditInfo.put(Constants.CLIENT_ID_STRING, clientId);
+                    auditInfo.put(Constants.ISSUER_CLAIMS, issuer);
 
                     if (!config.isEnableH2c() && jwtVerifier.checkForH2CRequest(headerMap)) {
                         setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED);
