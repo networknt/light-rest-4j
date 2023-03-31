@@ -10,6 +10,8 @@
 - fixes \#293 update JwtVerifyHandler and SwtVerifyHandler to populate i… [\#294](https://github.com/networknt/light-rest-4j/pull/294) ([stevehu](https://github.com/stevehu))
 - fixes \#291 update the openapi-inject to ensure it is valid from swagg… [\#292](https://github.com/networknt/light-rest-4j/pull/292) ([stevehu](https://github.com/stevehu))
 - fixes \#289 update unified security to support both jwt and swt for be… [\#290](https://github.com/networknt/light-rest-4j/pull/290) ([stevehu](https://github.com/stevehu))
+
+
 ## [2.1.8](https://github.com/networknt/light-rest-4j/tree/2.1.8) (2023-03-06)
 
 
