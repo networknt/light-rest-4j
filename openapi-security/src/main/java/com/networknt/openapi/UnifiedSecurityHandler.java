@@ -69,6 +69,11 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                         String authorization = exchange.getRequestHeaders().getFirst(Headers.AUTHORIZATION);
                         if(authorization == null) {
                             logger.error("Basic or JWT or SWT is enabled and authorization header is missing.");
+                            // set the WWW-Authenticate header to Basic realm="realm"
+                            if(pathPrefixAuth.isBasic()) {
+                                if(logger.isTraceEnabled()) logger.trace("Basic is enabled and set WWW-Authenticate header to Basic realm=\"Default Realm\"");
+                                exchange.getResponseHeaders().put(Headers.WWW_AUTHENTICATE, "Basic realm=\"Default Realm\"");
+                            }
                             setExchangeStatus(exchange, MISSING_AUTH_TOKEN);
                             if(logger.isDebugEnabled())
                                 logger.debug("UnifiedSecurityHandler.handleRequest ends with an error.");
