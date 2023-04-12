@@ -278,7 +278,7 @@ components:
       in: header
       required: true
       schema:
-        $ref: 'https://api.swaggerhub.com/domains/Sun-Life-Financial/EnterpriseCommonComponents/1.4.5#/components/schemas/x-traceability-id'
+        type: string
     schemas:
       TopicReplayMetadata:
         type: object
