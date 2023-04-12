@@ -270,7 +270,7 @@ components:
           tokenUrl: 'https://localhost:6882/token'
           scopes:
             "admin": "Grant admin access to light4j components' admin endpoint for this API, api platform team "
-            "${server.serviceId}/admin": "Grant admin access to light4j components' admin endpoints for this API ,  API owner"
+            "${server.serviceId:com.networknt.placeholder-1.0.0}/admin": "Grant admin access to light4j components' admin endpoints for this API ,  API owner"
   parameters:
     x-traceability-id:
       name: x-traceability-id
