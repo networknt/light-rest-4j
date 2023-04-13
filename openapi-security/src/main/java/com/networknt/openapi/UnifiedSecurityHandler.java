@@ -78,6 +78,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                             if(logger.isDebugEnabled())
                                 logger.debug("UnifiedSecurityHandler.handleRequest ends with an error.");
                             exchange.endExchange();
+                            return;
                         } else {
                             // make sure that the length is greater than 5.
                             if(authorization.trim().length() <= 5) {
