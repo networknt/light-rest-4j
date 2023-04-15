@@ -1,5 +1,13 @@
 # Change Log
 
+## [2.1.12](https://github.com/networknt/light-rest-4j/tree/2.1.12) (2023-04-14)
+
+
+**Merged pull requests:**
+
+
+- fixes \#300 return immediately after the missing token with WWW-Authen… [\#301](https://github.com/networknt/light-rest-4j/pull/301) ([stevehu](https://github.com/stevehu))
+- added open api inject to include replay end point [\#299](https://github.com/networknt/light-rest-4j/pull/299) ([Debashisa](https://github.com/Debashisa))
 ## [2.1.11](https://github.com/networknt/light-rest-4j/tree/2.1.11) (2023-04-10)
 
 
