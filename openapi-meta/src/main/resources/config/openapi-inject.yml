@@ -18,7 +18,14 @@ paths:
             schema:
               "$ref": "#/components/schemas/TopicReplayMetadata"
       parameters:
-        - $ref: '#/components/parameters/x-traceability-id'
+        - name: "x-traceability-id"
+          in: "header"
+          description: "Common header parameters for centeralized logging"
+          required: true
+          style: "simple"
+          explode: false
+          schema:
+            type: string
       responses:
         '200':
           description: Successful response
@@ -26,18 +33,6 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/ProduceResponse"
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/Status"
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/Status"
       security:
         - admin-scope:
             - admin
@@ -98,7 +93,7 @@ paths:
             application/json:
               schema:
                 type: object
-            
+
   /adm/chaosmonkey/{assault}:
     post:
       description: to update chaosmonkey settings
@@ -109,7 +104,7 @@ paths:
           required: true
           schema:
             type: string
-      
+
       requestBody:
         description: to update chaosmonkey settings
         required: true
@@ -150,7 +145,7 @@ paths:
             application/json:
               schema:
                 type: object
-            
+
     post:
       description: to modify the logging settings
       requestBody:
@@ -239,14 +234,14 @@ paths:
             application/json:
               schema:
                 type: object
-            
+
   /adm/shutdown:
     delete:
       summary: "Shutdown the service instance to force a restart."
       description: "Returns a JSON body of shutdown time"
       operationId: "serviceShutdown"
       security:
-      - admin-scope:
+        - admin-scope:
             # okta doesn't support either for now
             # for control pane to access all businesses' admin endpoints
             - admin
@@ -271,57 +266,49 @@ components:
           scopes:
             "admin": "Grant admin access to light4j components' admin endpoint for this API, api platform team "
             "${server.serviceId:com.networknt.placeholder-1.0.0}/admin": "Grant admin access to light4j components' admin endpoints for this API ,  API owner"
-  parameters:
-    x-traceability-id:
-      name: x-traceability-id
-      description: "Common header parameters for centeralized logging"
-      in: header
-      required: true
-      schema:
-        type: string
-    schemas:
-      TopicReplayMetadata:
-        type: object
-        properties:
-          topicName:
-            type: string
-          dlqIndicator:
-            type: string
-          partition:
-            type: number
-          startOffset:
-            type: number
-          endOffset:
-            type: number
-          consumerGroup:
-            type: string
-          timeout:
-            type: number
-          streamingApp:
-            type: boolean
-          destinationTopic:
-            type: string
-          lastRetry:
-            type: boolean
-      ProduceResponse:
-        type: object
-        properties:
-          keySchemaId:
-            type: integer
-          valueSchemaId:
-            type: integer
-          offsets:
-            type: array
-            items:
-              "$ref": "#/components/schemas/PartitionOffset"
-      PartitionOffset:
-        type: object
-        properties:
-          topic:
-            type: string
-          partition:
-            type: integer
-          offset:
-            type: number
-          metadata:
-            type: string
+  schemas:
+    TopicReplayMetadata:
+      type: object
+      properties:
+        topicName:
+          type: string
+        dlqIndicator:
+          type: boolean
+        partition:
+          type: number
+        startOffset:
+          type: number
+        endOffset:
+          type: number
+        consumerGroup:
+          type: string
+        timeout:
+          type: number
+        streamingApp:
+          type: boolean
+        destinationTopic:
+          type: string
+        lastRetry:
+          type: boolean
+    ProduceResponse:
+      type: object
+      properties:
+        keySchemaId:
+          type: integer
+        valueSchemaId:
+          type: integer
+        offsets:
+          type: array
+          items:
+            "$ref": "#/components/schemas/PartitionOffset"
+    PartitionOffset:
+      type: object
+      properties:
+        topic:
+          type: string
+        partition:
+          type: integer
+        offset:
+          type: number
+        metadata:
+          type: string
