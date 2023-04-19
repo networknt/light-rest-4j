@@ -1,5 +1,12 @@
 # Change Log
 
+## [2.1.15](https://github.com/networknt/light-rest-4j/tree/2.1.15) (2023-04-19)
+
+
+**Merged pull requests:**
+
+
+- fixing openapi inject yml [\#302](https://github.com/networknt/light-rest-4j/pull/302) ([Debashisa](https://github.com/Debashisa))
 ## [2.1.14](https://github.com/networknt/light-rest-4j/tree/2.1.14) (2023-04-19)
 
 
