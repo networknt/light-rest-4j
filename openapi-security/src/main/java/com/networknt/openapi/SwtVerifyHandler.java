@@ -221,14 +221,15 @@ public class SwtVerifyHandler implements MiddlewareHandler {
                         logger.debug("SwtVerifyHandler.handleRequest ends with an error.");
                     setExchangeStatus(exchange, STATUS_CLIENT_EXCEPTION, e.getMessage());
                     exchange.endExchange();
+                    return false;
                 }
             } else {
                 if (logger.isDebugEnabled())
                     logger.debug("SwtVerifyHandler.handleRequest ends with an error.");
                 setExchangeStatus(exchange, STATUS_MISSING_AUTH_TOKEN);
                 exchange.endExchange();
+                return false;
             }
-            return true;
         }
     }
 

@@ -199,6 +199,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                             } else {
                                 // this will return an error message to the client.
                             }
+                            if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
                             return false;
                         }
 
@@ -208,9 +209,11 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                         List<String> secondaryScopes = new ArrayList<>();
 
                         if(!this.hasValidSecondaryScopes(exchange, scopeJwt, secondaryScopes, ignoreExpiry, pathPrefix, reqPath, jwkServiceIds, auditInfo)) {
+                            if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
                             return false;
                         }
                         if(!this.hasValidScope(exchange, scopeHeader, secondaryScopes, claims, operation)) {
+                            if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
                             return false;
                         }
                     }
@@ -241,6 +244,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 
                     setExchangeStatus(exchange, STATUS_INVALID_AUTH_TOKEN);
                     exchange.endExchange();
+                    return false;
                 } catch (ExpiredTokenException e) {
 
                     logger.error("ExpiredTokenException", e);
@@ -250,6 +254,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 
                     setExchangeStatus(exchange, STATUS_AUTH_TOKEN_EXPIRED);
                     exchange.endExchange();
+                    return false;
                 }
             } else {
                 if (logger.isDebugEnabled())
@@ -257,8 +262,8 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
 
                 setExchangeStatus(exchange, STATUS_MISSING_AUTH_TOKEN);
                 exchange.endExchange();
+                return false;
             }
-            return true;
         }
     }
     /**
