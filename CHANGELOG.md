@@ -7,6 +7,8 @@
 
 
 - fixes \#303 update JwtVerifyHandler and SwtVerifyHandler to return fal… [\#304](https://github.com/networknt/light-rest-4j/pull/304) ([stevehu](https://github.com/stevehu))
+
+
 ## [2.1.15](https://github.com/networknt/light-rest-4j/tree/2.1.15) (2023-04-19)
 
 
