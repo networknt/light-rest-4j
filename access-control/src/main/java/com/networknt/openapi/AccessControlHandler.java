@@ -182,7 +182,7 @@ public class AccessControlHandler implements MiddlewareHandler {
     @SuppressWarnings("unchecked")
     protected void addBodyData(HttpServerExchange exchange, HttpMethod httpMethod, Map<String, Object> ruleEnginePayload) {
         if (httpMethod == HttpMethod.POST || httpMethod == HttpMethod.PUT || httpMethod == HttpMethod.PATCH) {
-            Map<String, Object> bodyMap = (Map<String, Object>) exchange.getAttachment(BodyHandler.REQUEST_BODY);
+            Map<String, Object> bodyMap = (Map<String, Object>) exchange.getAttachment(AttachmentConstants.REQUEST_BODY);
             if(bodyMap != null) {
                 ruleEnginePayload.put("requestBody", bodyMap);
             } else if (logger.isTraceEnabled()) {

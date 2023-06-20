@@ -3,6 +3,7 @@ package com.networknt.openapi;
 import com.networknt.body.BodyHandler;
 import com.networknt.config.Config;
 import com.networknt.handler.LightHttpHandler;
+import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.status.Status;
 import com.networknt.exception.ClientException;
 import io.undertow.Handlers;
@@ -93,8 +94,8 @@ public class ResponseValidatorTest {
         public void handleRequest(HttpServerExchange exchange) throws Exception {
 
             String responseBody = null;
-            if(exchange.getAttachment(BodyHandler.REQUEST_BODY) != null) {
-                responseBody = Config.getInstance().getMapper().writeValueAsString(exchange.getAttachment(BodyHandler.REQUEST_BODY));
+            if(exchange.getAttachment(AttachmentConstants.REQUEST_BODY) != null) {
+                responseBody = Config.getInstance().getMapper().writeValueAsString(exchange.getAttachment(AttachmentConstants.REQUEST_BODY));
             }
             final SchemaValidator schemaValidator = new SchemaValidator(OpenApiHandler.helper.openApi3);
             ResponseValidator validator = new ResponseValidator(schemaValidator);

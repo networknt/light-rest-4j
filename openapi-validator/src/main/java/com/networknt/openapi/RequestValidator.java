@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import com.networknt.httpstring.AttachmentConstants;
 import io.undertow.util.Headers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,7 +88,7 @@ public class RequestValidator {
         if(status != null) return status;
         String contentType = exchange.getRequestHeaders().getFirst(Headers.CONTENT_TYPE);
         if (contentType==null || contentType.startsWith("application/json")) {
-            Object body = exchange.getAttachment(BodyHandler.REQUEST_BODY);
+            Object body = exchange.getAttachment(AttachmentConstants.REQUEST_BODY);
             // skip the body validation if body parser is not in the request chain.
             if(body == null && ValidatorHandler.config.skipBodyValidation) return null;
             status = validateRequestBody(body, openApiOperation);

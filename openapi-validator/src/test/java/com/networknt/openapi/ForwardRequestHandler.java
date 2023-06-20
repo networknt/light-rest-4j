@@ -3,6 +3,7 @@ package com.networknt.openapi;
 import com.networknt.body.BodyHandler;
 import com.networknt.config.Config;
 import com.networknt.handler.LightHttpHandler;
+import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.httpstring.ContentType;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
@@ -16,8 +17,8 @@ public class ForwardRequestHandler implements LightHttpHandler {
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
         String responseBody = null;
-        if(exchange.getAttachment(BodyHandler.REQUEST_BODY) != null) {
-            responseBody = Config.getInstance().getMapper().writeValueAsString(exchange.getAttachment(BodyHandler.REQUEST_BODY));
+        if(exchange.getAttachment(AttachmentConstants.REQUEST_BODY) != null) {
+            responseBody = Config.getInstance().getMapper().writeValueAsString(exchange.getAttachment(AttachmentConstants.REQUEST_BODY));
         }
 
         List<HttpString> headerNames = exchange.getRequestHeaders().getHeaderNames().stream()
