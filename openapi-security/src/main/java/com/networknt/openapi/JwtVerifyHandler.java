@@ -302,7 +302,8 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
         Operation operation;
         if (openApiOperation == null) {
             final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), basePath);
-            final Optional<NormalisedPath> maybeApiPath = OpenApiHandler.getHelper(exchange.getRequestPath()).findMatchingApiPath(requestPath);
+            OpenApiHelper helper = OpenApiHandler.getHelper(exchange.getRequestPath());
+            final Optional<NormalisedPath> maybeApiPath = helper == null ? Optional.empty() : helper.findMatchingApiPath(requestPath);
 
             if (maybeApiPath.isEmpty()) {
                 if(!config.isSkipVerifyScopeWithoutSpec()) {
