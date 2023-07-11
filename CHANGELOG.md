@@ -1,5 +1,12 @@
 # Change Log
 
+## [2.1.23](https://github.com/networknt/light-rest-4j/tree/2.1.23) (2023-07-11)
+
+
+**Merged pull requests:**
+
+
+- fixes \#309 NPE with request path is not in the defined specs for mult… [\#310](https://github.com/networknt/light-rest-4j/pull/310) ([stevehu](https://github.com/stevehu))
 ## [2.1.22](https://github.com/networknt/light-rest-4j/tree/2.1.22) (2023-06-22)
 
 
