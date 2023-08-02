@@ -32,6 +32,8 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class SwtVerifyHandlerTest {
     static final Logger logger = LoggerFactory.getLogger(SwtVerifyHandlerTest.class);
 
@@ -70,6 +72,7 @@ public class SwtVerifyHandlerTest {
     static RoutingHandler getTestHandler() {
         return Handlers.routing()
                 .add(Methods.POST, "/oauth/introspection", exchange -> {
+                    logger.trace("handling /oauth/introspection");
                     FormParserFactory formParserFactory = FormParserFactory.builder().build();
                     FormDataParser parser = formParserFactory.createParser(exchange);
                     String token = null;
@@ -77,7 +80,20 @@ public class SwtVerifyHandlerTest {
                         FormData formData = parser.parseBlocking();
                         token = (String)BodyConverter.convert(formData).get("token");
                     }
-                    logger.trace("token = " + token);
+                    // get the clientId and clientSecret from the basic authorization header.
+                    String authorization = exchange.getRequestHeaders().getFirst(Headers.AUTHORIZATION);
+                    String credentials = authorization.substring(6);
+                    int pos = credentials.indexOf(':');
+                    if (pos == -1) {
+                        credentials = new String(org.apache.commons.codec.binary.Base64.decodeBase64(credentials), UTF_8);
+                    }
+
+                    pos = credentials.indexOf(':');
+                    if (pos != -1) {
+                        String clientId = credentials.substring(0, pos);
+                        String clientSecret = credentials.substring(pos + 1);
+                        System.out.println("token = " + token + " clientId = " + clientId + " clientSecret = " + clientSecret);
+                    }
                     String responseBody = "{\"active\":false}";
                     switch (token) {
                         case "valid_token":
@@ -119,6 +135,38 @@ public class SwtVerifyHandlerTest {
             ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer valid_token");
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        Assert.assertEquals(200, statusCode);
+        if (statusCode == 200) {
+            Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
+        }
+    }
+
+    @Test
+    public void testWithCorrectScopeInIdTokenAndClientIdSecretInHeader() throws Exception {
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
+            request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer valid_token");
+            request.getRequestHeaders().put(new HttpString("swt-client"), "new-client");
+            request.getRequestHeaders().put(new HttpString("swt-secret"), "new-secret");
             connection.sendRequest(request, client.createClientCallback(reference, latch));
             latch.await();
         } catch (Exception e) {
