@@ -17,6 +17,7 @@ import com.networknt.security.SwtVerifier;
 import com.networknt.security.SecurityConfig;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
+import com.networknt.utility.StringUtils;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -136,7 +137,10 @@ public class SwtVerifyHandler implements MiddlewareHandler {
                 if (logger.isTraceEnabled())
                     logger.trace("parsed swt from authorization = " + swt.substring(0, 10));
                 try {
-                    Result<TokenInfo> tokenInfoResult = swtVerifier.verifySwt(swt, reqPath, jwkServiceIds);
+                    String swtClientId = headerMap.getFirst(config.getSwtClientIdHeader());
+                    String swtClientSecret = headerMap.getFirst(config.getSwtClientSecretHeader());
+                    if(logger.isTraceEnabled()) logger.trace("header swtClientId = " + swtClientId + ", header swtClientSecret = " + StringUtils.maskHalfString(swtClientSecret));
+                    Result<TokenInfo> tokenInfoResult = swtVerifier.verifySwt(swt, reqPath, jwkServiceIds, swtClientId, swtClientSecret);
                     if(tokenInfoResult.isFailure()) {
                         // return error status to the user.
                         setExchangeStatus(exchange, tokenInfoResult.getError());
@@ -326,7 +330,11 @@ public class SwtVerifyHandler implements MiddlewareHandler {
             if (logger.isTraceEnabled())
                 logger.trace("start verifying scope token = " + scopeSwt.substring(0, 10));
             try {
-                Result<TokenInfo> scopeTokenInfo = swtVerifier.verifySwt(scopeSwt, reqPath, jwkServiceIds);
+                HeaderMap headerMap = exchange.getRequestHeaders();
+                String swtClientId = headerMap.getFirst(config.getSwtClientIdHeader());
+                String swtClientSecret = headerMap.getFirst(config.getSwtClientSecretHeader());
+                if(logger.isTraceEnabled()) logger.trace("header swtClientId = " + swtClientId + ", header swtClientSecret = " + StringUtils.maskHalfString(swtClientSecret));
+                Result<TokenInfo> scopeTokenInfo = swtVerifier.verifySwt(scopeSwt, reqPath, jwkServiceIds, swtClientId, swtClientSecret);
                 if(scopeTokenInfo.isFailure()) {
                     setExchangeStatus(exchange, scopeTokenInfo.getError());
                     exchange.endExchange();

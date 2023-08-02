@@ -15,6 +15,13 @@ enableVerifyJwt: ${openapi-security.enableVerifyJwt:true}
 # request path prefix in skipPathPrefixes.
 enableVerifySwt: ${openapi-security.enableVerifySwt:false}
 
+# swt clientId header name. When light-gateway is used and the consumer app does not want to save
+# the client secret in the configuration file, it can be passed in the header.
+swtClientIdHeader: ${openapi-security.swtClientIdHeader:swt-client}
+# swt clientSecret header name. When light-gateway is used and the consumer app does not want to save
+# the client secret in the configuration file, it can be passed in the header.
+swtClientSecretHeader: ${openapi-security.swtClientSecretHeader:swt-secret}
+
 # Extract JWT scope token from the X-Scope-Token header and validate the JWT token
 enableExtractScopeToken: ${openapi-security.enableExtractScopeToken:true}
 
