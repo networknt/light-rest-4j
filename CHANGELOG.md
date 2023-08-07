@@ -1,6 +1,6 @@
 # Change Log
 
-## [2.1.24](https://github.com/networknt/light-rest-4j/tree/2.1.24) (2023-08-06)
+## [2.1.24](https://github.com/networknt/light-rest-4j/tree/2.1.24) (2023-08-07)
 
 
 **Merged pull requests:**
@@ -8,6 +8,8 @@
 
 - fixes \#313 add a new test case for SwtVerifyHandler to pass the clien… [\#314](https://github.com/networknt/light-rest-4j/pull/314) ([stevehu](https://github.com/stevehu))
 - fixes \#311 swt introspection to use request headers for clientId andd… [\#312](https://github.com/networknt/light-rest-4j/pull/312) ([stevehu](https://github.com/stevehu))
+
+
 ## [2.1.23](https://github.com/networknt/light-rest-4j/tree/2.1.23) (2023-07-11)
 
 
