@@ -1,15 +1,14 @@
 package com.networknt.openapi.parameter;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import com.networknt.oas.model.Parameter;
 import com.networknt.openapi.OpenApiOperation;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.server.handlers.Cookie;
 import io.undertow.util.AttachmentKey;
+import io.undertow.util.Cookies;
 
 public interface ParameterDeserializer {
 	static Set<String> getCandidateQueryParams(HttpServerExchange exchange){
@@ -30,7 +29,9 @@ public interface ParameterDeserializer {
 		Set<String> candidateQueryParams = getCandidateQueryParams(exchange);
 		Set<String> candidatePathParams = exchange.getPathParameters().keySet();
 		Set<String> candidateHeaderParams = exchange.getRequestHeaders().getHeaderNames().stream().map(name->name.toString()).collect(Collectors.toSet());
-		Set<String> candidateCookieParams = exchange.getRequestCookies().keySet();
+		List<String> cookieNames = new ArrayList<>();
+		exchange.requestCookies().forEach(s -> cookieNames.add(s.getName()));
+		Set<String> candidateCookieParams = new HashSet<String>(cookieNames);
 		
 		openApiOperation.getOperation().getParameters().forEach(p->{
 			ParameterType type = ParameterType.of(p.getIn());

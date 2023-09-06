@@ -104,6 +104,7 @@ public class JwtVerifyHandlerTest {
 
     @Test
     public void testWithCorrectScopeInIdToken() throws Exception {
+        logger.trace("Start testWithCorrectScopeInIdToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -137,6 +138,7 @@ public class JwtVerifyHandlerTest {
      */
     @Test
     public void testWithCorrectCommaSeperatedScpClaimScopeInIdToken() throws Exception {
+        logger.trace("Start testWithCorrectCommaSeperatedScpClaimScopeInIdToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -170,6 +172,7 @@ public class JwtVerifyHandlerTest {
      */
     @Test
     public void testWithCorrectSpaceSeperatedScpClaimScopeInIdToken() throws Exception {
+        logger.trace("Start testWithCorrectSpaceSeperatedScpClaimScopeInIdToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -203,6 +206,7 @@ public class JwtVerifyHandlerTest {
      */
     @Test
     public void testWithCorrectSpaceSeperatedScopeClaimScopeInIdToken() throws Exception {
+        logger.trace("Start testWithCorrectSpaceSeperatedScopeClaimScopeInIdToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -233,6 +237,7 @@ public class JwtVerifyHandlerTest {
 
     @Test
     public void testUnmatchedScopeInIdToken() throws Exception {
+        logger.trace("Start testUnmatchedScopeInIdToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -265,6 +270,7 @@ public class JwtVerifyHandlerTest {
 
     @Test
     public void testWithCorrectScopeInScopeToken() throws Exception {
+        logger.trace("Start testWithCorrectScopeInScopeToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -296,6 +302,7 @@ public class JwtVerifyHandlerTest {
 
     @Test
     public void testUnmatchedScopeInScopeToken() throws Exception {
+        logger.trace("Start testUnmatchedScopeInScopeToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -329,6 +336,7 @@ public class JwtVerifyHandlerTest {
 
     @Test
     public void testH2CDisabledRequest() throws Exception {
+        logger.trace("Start testH2CDisabledRequest");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -364,6 +372,7 @@ public class JwtVerifyHandlerTest {
 
     @Test
     public void testEmptyAuthorizationHeader() throws Exception {
+        logger.trace("Start testEmptyAuthorizationHeader");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;

@@ -31,6 +31,7 @@ import com.networknt.utility.ModuleRegistry;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.server.handlers.Cookie;
 import io.undertow.util.AttachmentKey;
 import io.undertow.util.HeaderMap;
 import io.undertow.util.HeaderValues;
@@ -38,10 +39,7 @@ import io.undertow.util.HttpString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * This is the handler that parses the OpenApi object based on uri and method
@@ -389,9 +387,10 @@ public class OpenApiHandler implements MiddlewareHandler {
 
     public static Map<String, ?> getCookieParameters(final HttpServerExchange exchange, final boolean deserializedValueOnly) {
         Map<String, Object> deserializedCookieParamters = exchange.getAttachment(DESERIALIZED_COOKIE_PARAMETERS);
-
+        Map<String, Cookie> cookieMap = new HashMap<>();
+        exchange.requestCookies().forEach(s -> cookieMap.put(s.getName(), s));
         return deserializedValueOnly ? nonNullMap(deserializedCookieParamters)
-                : mergeMaps(deserializedCookieParamters, exchange.getRequestCookies());
+                : mergeMaps(deserializedCookieParamters, cookieMap);
     }
 
     // this is used to get the basePath from the OpenApiHandler regardless single specification or multiple specifications.
