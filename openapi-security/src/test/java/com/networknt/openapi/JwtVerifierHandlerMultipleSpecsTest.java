@@ -89,6 +89,7 @@ public class JwtVerifierHandlerMultipleSpecsTest {
 
     @Test
     public void testWithCorrectScopeInIdToken() throws Exception {
+        logger.trace("testWithCorrectScopeInIdToken starts");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -124,6 +125,7 @@ public class JwtVerifierHandlerMultipleSpecsTest {
      */
     @Test
     public void testWithCorrectCommaSeperatedScpClaimScopeInIdToken() throws Exception {
+        logger.trace("testWithCorrectCommaSeperatedScpClaimScopeInIdToken starts");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -157,6 +159,7 @@ public class JwtVerifierHandlerMultipleSpecsTest {
      */
     @Test
     public void testWithCorrectSpaceSeperatedScpClaimScopeInIdToken() throws Exception {
+        logger.trace("testWithCorrectSpaceSeperatedScpClaimScopeInIdToken starts");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -190,6 +193,7 @@ public class JwtVerifierHandlerMultipleSpecsTest {
      */
     @Test
     public void testWithCorrectSpaceSeperatedScopeClaimScopeInIdToken() throws Exception {
+        logger.trace("testWithCorrectSpaceSeperatedScopeClaimScopeInIdToken starts");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -220,6 +224,7 @@ public class JwtVerifierHandlerMultipleSpecsTest {
 
     @Test
     public void testUnmatchedScopeInIdToken() throws Exception {
+        logger.trace("testUnmatchedScopeInIdToken starts");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -252,6 +257,7 @@ public class JwtVerifierHandlerMultipleSpecsTest {
 
     @Test
     public void testWithCorrectScopeInScopeToken() throws Exception {
+        logger.trace("testWithCorrectScopeInScopeToken starts");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -283,6 +289,7 @@ public class JwtVerifierHandlerMultipleSpecsTest {
 
     @Test
     public void testUnmatchedScopeInScopeToken() throws Exception {
+        logger.trace("testUnmatchedScopeInScopeToken starts");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;

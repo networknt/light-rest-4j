@@ -122,6 +122,7 @@ public class SwtVerifyHandlerTest {
 
     @Test
     public void testWithCorrectScopeInIdToken() throws Exception {
+        logger.trace("starting testWithCorrectScopeInIdToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -152,6 +153,7 @@ public class SwtVerifyHandlerTest {
 
     @Test
     public void testWithCorrectScopeInIdTokenAndClientIdSecretInHeader() throws Exception {
+        logger.trace("starting testWithCorrectScopeInIdTokenAndClientIdSecretInHeader");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -184,6 +186,7 @@ public class SwtVerifyHandlerTest {
 
     @Test
     public void testUnmatchedScopeInIdToken() throws Exception {
+        logger.trace("starting testUnmatchedScopeInIdToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -221,6 +224,7 @@ public class SwtVerifyHandlerTest {
     @Test
     @Ignore
     public void testWithCorrectScopeInScopeToken() throws Exception {
+        logger.trace("starting testWithCorrectScopeInScopeToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -252,6 +256,7 @@ public class SwtVerifyHandlerTest {
 
     @Test
     public void testUnmatchedScopeInScopeToken() throws Exception {
+        logger.trace("starting testUnmatchedScopeInScopeToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -285,6 +290,7 @@ public class SwtVerifyHandlerTest {
 
     @Test
     public void testH2CDisabledRequest() throws Exception {
+        logger.trace("starting testH2CDisabledRequest");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
@@ -320,6 +326,7 @@ public class SwtVerifyHandlerTest {
 
     @Test
     public void testEmptyAuthorizationHeader() throws Exception {
+        logger.trace("starting testEmptyAuthorizationHeader");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
         final ClientConnection connection;
