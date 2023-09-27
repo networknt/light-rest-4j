@@ -47,7 +47,7 @@ client.tokenKeyServerUrl: http://localhost:7080
 client.tokenKeyUri: /oauth/introspection
 client.tokenKeyClientId: f7d42348-c647-4efb-a52d-4c5787421e72
 client.tokenKeyClientSecret: f6h1FTI8Q3-7UScPZDzfXA
-client.tokenKeyEnableHttp2: true
+client.tokenKeyEnableHttp2: false
 
 # openapi-security.yml
 openapi-security.skipPathPrefixes:
