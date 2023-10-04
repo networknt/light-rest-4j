@@ -1,5 +1,13 @@
 # Change Log
 
+## [2.1.27](https://github.com/networknt/light-rest-4j/tree/2.1.27) (2023-10-04)
+
+
+**Merged pull requests:**
+
+
+- fixes \#317 disable HTTP/2 for SwtVerifyHandlerTest as the test server… [\#318](https://github.com/networknt/light-rest-4j/pull/318) ([stevehu](https://github.com/stevehu))
+- fixes \#315 replacd deprecated getRequestCcookies to requestCookies [\#316](https://github.com/networknt/light-rest-4j/pull/316) ([stevehu](https://github.com/stevehu))
 ## [2.1.26](https://github.com/networknt/light-rest-4j/tree/2.1.26) (2023-08-17)
 
 
