@@ -43,7 +43,7 @@ public class ValidatorConfig {
     private static final String SKIP_PATH_PREFIXES = "skipPathPrefixes";
 
     private Map<String, Object> mappedConfig;
-    private Config config;
+    private final Config config;
 
     boolean enabled;
     boolean logError;
@@ -137,24 +137,54 @@ public class ValidatorConfig {
     private void setConfigData() {
         if(getMappedConfig() != null) {
             Object object = getMappedConfig().get(ENABLED);
-            if(object != null && (Boolean) object) {
-                enabled = true;
+            if(object != null) {
+                if(object instanceof String) {
+                    enabled = Boolean.parseBoolean((String)object);
+                } else if (object instanceof Boolean) {
+                    enabled = (Boolean) object;
+                } else {
+                    throw new ConfigException("enabled must be a boolean value.");
+                }
             }
             object = getMappedConfig().get(LOG_ERROR);
-            if(object != null && (Boolean) object) {
-                logError = true;
+            if(object != null) {
+                if(object instanceof String) {
+                    logError = Boolean.parseBoolean((String)object);
+                } else if (object instanceof Boolean) {
+                    logError = (Boolean) object;
+                } else {
+                    throw new ConfigException("logError must be a boolean value.");
+                }
             }
             object = getMappedConfig().get(SKIP_BODY_VALIDATION);
-            if(object != null && (Boolean) object) {
-                skipBodyValidation = true;
+            if(object != null) {
+                if(object instanceof String) {
+                    skipBodyValidation = Boolean.parseBoolean((String)object);
+                } else if (object instanceof Boolean) {
+                    skipBodyValidation = (Boolean) object;
+                } else {
+                    throw new ConfigException("skipBodyValidation must be a boolean value.");
+                }
             }
             object = getMappedConfig().get(VALIDATE_RESPONSE);
-            if(object != null && (Boolean) object) {
-                validateResponse = true;
+            if(object != null) {
+                if(object instanceof String) {
+                    validateResponse = Boolean.parseBoolean((String)object);
+                } else if (object instanceof Boolean) {
+                    validateResponse = (Boolean) object;
+                } else {
+                    throw new ConfigException("validateResponse must be a boolean value.");
+                }
             }
             object = getMappedConfig().get(HANDLE_NULLABLE_FIELD);
-            if(object != null && (Boolean) object) {
-                handleNullableField = true;
+            if(object != null) {
+                if(object instanceof String) {
+                    handleNullableField = Boolean.parseBoolean((String)object);
+                } else if (object instanceof Boolean) {
+                    handleNullableField = (Boolean) object;
+                } else {
+                    throw new ConfigException("handleNullableField must be a boolean value.");
+                }
             }
         }
     }

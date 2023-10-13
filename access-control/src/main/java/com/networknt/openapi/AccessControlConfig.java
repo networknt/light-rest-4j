@@ -34,7 +34,7 @@ class AccessControlConfig {
     private static final String SKIP_PATH_PREFIXES = "skipPathPrefixes";
 
     private Map<String, Object> mappedConfig;
-    private Config config;
+    private final Config config;
 
     boolean enabled;
     boolean defaultDeny;
@@ -97,12 +97,24 @@ class AccessControlConfig {
     private void setConfigData() {
         if(getMappedConfig() != null) {
             Object object = getMappedConfig().get(ENABLED);
-            if(object != null && (Boolean) object) {
-                enabled = true;
+            if(object != null) {
+                if(object instanceof String) {
+                    enabled = Boolean.parseBoolean((String)object);
+                } else if (object instanceof Boolean) {
+                    enabled = (Boolean) object;
+                } else {
+                    throw new ConfigException("enabled must be a boolean value.");
+                }
             }
             object = getMappedConfig().get(DEFAULT_DENY);
-            if(object != null && (Boolean) object) {
-                defaultDeny = true;
+            if(object != null) {
+                if(object instanceof String) {
+                    defaultDeny = Boolean.parseBoolean((String)object);
+                } else if (object instanceof Boolean) {
+                    defaultDeny = (Boolean) object;
+                } else {
+                    throw new ConfigException("defaultDeny must be a boolean value.");
+                }
             }
         }
     }
