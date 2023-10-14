@@ -97,25 +97,9 @@ class AccessControlConfig {
     private void setConfigData() {
         if(getMappedConfig() != null) {
             Object object = getMappedConfig().get(ENABLED);
-            if(object != null) {
-                if(object instanceof String) {
-                    enabled = Boolean.parseBoolean((String)object);
-                } else if (object instanceof Boolean) {
-                    enabled = (Boolean) object;
-                } else {
-                    throw new ConfigException("enabled must be a boolean value.");
-                }
-            }
+            if(object != null) enabled = Config.loadBooleanValue(ENABLED, object);
             object = getMappedConfig().get(DEFAULT_DENY);
-            if(object != null) {
-                if(object instanceof String) {
-                    defaultDeny = Boolean.parseBoolean((String)object);
-                } else if (object instanceof Boolean) {
-                    defaultDeny = (Boolean) object;
-                } else {
-                    throw new ConfigException("defaultDeny must be a boolean value.");
-                }
-            }
+            if(object != null) defaultDeny = Config.loadBooleanValue(DEFAULT_DENY, object);
         }
     }
 
