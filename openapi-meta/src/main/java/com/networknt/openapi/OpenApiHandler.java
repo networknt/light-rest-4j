@@ -301,7 +301,7 @@ public class OpenApiHandler implements MiddlewareHandler {
 
     @Override
     public void register() {
-        ModuleRegistry.registerModule(OpenApiHandler.class.getName(), Config.getInstance().getJsonMapConfig(CONFIG_NAME), null);
+        ModuleRegistry.registerModule(OpenApiHandler.class.getName(), config.getMappedConfig(), null);
     }
 
     @Override

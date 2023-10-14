@@ -62,13 +62,9 @@ public class OpenApiHandlerConfig {
     public boolean isIgnoreInvalidPath() { return ignoreInvalidPath; }
     private void setConfigData() {
         Object object = mappedConfig.get(MULTIPLE_SPEC);
-        if (object != null && (Boolean) object) {
-            multipleSpec = (Boolean)object;
-        }
+        if (object != null) multipleSpec = Config.loadBooleanValue(MULTIPLE_SPEC, object);
         object = mappedConfig.get(IGNORE_INVALID_PATH);
-        if (object != null && (Boolean) object) {
-            ignoreInvalidPath = (Boolean)object;
-        }
+        if (object != null) ignoreInvalidPath = Config.loadBooleanValue(IGNORE_INVALID_PATH, object);
     }
 
     public Map<String, Object> getPathSpecMapping() {

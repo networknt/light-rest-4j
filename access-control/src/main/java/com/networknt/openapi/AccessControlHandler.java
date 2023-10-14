@@ -222,5 +222,6 @@ public class AccessControlHandler implements MiddlewareHandler {
     public void reload() {
         config.reload();
         ModuleRegistry.registerModule(AccessControlHandler.class.getName(), config.getMappedConfig(), null);
+        if (logger.isInfoEnabled()) logger.info("AccessControlHandler is reloaded.");
     }
 }

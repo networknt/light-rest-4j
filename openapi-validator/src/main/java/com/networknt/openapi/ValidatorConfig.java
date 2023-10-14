@@ -43,7 +43,7 @@ public class ValidatorConfig {
     private static final String SKIP_PATH_PREFIXES = "skipPathPrefixes";
 
     private Map<String, Object> mappedConfig;
-    private Config config;
+    private final Config config;
 
     boolean enabled;
     boolean logError;
@@ -137,25 +137,15 @@ public class ValidatorConfig {
     private void setConfigData() {
         if(getMappedConfig() != null) {
             Object object = getMappedConfig().get(ENABLED);
-            if(object != null && (Boolean) object) {
-                enabled = true;
-            }
+            if(object != null) enabled = Config.loadBooleanValue(ENABLED, object);
             object = getMappedConfig().get(LOG_ERROR);
-            if(object != null && (Boolean) object) {
-                logError = true;
-            }
+            if(object != null) logError = Config.loadBooleanValue(LOG_ERROR, object);
             object = getMappedConfig().get(SKIP_BODY_VALIDATION);
-            if(object != null && (Boolean) object) {
-                skipBodyValidation = true;
-            }
+            if(object != null) skipBodyValidation = Config.loadBooleanValue(SKIP_BODY_VALIDATION, object);
             object = getMappedConfig().get(VALIDATE_RESPONSE);
-            if(object != null && (Boolean) object) {
-                validateResponse = true;
-            }
+            if(object != null) validateResponse = Config.loadBooleanValue(VALIDATE_RESPONSE, object);
             object = getMappedConfig().get(HANDLE_NULLABLE_FIELD);
-            if(object != null && (Boolean) object) {
-                handleNullableField = true;
-            }
+            if(object != null) handleNullableField = Config.loadBooleanValue(HANDLE_NULLABLE_FIELD, object);
         }
     }
 
