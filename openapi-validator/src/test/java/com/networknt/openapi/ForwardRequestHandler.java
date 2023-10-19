@@ -1,10 +1,10 @@
 package com.networknt.openapi;
 
-import com.networknt.body.BodyHandler;
+import com.networknt.common.ContentType;
 import com.networknt.config.Config;
 import com.networknt.handler.LightHttpHandler;
 import com.networknt.httpstring.AttachmentConstants;
-import com.networknt.httpstring.ContentType;
+
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
