@@ -1,5 +1,13 @@
 # Change Log
 
+## [2.1.28](https://github.com/networknt/light-rest-4j/tree/2.1.28) (2023-10-24)
+
+
+**Merged pull requests:**
+
+
+- fixes \#321 move the ContentType from http-string to common [\#322](https://github.com/networknt/light-rest-4j/pull/322) ([stevehu](https://github.com/stevehu))
+- fixes \#319 environment variables cannot overwrite config values if it… [\#320](https://github.com/networknt/light-rest-4j/pull/320) ([stevehu](https://github.com/stevehu))
 ## [2.1.27](https://github.com/networknt/light-rest-4j/tree/2.1.27) (2023-10-04)
 
 
