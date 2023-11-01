@@ -80,6 +80,7 @@ public class OpenApiHandler implements MiddlewareHandler {
     private volatile HttpHandler next;
 
     public OpenApiHandler(OpenApiHandlerConfig cfg) {
+        if(logger.isInfoEnabled()) logger.info("OpenApiHandler is constructed with cfg.");
         config = cfg;
         Map<String, Object> inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
 
@@ -108,6 +109,7 @@ public class OpenApiHandler implements MiddlewareHandler {
                     throw new RuntimeException("merge specification failed for " + entry.getValue());
                 }
             }
+            if(logger.isTraceEnabled()) logger.trace("multiple specifications loaded.");
         } else {
             Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache(CONFIG_NAME);
             handlerConfig = (HandlerConfig) Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class);
@@ -128,6 +130,7 @@ public class OpenApiHandler implements MiddlewareHandler {
                 logger.error("merge specification failed");
                 throw new RuntimeException("merge specification failed");
             }
+            if(logger.isTraceEnabled()) logger.trace("single specification loaded.");
         }
     }
 
