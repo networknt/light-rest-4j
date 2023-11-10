@@ -46,11 +46,15 @@ skipVerifyScopeWithoutSpec: ${openapi-security.skipVerifyScopeWithoutSpec:false}
 ignoreJwtExpiry: ${openapi-security.ignoreJwtExpiry:false}
 
 # set true if you want to allow http 1/1 connections to be upgraded to http/2 using the UPGRADE method (h2c).
-# By default this is set to false for security reasons. If you choose to enable it make sure you can handle http/2 w/o tls.
+# By default, this is set to false for security reasons. If you choose to enable it make sure you can handle http/2 w/o tls.
 enableH2c: ${openapi-security.enableH2c:false}
 
 # User for test only. should be always be false on official environment.
 enableMockJwt: ${openapi-security.enableMockJwt:false}
+
+# Enables relaxed verification for jwt. e.g. Disables key length requirements.
+# Should be used in test environments only.
+enableRelaxedKeyValidation: ${openapi-security.enableRelaxedKeyValidation:false}
 
 # JWT signature public certificates. kid and certificate path mappings.
 jwt:
