@@ -75,7 +75,7 @@ public class ParameterHandler implements MiddlewareHandler {
 
 	@Override
 	public void register() {
-		 ModuleRegistry.registerModule(ParameterHandler.class.getName(), null, null);
+
 	}
 
 }

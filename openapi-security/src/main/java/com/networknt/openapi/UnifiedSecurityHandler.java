@@ -253,13 +253,13 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
 
     @Override
     public void register() {
-        ModuleRegistry.registerModule(UnifiedSecurityHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(UnifiedSecurityConfig.CONFIG_NAME), null);
+        ModuleRegistry.registerModule(UnifiedSecurityConfig.CONFIG_NAME, UnifiedSecurityHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(UnifiedSecurityConfig.CONFIG_NAME), null);
     }
 
     @Override
     public void reload() {
         config.reload();
-        ModuleRegistry.registerModule(UnifiedSecurityHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(UnifiedSecurityConfig.CONFIG_NAME), null);
+        ModuleRegistry.registerModule(UnifiedSecurityConfig.CONFIG_NAME, UnifiedSecurityHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(UnifiedSecurityConfig.CONFIG_NAME), null);
     }
 
 }

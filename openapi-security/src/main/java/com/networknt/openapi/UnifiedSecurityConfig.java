@@ -28,7 +28,7 @@ public class UnifiedSecurityConfig {
     List<String> anonymousPrefixes;
     List<UnifiedPathPrefixAuth> pathPrefixAuths;
 
-    private Config config;
+    private final Config config;
     private Map<String, Object> mappedConfig;
 
     private UnifiedSecurityConfig() {

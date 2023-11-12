@@ -19,7 +19,7 @@ public class OpenApiHandlerConfig {
     boolean ignoreInvalidPath;
     Map<String, Object> pathSpecMapping;
 
-    private Config config;
+    private final Config config;
     private Map<String, Object> mappedConfig;
 
     private OpenApiHandlerConfig() {
