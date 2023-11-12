@@ -18,6 +18,7 @@ package com.networknt.specification;
 
 import com.networknt.config.Config;
 import com.networknt.handler.LightHttpHandler;
+import com.networknt.utility.ModuleRegistry;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
 
@@ -27,7 +28,10 @@ import io.undertow.util.HttpString;
  * @author Gavin Chen
  */
 public class SpecDisplayHandler implements LightHttpHandler {
+    static SpecificationConfig config = (SpecificationConfig)Config.getInstance().getJsonObjectConfig(SpecificationConfig.CONFIG_NAME, SpecificationConfig.class);
     public SpecDisplayHandler(){
+        if(logger.isInfoEnabled()) logger.info("SpecDisplayHandler is constructed");
+        ModuleRegistry.registerModule(SpecificationConfig.CONFIG_NAME, SpecDisplayHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(SpecificationConfig.CONFIG_NAME), null);
     }
 
     @Override
