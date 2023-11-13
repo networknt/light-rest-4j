@@ -57,16 +57,19 @@
         </triggeringPolicy>
     </appender>
 
-    <root level="info">
+    <root level="trace">
         <appender-ref ref="stdout" />
     </root>
-
+    <!--
     <logger name="com.networknt" level="trace" additivity="false">
+        <appender-ref ref="stdout"/>
+    </logger>
+    <logger name="io.undertow" level="trace" additivity="false">
         <appender-ref ref="stdout"/>
     </logger>
 
     <logger name="Audit" level="info" additivity="false">
         <appender-ref ref="audit"/>
     </logger>
-
+    -->
 </configuration>

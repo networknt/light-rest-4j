@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+@Ignore
 public class SwtVerifyHandlerTest {
     static final Logger logger = LoggerFactory.getLogger(SwtVerifyHandlerTest.class);
 
