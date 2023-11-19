@@ -1,5 +1,16 @@
 # Change Log
 
+## [2.1.29](https://github.com/networknt/light-rest-4j/tree/2.1.29) (2023-11-19)
+
+
+**Merged pull requests:**
+
+
+- fixes \#332 Ignore the SwtVerifyHandlerTest as it is frozen sometimes [\#333](https://github.com/networknt/light-rest-4j/pull/333) ([stevehu](https://github.com/stevehu))
+- fixes \#330 refactor module registry to add config name [\#331](https://github.com/networknt/light-rest-4j/pull/331) ([stevehu](https://github.com/stevehu))
+- fixes \#328 sync the openapi-security.yml with the security.yml in lig… [\#329](https://github.com/networknt/light-rest-4j/pull/329) ([stevehu](https://github.com/stevehu))
+- fixes \#325 add values.yml for service.yml and cache.yml for the jwk a… [\#326](https://github.com/networknt/light-rest-4j/pull/326) ([stevehu](https://github.com/stevehu))
+- fixes \#323 Add info log and trace log in the OpenApiHandler contructor [\#324](https://github.com/networknt/light-rest-4j/pull/324) ([stevehu](https://github.com/stevehu))
 ## [2.1.28](https://github.com/networknt/light-rest-4j/tree/2.1.28) (2023-10-24)
 
 
