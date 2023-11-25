@@ -57,8 +57,6 @@ public class OpenApiHandler implements MiddlewareHandler {
 
     public static final String CONFIG_NAME = "openapi";
     public static final String SPEC_INJECT = "openapi-inject";
-    public static final String HANDLER_CONFIG = "handler";
-
     public static final AttachmentKey<Map<String, Object>> DESERIALIZED_QUERY_PARAMETERS = AttachmentKey.create(Map.class);
     public static final AttachmentKey<Map<String, Object>> DESERIALIZED_PATH_PARAMETERS = AttachmentKey.create(Map.class);
     public static final AttachmentKey<Map<String, Object>> DESERIALIZED_HEADER_PARAMETERS = AttachmentKey.create(Map.class);
@@ -112,7 +110,7 @@ public class OpenApiHandler implements MiddlewareHandler {
             if(logger.isTraceEnabled()) logger.trace("multiple specifications loaded.");
         } else {
             Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache(CONFIG_NAME);
-            handlerConfig = (HandlerConfig) Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class);
+            handlerConfig = HandlerConfig.load();
 
             this.validateSpec(openapi, inject, "openapi.yml");
 
@@ -309,7 +307,8 @@ public class OpenApiHandler implements MiddlewareHandler {
 
     @Override
     public void reload() {
-        handlerConfig = (HandlerConfig) Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class);
+        config.reload();
+        ModuleRegistry.registerModule(OpenApiHandlerConfig.CONFIG_NAME, OpenApiHandler.class.getName(), config.getMappedConfig(), null);
     }
 
     /**

@@ -40,7 +40,6 @@ import java.util.*;
 public class SwtVerifyHandler implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(SwtVerifyHandler.class);
     static final String OPENAPI_SECURITY_CONFIG = "openapi-security";
-    static final String HANDLER_CONFIG = "handler";
     static final String STATUS_INVALID_AUTH_TOKEN = "ERR10000";
     static final String STATUS_AUTH_TOKEN_EXPIRED = "ERR10001";
     static final String STATUS_MISSING_AUTH_TOKEN = "ERR10002";
@@ -429,7 +428,7 @@ public class SwtVerifyHandler implements MiddlewareHandler {
         config = SecurityConfig.load(OPENAPI_SECURITY_CONFIG);
         swtVerifier = new SwtVerifier(config);
         // in case that the specification doesn't exist, get the basePath from the handler.yml for endpoint lookup.
-        HandlerConfig handlerConfig = (HandlerConfig) Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class);
+        HandlerConfig handlerConfig = HandlerConfig.load();
         this.basePath = handlerConfig == null ? "/" : handlerConfig.getBasePath();
     }
 
