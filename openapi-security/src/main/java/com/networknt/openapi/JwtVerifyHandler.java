@@ -55,10 +55,7 @@ import java.util.*;
  */
 public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     static final Logger logger = LoggerFactory.getLogger(JwtVerifyHandler.class);
-
-    static final String HANDLER_CONFIG = "handler";
     static final String OPENAPI_SECURITY_CONFIG = "openapi-security";
-
     static final String STATUS_INVALID_AUTH_TOKEN = "ERR10000";
     static final String STATUS_AUTH_TOKEN_EXPIRED = "ERR10001";
     static final String STATUS_MISSING_AUTH_TOKEN = "ERR10002";
@@ -84,7 +81,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
         config = SecurityConfig.load(OPENAPI_SECURITY_CONFIG);
         jwtVerifier = new JwtVerifier(config);
         // in case that the specification doesn't exist, get the basePath from the handler.yml for endpoint lookup.
-        HandlerConfig handlerConfig = (HandlerConfig) Config.getInstance().getJsonObjectConfig(HANDLER_CONFIG, HandlerConfig.class);
+        HandlerConfig handlerConfig = HandlerConfig.load();
         this.basePath = handlerConfig == null ? "/" : handlerConfig.getBasePath();
     }
 
