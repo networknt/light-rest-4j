@@ -116,6 +116,7 @@
 
     <modules>
         <module>openapi-meta</module>
+        <module>validator-config</module>
         <module>openapi-validator</module>
         <module>openapi-security</module>
         <module>access-control</module>
@@ -128,6 +129,11 @@
             <dependency>
                 <groupId>com.networknt</groupId>
                 <artifactId>openapi-meta</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.networknt</groupId>
+                <artifactId>validator-config</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
