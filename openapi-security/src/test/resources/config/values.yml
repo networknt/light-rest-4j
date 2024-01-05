@@ -2,8 +2,8 @@
 server.enableHttps: false
 server.enableHttp2: false
 server.enableHttp: true
-server.httpPort: 7080
-
+server.httpPort: 7081
+server.ioThreads: 16
 
 # handler.yml
 handler.basePath: /
@@ -14,10 +14,12 @@ handler.handlers:
   - com.networknt.basicauth.BasicAuthHandler@basic
   - com.networknt.openapi.UnifiedSecurityHandler@unified
   - com.networknt.apikey.ApiKeyHandler@apikey
+  - com.networknt.openapi.JwkHandler@jwk
 
 handler.chains.default:
   - specification
   - unified
+  - jwk
 
 # basic-auth.yml
 basic.users:
@@ -43,12 +45,13 @@ apikey.pathPrefixAuths:
     apiKey: CRYPT:3ddd6c8b9bf2afc24d1c94af1dffd518:1bf0cafb19c53e61ddeae626f8906d43
 
 # client.yml
-client.tokenKeyServerUrl: http://localhost:7080
-client.tokenKeyUri: /oauth/introspection
+client.tokenKeyServerUrl: http://localhost:7081
+client.tokenKeyUri: /oauth2/N2CMw0HGQXeLvC1wBfln2A/keys
 client.tokenKeyClientId: f7d42348-c647-4efb-a52d-4c5787421e72
 client.tokenKeyClientSecret: f6h1FTI8Q3-7UScPZDzfXA
 client.tokenKeyEnableHttp2: false
+client.timeout: 60000
 
 # openapi-security.yml
 openapi-security.skipPathPrefixes:
-  - /oauth/introspection
+  - /oauth2

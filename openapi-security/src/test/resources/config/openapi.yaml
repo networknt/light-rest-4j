@@ -5,21 +5,32 @@ info:
   license:
     name: MIT
 servers:
-  - url: http://petstore.swagger.io/v1
+  - url: http://petstore.swagger.io
 paths:
-  /wrong:
+  /oauth2/{hostId}/keys:
+    get:
+      description: "Get the statndard jwks"
+      operationId: "getJwks"
+      parameters:
+        - name: "hostId"
+          description: "The host id this service belongs to"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+  /v1/wrong:
     get:
       summary: List of wrong
       operationId: listWrong
-  /test1:
+  /v1/test1:
     get:
       summary: List of test1
       operationId: listTest1
-  /salesforce:
+  /v1/salesforce:
     get:
       summary: List salesforce
       operationId: listSalesforce
-  /pets:
+  /v1/pets:
     get:
       summary: List all pets
       operationId: listPets
@@ -88,7 +99,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /dogs/{dogId}:
+  /v1/dogs/{dogId}:
     get:
       summary: Info for a specific pet
       operationId: showPetById
@@ -100,7 +111,7 @@ paths:
           schema:
             type: string
 
-  /pets/{petId}:
+  /v1/pets/{petId}:
     get:
       summary: Info for a specific pet
       operationId: showPetById

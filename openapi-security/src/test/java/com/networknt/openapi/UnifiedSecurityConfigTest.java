@@ -14,7 +14,7 @@ public class UnifiedSecurityConfigTest {
         List<String> anonymousPrefixes = config.getAnonymousPrefixes();
         Assert.assertTrue(anonymousPrefixes.contains("/v1/dogs"));
         Assert.assertTrue(anonymousPrefixes.contains("/v1/cats"));
-        Assert.assertEquals(2, config.getAnonymousPrefixes().size());
+        Assert.assertEquals(3, config.getAnonymousPrefixes().size());
         // check the pathPrefixAuths
         Assert.assertEquals(4, config.getPathPrefixAuths().size());
         UnifiedPathPrefixAuth auth1 = config.getPathPrefixAuths().get(0);

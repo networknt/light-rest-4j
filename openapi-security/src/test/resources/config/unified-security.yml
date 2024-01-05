@@ -8,6 +8,7 @@ enabled: ${unified-security.enabled:true}
 anonymousPrefixes:
   - /v1/cats
   - /v1/dogs
+  - /oauth2
 
 pathPrefixAuths:
   - prefix: /v1/salesforce
