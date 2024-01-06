@@ -7,4 +7,3 @@ multipleSpec: ${openapi-handler.multipleSpec:true}
 pathSpecMapping:
   /petstore: openapi-petstore
   /market: openapi-market
-  /oauth2: openapi-oauth2

@@ -33,11 +33,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This is a test case for UnifiedSecurityHandler. It is using the petstore.yaml file in the test resources
- * Due to the jwk is in the same server and it is called within the context of the petstore access, there are
- * some threading issue that cause some test case failures. So, I have to run the test case one by one to make
- * all passed. For build, we have disabled this test case for now.
  */
-@Ignore
 public class UnifiedSecurityHandlerTest {
     static final Logger logger = LoggerFactory.getLogger(UnifiedSecurityHandlerTest.class);
 
@@ -49,6 +45,44 @@ public class UnifiedSecurityHandlerTest {
     static final int httpPort = server.getServerConfig().getHttpPort();
     static final int httpsPort = server.getServerConfig().getHttpsPort();
     static final String url = enableHttp2 || enableHttps ? "https://localhost:" + httpsPort : "http://localhost:" + httpPort;
+
+    static Undertow server2 = null;
+    @BeforeClass
+    public static void setUp() {
+        if (server2 == null) {
+            logger.info("starting server2");
+            HttpHandler handler = getJwksHandler();
+            server2 = Undertow.builder()
+                    .addHttpListener(7082, "localhost")
+                    .setHandler(handler)
+                    .build();
+            server2.start();
+        }
+
+    }
+
+    @AfterClass
+    public static void tearDown() throws Exception {
+        if (server2 != null) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ignored) {
+
+            }
+            server2.stop();
+            logger.info("The server2 is stopped.");
+        }
+
+    }
+
+    static RoutingHandler getJwksHandler() {
+        return Handlers.routing()
+                .add(Methods.GET, "/oauth2/N2CMw0HGQXeLvC1wBfln2A/keys", exchange -> {
+                    exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+                    exchange.getResponseSender().send("{\"keys\":[{\"kty\":\"RSA\",\"kid\":\"Tj_l_tIBTginOtQbL0Pv5w\",\"n\":\"0YRbWAb1FGDpPUUcrIpJC6BwlswlKMS-z2wMAobdo0BNxNa7hG_gIHVPkXu14Jfo1JhUhS4wES3DdY3a6olqPcRN1TCCUVHd-1TLd1BBS-yq9tdJ6HCewhe5fXonaRRKwutvoH7i_eR4m3fQ1GoVzVAA3IngpTr4ptnM3Ef3fj-5wZYmitzrRUyQtfARTl3qGaXP_g8pHFAP0zrNVvOnV-jcNMKm8YZNcgcs1SuLSFtUDXpf7Nr2_xOhiNM-biES6Dza1sMLrlxULFuctudO9lykB7yFh3LHMxtIZyIUHuy0RbjuOGC5PmDowLttZpPI_j4ynJHAaAWr8Ddz764WdQ\",\"e\":\"AQAB\"}]}");
+                });
+
+    }
 
     static RoutingHandler getTestHandler() {
         return Handlers.routing()
