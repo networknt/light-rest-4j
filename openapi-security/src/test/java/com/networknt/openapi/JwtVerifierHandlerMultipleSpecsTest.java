@@ -16,10 +16,7 @@ import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
 import org.apache.commons.text.StringEscapeUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.IoUtils;
@@ -35,7 +32,10 @@ import java.util.concurrent.atomic.AtomicReference;
  * This is a test class that focuses the multiple specifications with scope verification. It has a customized
  * openapi-handler.yml config file injected during the setup.
  *
+ * This test is disabled as it has to access jwk endpoint during the middle of the request.
+ *
  */
+@Ignore
 public class JwtVerifierHandlerMultipleSpecsTest {
     static final Logger logger = LoggerFactory.getLogger(JwtVerifierHandlerMultipleSpecsTest.class);
 

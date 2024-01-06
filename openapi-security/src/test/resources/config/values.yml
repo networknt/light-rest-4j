@@ -14,12 +14,10 @@ handler.handlers:
   - com.networknt.basicauth.BasicAuthHandler@basic
   - com.networknt.openapi.UnifiedSecurityHandler@unified
   - com.networknt.apikey.ApiKeyHandler@apikey
-  - com.networknt.openapi.JwkHandler@jwk
 
 handler.chains.default:
   - specification
   - unified
-  - jwk
 
 # basic-auth.yml
 basic.users:
