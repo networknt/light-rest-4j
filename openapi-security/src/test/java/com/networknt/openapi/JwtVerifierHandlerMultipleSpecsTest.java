@@ -32,43 +32,62 @@ import java.util.concurrent.atomic.AtomicReference;
  * This is a test class that focuses the multiple specifications with scope verification. It has a customized
  * openapi-handler.yml config file injected during the setup.
  *
- * This test is disabled as it has to access jwk endpoint during the middle of the request.
  *
  */
-@Ignore
 public class JwtVerifierHandlerMultipleSpecsTest {
     static final Logger logger = LoggerFactory.getLogger(JwtVerifierHandlerMultipleSpecsTest.class);
 
-    static Undertow server = null;
-
+    static Undertow server1 = null;
+    static Undertow server2 = null;
     @BeforeClass
     public static void setUp() {
-        if(server == null) {
-            logger.info("starting server");
+        if (server1 == null) {
+            logger.info("starting server1");
             HttpHandler handler = getTestHandler();
             JwtVerifyHandler jwtVerifyHandler = new JwtVerifyHandler();
             jwtVerifyHandler.setNext(handler);
             OpenApiHandler openApiHandler = new OpenApiHandler(OpenApiHandlerConfig.load("openapi-handler-multiple"));
             openApiHandler.setNext(jwtVerifyHandler);
-            server = Undertow.builder()
+            server1 = Undertow.builder()
                     .addHttpListener(7081, "localhost")
                     .setHandler(openApiHandler)
                     .build();
-            server.start();
+            server1.start();
         }
+
+        if (server2 == null) {
+            logger.info("starting server2");
+            HttpHandler handler = getJwksHandler();
+            server2 = Undertow.builder()
+                    .addHttpListener(7082, "localhost")
+                    .setHandler(handler)
+                    .build();
+            server2.start();
+        }
+
     }
 
     @AfterClass
     public static void tearDown() throws Exception {
-        if(server != null) {
+        if (server1 != null) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ignored) {
 
             }
-            server.stop();
-            logger.info("The server is stopped.");
+            server1.stop();
+            logger.info("The server1 is stopped.");
         }
+        if (server2 != null) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ignored) {
+
+            }
+            server2.stop();
+            logger.info("The server2 is stopped.");
+        }
+
     }
 
     static RoutingHandler getTestHandler() {
@@ -84,11 +103,16 @@ public class JwtVerifierHandlerMultipleSpecsTest {
                         exchange.endExchange();
                     }
                 })
+                .add(Methods.GET, "/petstore/pets", exchange -> exchange.getResponseSender().send("get"));
+    }
+
+    static RoutingHandler getJwksHandler() {
+        return Handlers.routing()
                 .add(Methods.GET, "/oauth2/N2CMw0HGQXeLvC1wBfln2A/keys", exchange -> {
                     exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
                     exchange.getResponseSender().send("{\"keys\":[{\"kty\":\"RSA\",\"kid\":\"Tj_l_tIBTginOtQbL0Pv5w\",\"n\":\"0YRbWAb1FGDpPUUcrIpJC6BwlswlKMS-z2wMAobdo0BNxNa7hG_gIHVPkXu14Jfo1JhUhS4wES3DdY3a6olqPcRN1TCCUVHd-1TLd1BBS-yq9tdJ6HCewhe5fXonaRRKwutvoH7i_eR4m3fQ1GoVzVAA3IngpTr4ptnM3Ef3fj-5wZYmitzrRUyQtfARTl3qGaXP_g8pHFAP0zrNVvOnV-jcNMKm8YZNcgcs1SuLSFtUDXpf7Nr2_xOhiNM-biES6Dza1sMLrlxULFuctudO9lykB7yFh3LHMxtIZyIUHuy0RbjuOGC5PmDowLttZpPI_j4ynJHAaAWr8Ddz764WdQ\",\"e\":\"AQAB\"}]}");
-                })
-                .add(Methods.GET, "/petstore/pets", exchange -> exchange.getResponseSender().send("get"));
+                });
+
     }
 
     @Test
