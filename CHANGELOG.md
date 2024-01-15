@@ -1,9 +1,22 @@
 # Change Log
 
-## [2.1.30](https://github.com/networknt/light-rest-4j/tree/2.1.30) (2023-11-20)
+## [2.1.31](https://github.com/networknt/light-rest-4j/tree/2.1.31) (2024-01-15)
 
 
 **Merged pull requests:**
+
+
+- fixes \#343 Fix all test cases with another server2 for the Jwks [\#344](https://github.com/networknt/light-rest-4j/pull/344) ([stevehu](https://github.com/stevehu))
+- fixes \#341 disable two more test cases as they are not stable [\#342](https://github.com/networknt/light-rest-4j/pull/342) ([stevehu](https://github.com/stevehu))
+- fixes \#339 update test cases to use jwk endpoint instead of 509 certf… [\#340](https://github.com/networknt/light-rest-4j/pull/340) ([stevehu](https://github.com/stevehu))
+- fixes \#337 split ValidatorConfig into another module [\#338](https://github.com/networknt/light-rest-4j/pull/338) ([stevehu](https://github.com/stevehu))
+- fixes \#334 update config class to support conversion from string to i… [\#335](https://github.com/networknt/light-rest-4j/pull/335) ([stevehu](https://github.com/stevehu))
+## [2.1.30](https://github.com/networknt/light-rest-4j/tree/2.1.30) (2023-11-21)
+
+
+**Merged pull requests:**
+
+
 
 
 ## [2.1.29](https://github.com/networknt/light-rest-4j/tree/2.1.29) (2023-11-19)
