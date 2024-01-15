@@ -11,6 +11,8 @@
 - fixes \#339 update test cases to use jwk endpoint instead of 509 certf… [\#340](https://github.com/networknt/light-rest-4j/pull/340) ([stevehu](https://github.com/stevehu))
 - fixes \#337 split ValidatorConfig into another module [\#338](https://github.com/networknt/light-rest-4j/pull/338) ([stevehu](https://github.com/stevehu))
 - fixes \#334 update config class to support conversion from string to i… [\#335](https://github.com/networknt/light-rest-4j/pull/335) ([stevehu](https://github.com/stevehu))
+
+
 ## [2.1.30](https://github.com/networknt/light-rest-4j/tree/2.1.30) (2023-11-21)
 
 
