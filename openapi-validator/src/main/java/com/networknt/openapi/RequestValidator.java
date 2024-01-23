@@ -90,7 +90,7 @@ public class RequestValidator {
         if (contentType==null || contentType.startsWith("application/json")) {
             Object body = exchange.getAttachment(AttachmentConstants.REQUEST_BODY);
             // skip the body validation if body parser is not in the request chain.
-            if(body == null && ValidatorHandler.config.skipBodyValidation) return null;
+            if(body == null || ValidatorHandler.config.skipBodyValidation) return null;
             status = validateRequestBody(body, openApiOperation);
         }
         return status;
