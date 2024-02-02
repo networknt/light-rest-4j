@@ -78,13 +78,13 @@ public class SwtVerifyHandler implements MiddlewareHandler {
 
     @Override
     public void register() {
-        ModuleRegistry.registerModule(OPENAPI_SECURITY_CONFIG, SwtVerifyHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(OPENAPI_SECURITY_CONFIG), null);
+        ModuleRegistry.registerModule(OPENAPI_SECURITY_CONFIG, SwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(OPENAPI_SECURITY_CONFIG), null);
     }
 
     @Override
     public void reload() {
         config.reload(OPENAPI_SECURITY_CONFIG);
-        ModuleRegistry.registerModule(OPENAPI_SECURITY_CONFIG, SwtVerifyHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(OPENAPI_SECURITY_CONFIG), null);
+        ModuleRegistry.registerModule(OPENAPI_SECURITY_CONFIG, SwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(OPENAPI_SECURITY_CONFIG), null);
     }
 
     @Override

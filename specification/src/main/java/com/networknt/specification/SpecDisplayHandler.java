@@ -31,7 +31,7 @@ public class SpecDisplayHandler implements LightHttpHandler {
     static SpecificationConfig config = (SpecificationConfig)Config.getInstance().getJsonObjectConfig(SpecificationConfig.CONFIG_NAME, SpecificationConfig.class);
     public SpecDisplayHandler(){
         if(logger.isInfoEnabled()) logger.info("SpecDisplayHandler is constructed");
-        ModuleRegistry.registerModule(SpecificationConfig.CONFIG_NAME, SpecDisplayHandler.class.getName(), Config.getInstance().getJsonMapConfigNoCache(SpecificationConfig.CONFIG_NAME), null);
+        ModuleRegistry.registerModule(SpecificationConfig.CONFIG_NAME, SpecDisplayHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SpecificationConfig.CONFIG_NAME), null);
     }
 
     @Override
