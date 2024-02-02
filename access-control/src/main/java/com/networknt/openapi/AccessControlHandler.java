@@ -215,13 +215,13 @@ public class AccessControlHandler implements MiddlewareHandler {
 
     @Override
     public void register() {
-        ModuleRegistry.registerModule(AccessControlConfig.CONFIG_NAME, AccessControlHandler.class.getName(), config.getMappedConfig(), null);
+        ModuleRegistry.registerModule(AccessControlConfig.CONFIG_NAME, AccessControlHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(AccessControlConfig.CONFIG_NAME), null);
     }
 
     @Override
     public void reload() {
         config.reload();
-        ModuleRegistry.registerModule(AccessControlConfig.CONFIG_NAME, AccessControlHandler.class.getName(), config.getMappedConfig(), null);
+        ModuleRegistry.registerModule(AccessControlConfig.CONFIG_NAME, AccessControlHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(AccessControlConfig.CONFIG_NAME), null);
         if (logger.isInfoEnabled()) logger.info("AccessControlHandler is reloaded.");
     }
 }

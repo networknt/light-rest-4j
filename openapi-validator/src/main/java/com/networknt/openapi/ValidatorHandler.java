@@ -186,7 +186,7 @@ public class ValidatorHandler implements MiddlewareHandler {
 
     @Override
     public void register() {
-        ModuleRegistry.registerModule(OPENAPI_CONFIG_NAME, ValidatorHandler.class.getName(), config.getMappedConfig(), null);
+        ModuleRegistry.registerModule(OPENAPI_CONFIG_NAME, ValidatorHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(OPENAPI_CONFIG_NAME), null);
     }
 
     @Override
@@ -195,6 +195,6 @@ public class ValidatorHandler implements MiddlewareHandler {
         if(config == null) {
             config.reload(CONFIG_NAME);
         }
-        ModuleRegistry.registerModule(OPENAPI_CONFIG_NAME, ValidatorHandler.class.getName(), config.getMappedConfig(), null);
+        ModuleRegistry.registerModule(OPENAPI_CONFIG_NAME, ValidatorHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(OPENAPI_CONFIG_NAME), null);
     }
 }
