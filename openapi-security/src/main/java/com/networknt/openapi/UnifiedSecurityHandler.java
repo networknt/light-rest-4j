@@ -97,6 +97,10 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                     exchange.endExchange();
                                     return;
                                 } else {
+                                    // if the handler is not enabled in the configuration, break here to call next handler.
+                                    if(!handler.isEnabled()) {
+                                        break;
+                                    }
                                     if(handler.handleBasicAuth(exchange, reqPath, authorization)) {
                                         // verification is passed, go to the next handler in the chain
                                         break;
@@ -121,6 +125,10 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                             exchange.endExchange();
                                             return;
                                         } else {
+                                            // if the handler is not enabled in the configuration, break here to call next handler.
+                                            if(!handler.isEnabled()) {
+                                                break;
+                                            }
                                             // get the jwkServiceIds list.
                                             if (handler.handleJwt(exchange, pathPrefixAuth.getPathPrefix(), reqPath, pathPrefixAuth.getJwkServiceIds())) {
                                                 // verification is passed, go to the next handler in the chain.
@@ -138,6 +146,10 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                             exchange.endExchange();
                                             return;
                                         } else {
+                                            // if the handler is not enabled in the configuration, break here to call next handler.
+                                            if(!handler.isEnabled()) {
+                                                break;
+                                            }
                                             // get the jwkServiceIds list.
                                             if (handler.handleSwt(exchange, reqPath, pathPrefixAuth.getSwtServiceIds())) {
                                                 // verification is passed, go to the next handler in the chain.
@@ -157,6 +169,10 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                         exchange.endExchange();
                                         return;
                                     } else {
+                                        // if the handler is not enabled in the configuration, break here to call next handler.
+                                        if(!handler.isEnabled()) {
+                                            break;
+                                        }
                                         // get the jwkServiceIds list.
                                         if (handler.handleJwt(exchange, pathPrefixAuth.getPathPrefix(), reqPath, pathPrefixAuth.getJwkServiceIds())) {
                                             // verification is passed, go to the next handler in the chain.
@@ -175,6 +191,10 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                         exchange.endExchange();
                                         return;
                                     } else {
+                                        // if the handler is not enabled in the configuration, break here to call next handler.
+                                        if(!handler.isEnabled()) {
+                                            break;
+                                        }
                                         // get the jwkServiceIds list.
                                         if (handler.handleSwt(exchange, reqPath, pathPrefixAuth.getSwtServiceIds())) {
                                             // verification is passed, go to the next handler in the chain.
@@ -202,6 +222,10 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                             exchange.endExchange();
                             return;
                         } else {
+                            // if the handler is not enabled in the configuration, break here to call next handler.
+                            if(!handler.isEnabled()) {
+                                break;
+                            }
                             if(handler.handleApiKey(exchange, reqPath)) {
                                 // the APIKey handler successfully verified the credentials. Need to break here so that the next handler can be called.
                                 break;
