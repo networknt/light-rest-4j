@@ -20,39 +20,38 @@ public class HeaderParameterDeserializer implements ParameterDeserializer {
 	@Override
 	public AttachmentKey<Map<String, Object>> getAttachmentKey(){
 		return OpenApiHandler.DESERIALIZED_HEADER_PARAMETERS;
-	}	
-	
+	}
+
 	@Override
 	public StyleParameterDeserializer getStyleDeserializer(String style) {
 		if (StringUtils.isNotBlank(style) && !SIMPLE.equalsIgnoreCase(style)) {
 			return null;
 		}
-		
+
 		return new StyleParameterDeserializer() {
 
 			@Override
-			public Object deserialize(HttpServerExchange exchange, Parameter parameter, 
+			public Object deserialize(HttpServerExchange exchange, Parameter parameter,
 					ValueType valueType,
 					boolean exploade) {
 				Collection<String> values = exchange.getRequestHeaders().get(new HttpString(parameter.getName()));
-				
+
 				if (ValueType.ARRAY == valueType) {
 					List<String> valueList = new ArrayList<>();
-					
+
 					values.forEach(v->valueList.addAll(asList(v, Delimiters.COMMA)));
-					
-					return valueList;			
+
+					return valueList;
 				}else if (ValueType.OBJECT == valueType) {
 					Map<String, String> valueMap = new HashMap<>();
 					values.forEach(v->valueMap.putAll(exploade?asExploadeMap(v, Delimiters.COMMA):asMap(v, Delimiters.COMMA)));
-					
+
 					return valueMap;
 				}
-				
+
 				return null;
 			}
-			
+
 		};
 	}
 }
-

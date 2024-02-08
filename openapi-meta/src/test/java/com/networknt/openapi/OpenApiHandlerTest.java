@@ -206,29 +206,29 @@ public class OpenApiHandlerTest {
             Assert.assertEquals("withAuditInfo", body);
         }
     }
-    
+
     @Test
     public void testMapUtils() {
     	Map<String, String> preferredMap = new HashMap<>();
     	Map<String, String> alternativeMap = new HashMap<>();
-    	
+
     	preferredMap.put("a", "1");
     	preferredMap.put("b", "2");
-    	
+
     	alternativeMap.put("a", "11");
     	alternativeMap.put("b", "22");
     	alternativeMap.put("c", "33");
-    	
+
     	Map<String, ?> mergedMap = OpenApiHandler.mergeMaps(preferredMap, alternativeMap);
-    	
+
     	assertEquals(3, mergedMap.size());
     	assertEquals("1", mergedMap.get("a"));
     	assertEquals("2", mergedMap.get("b"));
     	assertEquals("33", mergedMap.get("c"));
-    	
+
     	Map<String, Object> nonNullMap = OpenApiHandler.nonNullMap(null);
-    	
+
     	assertNotNull(nonNullMap);
-    	
+
     }
 }

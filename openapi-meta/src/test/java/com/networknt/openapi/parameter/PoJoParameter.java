@@ -13,17 +13,17 @@ public class PoJoParameter implements Parameter {
 	private boolean explode;
 	private Schema schema;
 	private String name;
-	
+
 	public PoJoParameter() {
 	}
-	
+
 	public PoJoParameter(String name, String in, String style, boolean explode, Schema schema) {
 		this.name = name;
 		this.in = in;
 		this.style = style;
 		this.explode = explode;
 		this.schema = schema;
-	}	
+	}
 
 	@Override
 	public String getKey() {

@@ -61,7 +61,7 @@ public class OpenApiEndpointSourceTest {
             .stream(endpoints.spliterator(), false)
             .map(Object::toString)
             .collect(Collectors.toSet());
-        
+
         for (String endpoint: EXPECTED) {
         	assertTrue(endpointStrings.contains(endpoint));
         }

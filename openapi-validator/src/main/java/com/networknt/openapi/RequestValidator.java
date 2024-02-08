@@ -123,10 +123,10 @@ public class RequestValidator {
         SchemaValidatorsConfig config = new SchemaValidatorsConfig();
         config.setTypeLoose(false);
         config.setHandleNullableField(ValidatorHandler.config.isHandleNullableField());
-        
+
         return schemaValidator.validate(requestBody, Overlay.toJson((SchemaImpl)specBody.getContentMediaType("application/json").getSchema()), config, "requestBody");
     }
-    
+
     private Status validateRequestParameters(final HttpServerExchange exchange, final NormalisedPath requestPath, final OpenApiOperation openApiOperation) {
         Status status = validatePathParameters(exchange, requestPath, openApiOperation);
         if(status != null) return status;
@@ -136,20 +136,20 @@ public class RequestValidator {
 
         status = validateHeaderParameters(exchange, openApiOperation);
         if(status != null) return status;
-        
+
         status = validateCookieParameters(exchange, openApiOperation);
-        if(status != null) return status;  
-        
+        if(status != null) return status;
+
         return null;
     }
 
     private Status validatePathParameters(final HttpServerExchange exchange, final NormalisedPath requestPath, final OpenApiOperation openApiOperation) {
     	ValidationResult result = validateDeserializedValues(exchange, openApiOperation.getOperation().getParameters(), ParameterType.PATH);
-    	
+
     	if (null!=result.getStatus() || result.getSkippedParameters().isEmpty()) {
     		return result.getStatus();
     	}
-    	
+
     	// validate values that cannot be deserialized or do not need to be deserialized
     	Status status = null;
         for (int i = 0; i < openApiOperation.getPathString().parts().size(); i++) {
@@ -180,18 +180,18 @@ public class RequestValidator {
     private Status validateQueryParameters(final HttpServerExchange exchange,
                                            final OpenApiOperation openApiOperation) {
     	ValidationResult result = validateDeserializedValues(exchange, openApiOperation.getOperation().getParameters(), ParameterType.QUERY);
-    	
+
     	if (null!=result.getStatus() || result.getSkippedParameters().isEmpty()) {
     		return result.getStatus();
     	}
-    	
+
     	// validate values that cannot be deserialized or do not need to be deserialized
         Optional<Status> optional = result.getSkippedParameters()
         		.stream()
                 .map(p -> validateQueryParameter(exchange, openApiOperation, p))
                 .filter(s -> s != null)
                 .findFirst();
-        
+
         return optional.orElse(null);
     }
 
@@ -216,7 +216,7 @@ public class RequestValidator {
                     .map((v) -> schemaValidator.validate(v, Overlay.toJson((SchemaImpl)queryParameter.getSchema()), queryParameter.getName()))
                     .filter(s -> s != null)
                     .findFirst();
-            
+
             return optional.orElse(null);
         // Validate the queryParameterValue directly instead of validating its elements, if the length of this array deque larger than 2.
         // Since if the queryParameterValue's length larger than 2, it means the query parameter is an array.
@@ -240,35 +240,35 @@ public class RequestValidator {
             return optional.orElse(null);
         }
     }
-    
+
     private Optional<Status> validatePathLevelHeaders(final HttpServerExchange exchange, final OpenApiOperation openApiOperation) {
     	ValidationResult result = validateDeserializedValues(exchange, openApiOperation.getPathObject().getParameters(), ParameterType.HEADER);
-    	
+
     	if (null!=result.getStatus() || result.getSkippedParameters().isEmpty()) {
     		return Optional.ofNullable(result.getStatus());
     	}
-    	
+
     	return result.getSkippedParameters().stream()
 				        .map(p -> validateHeader(exchange, openApiOperation, p))
 				        .filter(s -> s != null)
 				        .findFirst();
     }
-    
-    
-    
+
+
+
     private Optional<Status> validateOperationLevelHeaders(final HttpServerExchange exchange, final OpenApiOperation openApiOperation) {
     	ValidationResult result = validateDeserializedValues(exchange, openApiOperation.getOperation().getParameters(), ParameterType.HEADER);
-    	
+
     	if (null!=result.getStatus() || result.getSkippedParameters().isEmpty()) {
     		return Optional.ofNullable(result.getStatus());
     	}
-    	
+
     	return result.getSkippedParameters().stream()
 				        .map(p -> validateHeader(exchange, openApiOperation, p))
 				        .filter(s -> s != null)
 				        .findFirst();
-    }  
-    
+    }
+
 	private Status validateCookieParameters(final HttpServerExchange exchange,
 			final OpenApiOperation openApiOperation) {
 
@@ -282,34 +282,34 @@ public class RequestValidator {
 			return optional.orElse(null);
 		}
 	}
-	
+
     private Optional<Status> validatePathLevelCookies(final HttpServerExchange exchange, final OpenApiOperation openApiOperation) {
     	ValidationResult result = validateDeserializedValues(exchange, openApiOperation.getPathObject().getParameters(), ParameterType.COOKIE);
-    	
+
     	if (null!=result.getStatus() || result.getSkippedParameters().isEmpty()) {
     		return Optional.ofNullable(result.getStatus());
     	}
-    	
+
     	return result.getSkippedParameters().stream()
 				        .map(p -> validateHeader(exchange, openApiOperation, p))
 				        .filter(s -> s != null)
 				        .findFirst();
     }
-    
-    
-    
+
+
+
     private Optional<Status> validateOperationLevelCookies(final HttpServerExchange exchange, final OpenApiOperation openApiOperation) {
     	ValidationResult result = validateDeserializedValues(exchange, openApiOperation.getOperation().getParameters(), ParameterType.COOKIE);
-    	
+
     	if (null!=result.getStatus() || result.getSkippedParameters().isEmpty()) {
     		return Optional.ofNullable(result.getStatus());
     	}
-    	
+
     	return result.getSkippedParameters().stream()
 				        .map(p -> validateHeader(exchange, openApiOperation, p))
 				        .filter(s -> s != null)
 				        .findFirst();
-    }	
+    }
 
     private Status validateHeader(final HttpServerExchange exchange,
                                   final OpenApiOperation openApiOperation,
@@ -329,11 +329,11 @@ public class RequestValidator {
         }
         return null;
     }
-    
+
 
     private ValidationResult validateDeserializedValues(final HttpServerExchange exchange, final Collection<Parameter> parameters, final ParameterType type) {
     	ValidationResult validationResult = new ValidationResult();
-    	
+
     	parameters.stream()
 		        .filter(p -> ParameterType.is(p.getIn(), type))
 		        .forEach(p->{
@@ -345,10 +345,10 @@ public class RequestValidator {
 		        		validationResult.addStatus(s);
 		        	}
 		        });
-    	
+
     	return validationResult;
     }
-    
+
     private Object getDeserializedValue(final HttpServerExchange exchange, final String name, final ParameterType type) {
     	if (null!=type && StringUtils.isNotBlank(name)) {
 			switch(type){
@@ -360,35 +360,35 @@ public class RequestValidator {
 				return OpenApiHandler.getHeaderParameters(exchange,true).get(name);
 			case COOKIE:
 				return OpenApiHandler.getCookieParameters(exchange,true).get(name);
-			}   		
+			}
     	}
-    	
+
     	return null;
     }
-    
-    
+
+
     class ValidationResult {
     	private Set<Parameter> skippedParameters = new HashSet<>();;
     	private List<Status> statuses = new ArrayList<>();
-    	
+
     	public void addSkipped(Parameter p) {
     		skippedParameters.add(p);
     	}
-    	
+
     	public void addStatus(Status s) {
     		if (null!=s) {
     			statuses.add(s);
     		}
     	}
-    	
+
     	public Set<Parameter> getSkippedParameters(){
     		return Collections.unmodifiableSet(skippedParameters);
     	}
-    	
+
     	public Status getStatus() {
     		return statuses.isEmpty()?null:statuses.get(0);
     	}
-    	
+
     	public List<Status> getAllStatueses(){
     		return Collections.unmodifiableList(statuses);
     	}
