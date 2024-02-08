@@ -47,29 +47,29 @@ paths:
           schema:
             type: array
             items:
-              type: string              
+              type: string
         - name: id_do
           in: query
           required: false
           style: deepObject
           explode: true
           schema:
-            $ref: '#/components/schemas/Pet'  
+            $ref: '#/components/schemas/Pet'
         - name: id_fo
           in: query
           required: false
           style: form
           explode: true
           schema:
-            $ref: '#/components/schemas/Pet'   
+            $ref: '#/components/schemas/Pet'
         - name: id_fno
           in: query
           required: false
           style: form
           explode: false
           schema:
-            $ref: '#/components/schemas/Pet'                         
-                            
+            $ref: '#/components/schemas/Pet'
+
       security:
         - petstore_auth:
             - 'read:pets'
@@ -140,7 +140,7 @@ paths:
           description: The id of the pet to retrieve
           schema:
             type: string
-                         
+
       security:
         - petstore_auth:
             - 'read:pets'
@@ -209,8 +209,8 @@ paths:
           schema:
             type: array
             items:
-              type: string  
-                         
+              type: string
+
       security:
         - petstore_auth:
             - 'read:pets'
@@ -245,7 +245,7 @@ paths:
           explode: true
           schema:
             $ref: '#/components/schemas/Pet'
-                         
+
       security:
         - petstore_auth:
             - 'read:pets'
@@ -279,7 +279,7 @@ paths:
           description: The id of the pet to retrieve
           schema:
             $ref: '#/components/schemas/Pet'
-                         
+
       security:
         - petstore_auth:
             - 'read:pets'
@@ -316,8 +316,8 @@ paths:
           schema:
             type: array
             items:
-              type: string  
-                         
+              type: string
+
       security:
         - petstore_auth:
             - 'read:pets'
@@ -337,7 +337,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'                
+                $ref: '#/components/schemas/Error'
   '/pets_label_array_no_ep/{petId}':
     get:
       summary: Info for a specific pet
@@ -353,8 +353,8 @@ paths:
           schema:
             type: array
             items:
-              type: string  
-                         
+              type: string
+
       security:
         - petstore_auth:
             - 'read:pets'
@@ -374,7 +374,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'  
+                $ref: '#/components/schemas/Error'
   '/pets_label_obj_ep/{petId}':
     get:
       summary: Info for a specific pet
@@ -390,7 +390,7 @@ paths:
           explode: true
           schema:
             $ref: '#/components/schemas/Pet'
-                         
+
       security:
         - petstore_auth:
             - 'read:pets'
@@ -410,7 +410,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'                
+                $ref: '#/components/schemas/Error'
   '/pets_label_obj_no_ep/{petId}':
     get:
       summary: Info for a specific pet
@@ -425,7 +425,7 @@ paths:
           style: label
           schema:
             $ref: '#/components/schemas/Pet'
-                         
+
       security:
         - petstore_auth:
             - 'read:pets'
@@ -445,7 +445,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'                  
+                $ref: '#/components/schemas/Error'
   '/pets_matrix_pm/{petId}':
     get:
       summary: Info for a specific pet
@@ -461,7 +461,7 @@ paths:
           explode: true
           schema:
             type: string
-                         
+
       security:
         - petstore_auth:
             - 'read:pets'
@@ -481,7 +481,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'  
+                $ref: '#/components/schemas/Error'
   '/pets_matrix_array_ep/{petId}':
     get:
       summary: Info for a specific pet
@@ -498,8 +498,8 @@ paths:
           schema:
             type: array
             items:
-              type: string  
-                         
+              type: string
+
       security:
         - petstore_auth:
             - 'read:pets'
@@ -519,7 +519,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'                
+                $ref: '#/components/schemas/Error'
   '/pets_matrix_array_no_ep/{petId}':
     get:
       summary: Info for a specific pet
@@ -535,8 +535,8 @@ paths:
           schema:
             type: array
             items:
-              type: string  
-                         
+              type: string
+
       security:
         - petstore_auth:
             - 'read:pets'
@@ -556,7 +556,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'  
+                $ref: '#/components/schemas/Error'
   '/pets_matrix_obj_ep/{petId}':
     get:
       summary: Info for a specific pet
@@ -572,7 +572,7 @@ paths:
           explode: true
           schema:
             $ref: '#/components/schemas/Pet'
-                         
+
       security:
         - petstore_auth:
             - 'read:pets'
@@ -592,7 +592,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'                
+                $ref: '#/components/schemas/Error'
   '/pets_matrix_obj_no_ep/{petId}':
     get:
       summary: Info for a specific pet
@@ -607,7 +607,7 @@ paths:
           style: matrix
           schema:
             $ref: '#/components/schemas/Pet'
-                         
+
       security:
         - petstore_auth:
             - 'read:pets'
@@ -627,7 +627,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'  
+                $ref: '#/components/schemas/Error'
   '/pets_header_array':
     get:
       summary: Info for a specific pet
@@ -642,8 +642,8 @@ paths:
           schema:
             type: array
             items:
-              type: string  
-                         
+              type: string
+
       security:
         - petstore_auth:
             - 'read:pets'
@@ -678,7 +678,7 @@ paths:
           explode: true
           schema:
             $ref: '#/components/schemas/Pet'
-                         
+
       security:
         - petstore_auth:
             - 'read:pets'
@@ -712,7 +712,7 @@ paths:
           description: The id of the pet to retrieve
           schema:
             $ref: '#/components/schemas/Pet'
-                         
+
       security:
         - petstore_auth:
             - 'read:pets'
@@ -747,8 +747,8 @@ paths:
           schema:
             type: array
             items:
-              type: string  
-                         
+              type: string
+
       security:
         - petstore_auth:
             - 'read:pets'
@@ -782,7 +782,7 @@ paths:
           description: The id of the pet to retrieve
           schema:
             $ref: '#/components/schemas/Pet'
-                         
+
       security:
         - petstore_auth:
             - 'read:pets'

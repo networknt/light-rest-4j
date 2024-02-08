@@ -21,7 +21,7 @@ import io.undertow.util.PathTemplateMatcher;
 public class ParameterHandler implements MiddlewareHandler {
 	private static PathTemplateMatcher<String> pathTemplateMatcher = new PathTemplateMatcher<>();
 	private volatile HttpHandler next;
-	
+
 	static {
         pathTemplateMatcher.add("/pets", "0");
         pathTemplateMatcher.add("/pets/{petId}", "1");
@@ -31,7 +31,7 @@ public class ParameterHandler implements MiddlewareHandler {
         pathTemplateMatcher.add("/pets_label_array_ep/{petId}", "5");
         pathTemplateMatcher.add("/pets_label_array_no_ep/{petId}", "6");
         pathTemplateMatcher.add("/pets_label_obj_ep/{petId}", "7");
-        pathTemplateMatcher.add("/pets_label_obj_no_ep/{petId}", "8");        
+        pathTemplateMatcher.add("/pets_label_obj_no_ep/{petId}", "8");
         pathTemplateMatcher.add("/pets_matrix_array_ep/{petId}", "9");
         pathTemplateMatcher.add("/pets_matrix_array_no_ep/{petId}", "10");
         pathTemplateMatcher.add("/pets_matrix_obj_ep/{petId}", "11");
@@ -42,17 +42,17 @@ public class ParameterHandler implements MiddlewareHandler {
 	@Override
 	public void handleRequest(HttpServerExchange exchange) throws Exception {
 		PathTemplateMatcher.PathMatchResult<String> result = pathTemplateMatcher.match(exchange.getRequestPath());
-		
+
 		if (result != null) {
 			exchange.putAttachment(ATTACHMENT_KEY,
 					new io.undertow.util.PathTemplateMatch(result.getMatchedTemplate(), result.getParameters()));
 			for (Map.Entry<String, String> entry : result.getParameters().entrySet()) {
 				exchange.addQueryParam(entry.getKey(), entry.getValue());
-				
+
 				exchange.addPathParam(entry.getKey(), entry.getValue());
 			}
 		}
-		
+
 		Handler.next(exchange, next);
 	}
 

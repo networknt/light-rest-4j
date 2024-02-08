@@ -21,14 +21,14 @@ public class CookieParameterDeserializer implements ParameterDeserializer {
 	@Override
 	public AttachmentKey<Map<String, Object>> getAttachmentKey(){
 		return OpenApiHandler.DESERIALIZED_COOKIE_PARAMETERS;
-	}	
-	
+	}
+
 	@Override
 	public StyleParameterDeserializer getStyleDeserializer(String style) {
 		if (StringUtils.isNotBlank(style) && !FORM.equalsIgnoreCase(style)) {
 			return null;
 		}
-		
+
 		return new StyleParameterDeserializer() {
 			@Override
 			public boolean isApplicable(ValueType valueType, boolean exploade) {
@@ -39,34 +39,34 @@ public class CookieParameterDeserializer implements ParameterDeserializer {
 			public Object deserialize(HttpServerExchange exchange, Parameter parameter, ValueType valueType,
 					boolean exploade) {
 				List<String> rawCookies = exchange.getRequestHeaders().get(Headers.COOKIE);
-				
-				
+
+
 				Map<String, Cookie> cookies = CookieHelper.parseRequestCookies(
 						exchange.getConnection().getUndertowOptions().get(UndertowOptions.MAX_COOKIES, 200),
 						exchange.getConnection().getUndertowOptions().get(UndertowOptions.ALLOW_EQUALS_IN_COOKIE_VALUE, false),
 						rawCookies);
-						
-				
+
+
 				Cookie cookie = cookies.get(parameter.getName());
-				
+
 				String value = cookie.getValue();
-				
+
 				if (ValueType.ARRAY == valueType) {
 					List<String> valueList = new ArrayList<>();
-					
+
 					valueList.addAll(asList(value, Delimiters.COMMA));
-					
-					return valueList;			
+
+					return valueList;
 				}else if (ValueType.OBJECT == valueType) {
 					Map<String, String> valueMap = new HashMap<>();
 					valueMap.putAll(asMap(value, Delimiters.COMMA));
-					
+
 					return valueMap;
 				}
-				
+
 				return null;
 			}
-			
+
 		};
 	}
 

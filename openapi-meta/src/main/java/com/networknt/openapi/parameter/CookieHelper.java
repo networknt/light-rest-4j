@@ -30,7 +30,7 @@ import io.undertow.server.handlers.CookieImpl;
 
 /**
  * Adapted from io.undertow.util.Cookies to support comma delimited values.
- * 
+ *
  * @author Daniel Zhao
  *
  */
@@ -40,10 +40,10 @@ public class CookieHelper {
     public static final String DOMAIN = "$Domain";
     public static final String VERSION = "$Version";
     public static final String PATH = "$Path";
-    
+
     private static final char[] HTTP_SEPARATORS;
     private static final boolean[] HTTP_SEPARATOR_FLAGS = new boolean[128];
-    
+
     /**
      * If set to true, the <code>/</code> character will be treated as a
      * separator. Default is false.
@@ -289,5 +289,3 @@ public class CookieHelper {
         return HTTP_SEPARATOR_FLAGS[c];
     }
 }
-
-

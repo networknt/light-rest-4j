@@ -12,10 +12,10 @@ import com.networknt.oas.model.Xml;
 public class PojoSchema implements Schema {
 	private Map<String, Schema> properties = new HashMap<>();
 	private String type;
-	
+
 	public PojoSchema() {
 	}
-	
+
 	public PojoSchema(String type, Map<String, Schema> properties) {
 		this.type = type;
 		this.properties.putAll(properties);
