@@ -1,9 +1,13 @@
 package com.networknt.openapi;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.networknt.config.Config;
+import com.networknt.config.ConfigException;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
 
 public class UnifiedSecurityConfigTest {
     @Test
@@ -67,4 +71,22 @@ public class UnifiedSecurityConfigTest {
         Assert.assertNull(config.getPathPrefixAuths());
     }
 
+    @Test
+    public void testPathPrefixAuth() {
+        String s = "[{\"prefix\":\"/adm/modules\",\"basic\":true},{\"prefix\":\"/adm/server\",\"basic\":true},{\"prefix\":\"/adm/logger\",\"basic\":true},{\"prefix\":\"/adm/health\",\"basic\":true},{\"prefix\":\"/gateway/NavigationTP\",\"jwt\":true,\"jwkServiceIds\":\"Navigation, NavigationJWT\"}]";
+        if(s.startsWith("[")) {
+            // json format
+            try {
+                List<Map<String, Object>> values = Config.getInstance().getMapper().readValue(s, new TypeReference<>() {});
+                Assert.assertEquals(5, values.size());
+                List<UnifiedPathPrefixAuth> pathPrefixAuths = UnifiedSecurityConfig.populatePathPrefixAuths(values);
+                Assert.assertEquals(5, pathPrefixAuths.size());
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new ConfigException("could not parse the pathPrefixAuths json with a list of string and object.");
+            }
+        } else {
+            throw new ConfigException("pathPrefixAuths must be a list of string object map.");
+        }
+    }
 }

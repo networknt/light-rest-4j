@@ -3,7 +3,7 @@ package com.networknt.openapi;
 import java.util.List;
 
 public class UnifiedPathPrefixAuth {
-    String pathPrefix;
+    String prefix;
     boolean basic;
     boolean jwt;
     boolean swt;
@@ -11,12 +11,12 @@ public class UnifiedPathPrefixAuth {
     List<String> jwkServiceIds;
     List<String> swtServiceIds;
 
-    public String getPathPrefix() {
-        return pathPrefix;
+    public String getPrefix() {
+        return prefix;
     }
 
-    public void setPathPrefix(String pathPrefix) {
-        this.pathPrefix = pathPrefix;
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
     }
 
     public boolean isBasic() {
