@@ -60,10 +60,10 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
             boolean found = false;
             // iterate each entry to check enabled security methods.
             for(UnifiedPathPrefixAuth pathPrefixAuth: config.getPathPrefixAuths()) {
-                if(logger.isTraceEnabled()) logger.trace("Check with requestPath = " + reqPath + " prefix = " + pathPrefixAuth.getPathPrefix());
-                if(reqPath.startsWith(pathPrefixAuth.getPathPrefix())) {
+                if(logger.isTraceEnabled()) logger.trace("Check with requestPath = " + reqPath + " prefix = " + pathPrefixAuth.getPrefix());
+                if(reqPath.startsWith(pathPrefixAuth.getPrefix())) {
                     found = true;
-                    if(logger.isTraceEnabled()) logger.trace("Found with requestPath = " + reqPath + " prefix = " + pathPrefixAuth.getPathPrefix());
+                    if(logger.isTraceEnabled()) logger.trace("Found with requestPath = " + reqPath + " prefix = " + pathPrefixAuth.getPrefix());
                     // check jwt and basic first with authorization header, then check the apikey if it is enabled.
                     if(pathPrefixAuth.isBasic() || pathPrefixAuth.isJwt() || pathPrefixAuth.isSwt()) {
                         String authorization = exchange.getRequestHeaders().getFirst(Headers.AUTHORIZATION);
@@ -130,7 +130,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                                 break;
                                             }
                                             // get the jwkServiceIds list.
-                                            if (handler.handleJwt(exchange, pathPrefixAuth.getPathPrefix(), reqPath, pathPrefixAuth.getJwkServiceIds())) {
+                                            if (handler.handleJwt(exchange, pathPrefixAuth.getPrefix(), reqPath, pathPrefixAuth.getJwkServiceIds())) {
                                                 // verification is passed, go to the next handler in the chain.
                                                 break;
                                             } else {
@@ -174,7 +174,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                             break;
                                         }
                                         // get the jwkServiceIds list.
-                                        if (handler.handleJwt(exchange, pathPrefixAuth.getPathPrefix(), reqPath, pathPrefixAuth.getJwkServiceIds())) {
+                                        if (handler.handleJwt(exchange, pathPrefixAuth.getPrefix(), reqPath, pathPrefixAuth.getJwkServiceIds())) {
                                             // verification is passed, go to the next handler in the chain.
                                             break;
                                         } else {
