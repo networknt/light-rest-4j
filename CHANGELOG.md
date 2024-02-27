@@ -12,6 +12,8 @@
 - fixes \#349 UnifiedSecurityHandler should check each handler isEnabled… [\#350](https://github.com/networknt/light-rest-4j/pull/350) ([stevehu](https://github.com/stevehu))
 - fixes \#347 Use NoneDecryptedInstance to load the config for registerM… [\#348](https://github.com/networknt/light-rest-4j/pull/348) ([stevehu](https://github.com/stevehu))
 - fixes \#345 openapi-validator.skipBodyValidation not working as expected [\#346](https://github.com/networknt/light-rest-4j/pull/346) ([stevehu](https://github.com/stevehu))
+
+
 ## [2.1.31](https://github.com/networknt/light-rest-4j/tree/2.1.31) (2024-01-16)
 
 
