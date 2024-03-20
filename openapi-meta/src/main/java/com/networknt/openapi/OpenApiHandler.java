@@ -112,7 +112,7 @@ public class OpenApiHandler implements MiddlewareHandler {
             Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache(CONFIG_NAME);
             handlerConfig = HandlerConfig.load();
 
-            this.validateSpec(openapi, inject, "openapi.yml");
+            this.validateSpec(openapi, inject, "openapi.yaml");
 
             OpenApiHelper.merge(openapi, inject);
             try {
