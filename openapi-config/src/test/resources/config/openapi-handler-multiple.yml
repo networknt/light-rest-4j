@@ -1,0 +1,13 @@
+# openapi-handler.yml
+# This configuration file is used to support multiple OpenAPI specifications in the same light-rest-4j instance.
+# An indicator to allow multiple openapi specifications. Default to false which only allow one spec named openapi.yml or openapi.yaml or openapi.json.
+multipleSpec: ${openapi-handler.multipleSpec:true}
+# When the OpenApiHandler is used in a shared gateway and some backend APIs have no specifications deployed on the gateway, the handler will return
+# an invalid request path error to the client. To allow the call to pass through the OpenApiHandler and route to the backend APIs, you can set this
+# flag to true. In this mode, the handler will only add the endpoint specification to the auditInfo if it can find it. Otherwise, it will pass through.
+ignoreInvalidPath: ${openapi-handler.ignoreInvalidPath:false}
+# Path to spec mapping. One or more base paths can map to the same specifications. The key is the base path and the value is the specification name.
+# If users want to use multiple specification files in the same instance, each specification must have a unique base path and it must be set as key.
+pathSpecMapping:
+  /petstore: openapi-petstore
+  /market: openapi-market
