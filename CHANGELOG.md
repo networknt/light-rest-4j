@@ -1,5 +1,14 @@
 # Change Log
 
+## [2.1.33](https://github.com/networknt/light-rest-4j/tree/2.1.33) (2024-03-31)
+
+
+**Merged pull requests:**
+
+
+- fixes \#356 split openapi-config module from openapi-meta [\#357](https://github.com/networknt/light-rest-4j/pull/357) ([stevehu](https://github.com/stevehu))
+
+
 ## [2.1.32](https://github.com/networknt/light-rest-4j/tree/2.1.32) (2024-02-27)
 
 
