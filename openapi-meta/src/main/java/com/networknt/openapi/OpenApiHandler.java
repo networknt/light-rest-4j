@@ -87,7 +87,16 @@ public class OpenApiHandler implements MiddlewareHandler {
             // multiple specifications in the same handler.
             Map<String, Object> pathSpecMapping = config.getPathSpecMapping();
             helperMap = new HashMap<>();
-
+            // add adm helper to the helperMap
+            if(inject != null) {
+                try {
+                    OpenApiHelper h = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(inject));
+                    helperMap.put("/adm", h);
+                } catch (JsonProcessingException e) {
+                    logger.error("parse inject failed for adm");
+                    throw new RuntimeException("parse inject failed for adm");
+                }
+            }
             // iterate the mapping to load the specifications.
             for (Map.Entry<String, Object> entry : pathSpecMapping.entrySet()) {
 
@@ -98,7 +107,9 @@ public class OpenApiHandler implements MiddlewareHandler {
 
                 this.validateSpec(openapi, inject, entry.getKey());
 
-                openapi = OpenApiHelper.merge(openapi, inject);
+                // no need to merge the inject as the path is not the same as the openapi
+                // openapi = OpenApiHelper.merge(openapi, inject);
+
                 try {
                     OpenApiHelper h = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(openapi));
                     helperMap.put(entry.getKey(), h);
