@@ -98,7 +98,7 @@ public class OpenApiHandler implements MiddlewareHandler {
 
                 this.validateSpec(openapi, inject, entry.getKey());
 
-                OpenApiHelper.merge(openapi, inject);
+                openapi = OpenApiHelper.merge(openapi, inject);
                 try {
                     OpenApiHelper h = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(openapi));
                     helperMap.put(entry.getKey(), h);
@@ -114,7 +114,7 @@ public class OpenApiHandler implements MiddlewareHandler {
 
             this.validateSpec(openapi, inject, "openapi.yaml");
 
-            OpenApiHelper.merge(openapi, inject);
+            openapi = OpenApiHelper.merge(openapi, inject);
             try {
 
                 helper = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(openapi));
