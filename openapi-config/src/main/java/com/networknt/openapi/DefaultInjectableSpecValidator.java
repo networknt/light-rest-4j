@@ -12,7 +12,8 @@ public class DefaultInjectableSpecValidator implements InjectableSpecValidator {
 
     @Override
     public boolean isValid(Map<String, Object> openapi, Map<String, Object> inject) {
-        if (inject == null) {
+        // openapi.yaml can be null in the light-gateway with multiple specs are disabled.
+        if (inject == null || openapi == null) {
             return true;
         }
         if (inject.get(PATHS) instanceof Map && openapi.get(PATHS) instanceof Map) {
