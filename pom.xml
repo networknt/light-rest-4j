@@ -119,6 +119,7 @@
         <module>openapi-meta</module>
         <module>validator-config</module>
         <module>openapi-validator</module>
+        <module>unified-config</module>
         <module>openapi-security</module>
         <module>access-control</module>
         <module>specification</module>
@@ -145,6 +146,11 @@
             <dependency>
                 <groupId>com.networknt</groupId>
                 <artifactId>openapi-validator</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.networknt</groupId>
+                <artifactId>unified-config</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -176,6 +182,11 @@
             <dependency>
                 <groupId>com.networknt</groupId>
                 <artifactId>http-string</artifactId>
+                <version>${version.light-4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.networknt</groupId>
+                <artifactId>security-config</artifactId>
                 <version>${version.light-4j}</version>
             </dependency>
             <dependency>
