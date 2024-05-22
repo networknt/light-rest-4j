@@ -20,6 +20,7 @@ handler.chains.default:
   - unified
 
 # basic-auth.yml
+basic.enabled: true
 basic.users:
   - username: user1
     password: user1pass
