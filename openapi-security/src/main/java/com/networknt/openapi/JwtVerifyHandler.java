@@ -30,6 +30,7 @@ import com.networknt.oas.model.SecurityRequirement;
 import com.networknt.security.IJwtVerifyHandler;
 import com.networknt.security.JwtVerifier;
 import com.networknt.security.SecurityConfig;
+import com.networknt.security.UndertowVerifyHandler;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
 import io.undertow.Handlers;
@@ -53,7 +54,7 @@ import java.util.*;
  *
  * @author Steve Hu
  */
-public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
+public class JwtVerifyHandler extends UndertowVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
     static final Logger logger = LoggerFactory.getLogger(JwtVerifyHandler.class);
     static final String OPENAPI_SECURITY_CONFIG = "openapi-security";
     static final String STATUS_INVALID_AUTH_TOKEN = "ERR10000";
@@ -171,7 +172,7 @@ public class JwtVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
                     auditInfo.put(Constants.CLIENT_ID_STRING, clientId);
                     auditInfo.put(Constants.ISSUER_CLAIMS, issuer);
 
-                    if (!config.isEnableH2c() && jwtVerifier.checkForH2CRequest(headerMap)) {
+                    if (!config.isEnableH2c() && checkForH2CRequest(headerMap)) {
                         setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED);
                         if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends with an error.");
                         return false;

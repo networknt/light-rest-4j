@@ -15,6 +15,7 @@ import com.networknt.oas.model.SecurityParameter;
 import com.networknt.oas.model.SecurityRequirement;
 import com.networknt.security.SwtVerifier;
 import com.networknt.security.SecurityConfig;
+import com.networknt.security.UndertowVerifyHandler;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
 import com.networknt.utility.StringUtils;
@@ -37,7 +38,7 @@ import java.util.*;
  *
  * @author Steve Hu
  */
-public class SwtVerifyHandler implements MiddlewareHandler {
+public class SwtVerifyHandler extends UndertowVerifyHandler implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(SwtVerifyHandler.class);
     static final String OPENAPI_SECURITY_CONFIG = "openapi-security";
     static final String STATUS_INVALID_AUTH_TOKEN = "ERR10000";
@@ -157,7 +158,7 @@ public class SwtVerifyHandler implements MiddlewareHandler {
                     auditInfo.put(Constants.CLIENT_ID_STRING, clientId);
                     String issuer = tokenInfo.getIss();
                     auditInfo.put(Constants.ISSUER_CLAIMS, issuer);
-                    if (!config.isEnableH2c() && swtVerifier.checkForH2CRequest(headerMap)) {
+                    if (!config.isEnableH2c() && checkForH2CRequest(headerMap)) {
                         setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED);
                         if (logger.isDebugEnabled()) logger.debug("SwtVerifyHandler.handleRequest ends with an error.");
                         return false;
