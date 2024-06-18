@@ -258,6 +258,30 @@ paths:
             application/json:
               schema:
                 type: object
+  /adm/cache/{name}:
+    get:
+      description: get all cache names in a list or all items in a map
+      parameters:
+        - name: name
+          in: path
+          description: Cache Name
+          required: true
+          schema:
+            type: string
+      security:
+        - admin-scope:
+            # okta doesn't support either for now
+            # for control pane to access all businesses' admin endpoints
+            - admin
+            # for each business to access their own admin endpoints
+            - ${server.serviceId:com.networknt.placeholder-1.0.0}/admin
+      responses:
+        '200':
+          description: A JSON object of cache items
+          content:
+            application/json:
+              schema:
+                type: object
 
 components:
   securitySchemes:
