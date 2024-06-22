@@ -1,5 +1,21 @@
 # Change Log
 
+## [2.1.34](https://github.com/networknt/light-rest-4j/tree/2.1.34) (2024-06-22)
+
+
+**Merged pull requests:**
+
+
+- fixes \#372 update openapi-inject to add cache explore endpoint [\#373](https://github.com/networknt/light-rest-4j/pull/373) ([stevehu](https://github.com/stevehu))
+- fixes \#370 Update JwtVerifyHandler and SwtVerifyHandler [\#371](https://github.com/networknt/light-rest-4j/pull/371) ([stevehu](https://github.com/stevehu))
+- fixes \#368 Add a test case and configurations to test enum validation [\#369](https://github.com/networknt/light-rest-4j/pull/369) ([stevehu](https://github.com/stevehu))
+- fixes \#366 update test values.yml to set baise.enabled to true [\#367](https://github.com/networknt/light-rest-4j/pull/367) ([stevehu](https://github.com/stevehu))
+- fixes \#364 Split unified-config for UnifiedSecurityHandle to share wi… [\#365](https://github.com/networknt/light-rest-4j/pull/365) ([stevehu](https://github.com/stevehu))
+- [pre-commit.ci] pre-commit autoupdate [\#363](https://github.com/networknt/light-rest-4j/pull/363) ([pre-commit-ci](https://github.com/apps/pre-commit-ci))
+- fixes \#361 add openapi-inject into the map with key adm in multiple s… [\#362](https://github.com/networknt/light-rest-4j/pull/362) ([stevehu](https://github.com/stevehu))
+- fixes \#359 Allow the openapi.yaml to be missing so that openapi-injec… [\#360](https://github.com/networknt/light-rest-4j/pull/360) ([stevehu](https://github.com/stevehu))
+
+
 ## [2.1.33](https://github.com/networknt/light-rest-4j/tree/2.1.33) (2024-03-31)
 
 
