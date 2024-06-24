@@ -103,30 +103,25 @@ public class OpenApiHandler implements MiddlewareHandler {
                 if (logger.isTraceEnabled())
                     logger.trace("key = {} value = {}", entry.getKey(), entry.getValue());
 
-                Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache((String) entry.getValue());
-
-                this.validateSpec(openapi, inject, entry.getKey());
-
-                // no need to merge the inject as the path is not the same as the openapi
-                // openapi = OpenApiHelper.merge(openapi, inject);
-
                 try {
+                    Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache((String) entry.getValue());
+                    this.validateSpec(openapi, inject, entry.getKey());
                     OpenApiHelper h = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(openapi));
                     helperMap.put(entry.getKey(), h);
-                } catch (JsonProcessingException e) {
-                    logger.error("merge specification failed for " + entry.getValue());
+                } catch (Exception e) {
+                    logger.error("merge specification failed for {}", entry.getValue(), e);
                     throw new RuntimeException("merge specification failed for " + entry.getValue());
                 }
             }
             if(logger.isTraceEnabled()) logger.trace("multiple specifications loaded.");
         } else {
-            Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache(CONFIG_NAME);
-            handlerConfig = HandlerConfig.load();
-
-            this.validateSpec(openapi, inject, "openapi.yaml");
-
-            openapi = OpenApiHelper.merge(openapi, inject);
             try {
+                Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache(CONFIG_NAME);
+                handlerConfig = HandlerConfig.load();
+
+                this.validateSpec(openapi, inject, "openapi.yaml");
+
+                openapi = OpenApiHelper.merge(openapi, inject);
 
                 helper = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(openapi));
 
@@ -135,9 +130,9 @@ public class OpenApiHandler implements MiddlewareHandler {
                 if (helper.basePath.isEmpty() && handlerConfig != null && handlerConfig.getBasePath() != null) {
                     helper.setBasePath(handlerConfig.getBasePath());
                 }
-            } catch (JsonProcessingException e) {
-                logger.error("merge specification failed");
-                throw new RuntimeException("merge specification failed");
+            } catch (Exception e) {
+                logger.error("merge specification failed", e);
+                throw new RuntimeException("merge specification failed", e);
             }
             if(logger.isTraceEnabled()) logger.trace("single specification loaded.");
         }
