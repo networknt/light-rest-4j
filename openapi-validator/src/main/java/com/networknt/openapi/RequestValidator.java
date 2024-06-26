@@ -19,14 +19,11 @@ package com.networknt.openapi;
 import static java.util.Objects.requireNonNull;
 
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import com.networknt.config.Config;
 import com.networknt.httpstring.AttachmentConstants;
 import io.undertow.util.Headers;
 import org.slf4j.Logger;
@@ -60,6 +57,7 @@ public class RequestValidator {
     static final String VALIDATOR_REQUEST_BODY_MISSING = "ERR11014";
     static final String VALIDATOR_REQUEST_PARAMETER_HEADER_MISSING = "ERR11017";
     static final String VALIDATOR_REQUEST_PARAMETER_QUERY_MISSING = "ERR11000";
+    static final String CONTENT_TYPE_MISMATCH = "ERR10015";
 
     private final SchemaValidator schemaValidator;
 
@@ -110,12 +108,12 @@ public class RequestValidator {
         if (requestBody == null) {
             if (specBody.getRequired() != null && specBody.getRequired()) {
                 if(BodyHandler.config.isEnabled()) {
-                    // BodyHandler is enable and there is no error returned, that means the request body is empty. This is an validation error.
+                    // BodyHandler is enabled and there is no error returned, that means the request body is empty. This is a validation error.
                     return new Status(VALIDATOR_REQUEST_BODY_MISSING, openApiOperation.getMethod(), openApiOperation.getPathString().original());
                 } else {
-                    // most likely, the BodyHandler is missing from the request chain and we cannot find the body attachment in the exchange
+                    // most likely, the BodyHandler is missing from the request chain, and we cannot find the body attachment in the exchange
                     // the second scenario is that application/json is not in the request header and BodyHandler is skipped.
-                    logger.warn("Body object doesn't exist in exchange attachment. Most likely the BodyHandler is not in the request chain before RequestValidator or reqeust misses application/json content type header");
+                    logger.warn("Body object doesn't exist in exchange attachment. Most likely the BodyHandler is not in the request chain before RequestValidator or request misses application/json content type header");
                 }
             }
             return null;
@@ -124,7 +122,29 @@ public class RequestValidator {
         config.setTypeLoose(false);
         config.setHandleNullableField(ValidatorHandler.config.isHandleNullableField());
 
-        return schemaValidator.validate(requestBody, Overlay.toJson((SchemaImpl)specBody.getContentMediaType("application/json").getSchema()), config, "requestBody");
+        // the body can be converted to JsonNode here. If not, an error is returned.
+        JsonNode requestNode;
+        // The body can be a string, map or list. Convert to JsonNode.
+        if(requestBody instanceof String) {
+            String requestBodyString = (String)requestBody;
+            requestBodyString = requestBodyString.trim();
+            if(requestBodyString.startsWith("{") || requestBodyString.startsWith("[")) {
+                try {
+                    requestNode = Config.getInstance().getMapper().readTree(requestBodyString);
+                } catch (Exception e) {
+                    return new Status(CONTENT_TYPE_MISMATCH, "application/json");
+                }
+            } else {
+                return new Status(CONTENT_TYPE_MISMATCH, "application/json");
+            }
+        } else if (requestBody instanceof Map) {
+            requestNode = Config.getInstance().getMapper().valueToTree(requestBody);
+        } else if (requestBody instanceof List) {
+            requestNode = Config.getInstance().getMapper().valueToTree(requestBody);
+        } else {
+            return new Status(CONTENT_TYPE_MISMATCH, "application/json");
+        }
+        return schemaValidator.validate(requestNode, Overlay.toJson((SchemaImpl)specBody.getContentMediaType("application/json").getSchema()), config);
     }
 
     private Status validateRequestParameters(final HttpServerExchange exchange, final NormalisedPath requestPath, final OpenApiOperation openApiOperation) {
@@ -171,7 +191,7 @@ public class RequestValidator {
 	                logger.info("Path parameter cannot be decoded, it will be used directly");
 	            }
 
-                return schemaValidator.validate(paramValue, Overlay.toJson((SchemaImpl)(parameter.get().getSchema())), paramName);
+                return schemaValidator.validate(new TextNode(paramValue), Overlay.toJson((SchemaImpl)(parameter.get().getSchema())));
             }
         }
         return status;
@@ -213,7 +233,7 @@ public class RequestValidator {
 
             Optional<Status> optional = queryParameterValues
                     .stream()
-                    .map((v) -> schemaValidator.validate(v, Overlay.toJson((SchemaImpl)queryParameter.getSchema()), queryParameter.getName()))
+                    .map((v) -> schemaValidator.validate(new TextNode(v), Overlay.toJson((SchemaImpl)queryParameter.getSchema())))
                     .filter(s -> s != null)
                     .findFirst();
 
@@ -222,7 +242,8 @@ public class RequestValidator {
         // Since if the queryParameterValue's length larger than 2, it means the query parameter is an array.
         // thus array validation should be applied, for example, validate the length of the array.
         } else {
-            return schemaValidator.validate(queryParameterValues, Overlay.toJson((SchemaImpl)queryParameter.getSchema()), queryParameter.getName());
+            final JsonNode content = Config.getInstance().getMapper().valueToTree(queryParameterValues);
+            return schemaValidator.validate(content, Overlay.toJson((SchemaImpl)queryParameter.getSchema()));
         }
         return null;
     }
@@ -322,7 +343,7 @@ public class RequestValidator {
         } else {
             Optional<Status> optional = headerValues
                     .stream()
-                    .map((v) -> schemaValidator.validate(v, Overlay.toJson((SchemaImpl)headerParameter.getSchema()), headerParameter.getName()))
+                    .map((v) -> schemaValidator.validate(new TextNode(v), Overlay.toJson((SchemaImpl)headerParameter.getSchema())))
                     .filter(s -> s != null)
                     .findFirst();
             return optional.orElse(null);
@@ -341,7 +362,8 @@ public class RequestValidator {
 		        	if (null==deserializedValue) {
 		        		validationResult.addSkipped(p);
 		        	}else {
-		        		Status s = schemaValidator.validate(deserializedValue, Overlay.toJson((SchemaImpl)(p.getSchema())), p.getName());
+		        		JsonNode jsonNode = Config.getInstance().getMapper().valueToTree(deserializedValue);
+                        Status s = schemaValidator.validate(jsonNode, Overlay.toJson((SchemaImpl)(p.getSchema())));
 		        		validationResult.addStatus(s);
 		        	}
 		        });
