@@ -18,14 +18,10 @@ package com.networknt.openapi;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.networknt.config.Config;
 import com.networknt.jsonoverlay.Overlay;
 import com.networknt.oas.model.OpenApi3;
 import com.networknt.oas.model.impl.OpenApi3Impl;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SchemaValidatorsConfig;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.*;
 import com.networknt.status.Status;
 
 import java.util.Set;
@@ -80,8 +76,8 @@ public class SchemaValidator {
      *
      * @return A status containing error code and description
      */
-    public Status validate(final Object value, final JsonNode schema, SchemaValidatorsConfig config) {
-        return doValidate(value, schema, config, "$");
+    public Status validate(final JsonNode value, final JsonNode schema, SchemaValidatorsConfig config) {
+        return doValidate(value, schema, config, null);
     }
 
     /**
@@ -90,23 +86,25 @@ public class SchemaValidator {
      * @param value The value to validate
      * @param schema The property schema to validate the value against
      * @param config The config model for some validator
-     * @param at The name of the property being validated
+     * @param instanceLocation The JsonNodePath being validated
      * @return Status object
      */
-    public Status validate(final Object value, final JsonNode schema, SchemaValidatorsConfig config, String at) {
-        return doValidate(value, schema, config, at);
+    public Status validate(final JsonNode value, final JsonNode schema, SchemaValidatorsConfig config, JsonNodePath instanceLocation) {
+        return doValidate(value, schema, config, instanceLocation);
     }
 
-    public Status validate(final Object value, final JsonNode schema) {
-        return doValidate(value, schema, defaultConfig, "$");
+    public Status validate(final JsonNode value, final JsonNode schema) {
+        return doValidate(value, schema, defaultConfig, null);
     }
 
-    public Status validate(final Object value, final JsonNode schema, String at) {
-        return doValidate(value, schema, defaultConfig, at);
+    public Status validate(final JsonNode value, final JsonNode schema, JsonNodePath instanceLocation) {
+        return doValidate(value, schema, defaultConfig, instanceLocation);
     }
 
-    private Status doValidate(final Object value, final JsonNode schema, SchemaValidatorsConfig config, String at) {
+    private Status doValidate(final JsonNode value, final JsonNode schema, SchemaValidatorsConfig config, JsonNodePath instanceLocation) {
         requireNonNull(schema, "A schema is required");
+        if (instanceLocation == null)
+            instanceLocation = new JsonNodePath(config.getPathType());
 
         Status status = null;
         Set<ValidationMessage> processingReport = null;
@@ -114,14 +112,13 @@ public class SchemaValidator {
             if(jsonNode != null) {
                 ((ObjectNode)schema).set(COMPONENTS_FIELD, jsonNode);
             }
-            JsonSchema jsonSchema = JsonSchemaFactory.getInstance().getSchema(schema, config);
-            final JsonNode content = Config.getInstance().getMapper().valueToTree(value);
-            processingReport = jsonSchema.validate(content, content, at);
+            JsonSchema jsonSchema = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012).getSchema(schema, config);
+            processingReport = jsonSchema.validate(jsonSchema.createExecutionContext(), value, value, instanceLocation);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        if(processingReport != null && processingReport.size() > 0) {
+        if(processingReport != null && !processingReport.isEmpty()) {
             ValidationMessage vm = processingReport.iterator().next();
             status = new Status(VALIDATOR_SCHEMA, vm.getMessage());
         }

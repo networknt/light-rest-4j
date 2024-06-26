@@ -17,6 +17,7 @@ package com.networknt.openapi;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.networknt.config.Config;
 import com.networknt.dump.StoreResponseStreamSinkConduit;
 import com.networknt.jsonoverlay.Overlay;
@@ -46,6 +47,8 @@ public class ResponseValidator {
     private final SchemaValidatorsConfig config;
     private static final String VALIDATOR_RESPONSE_CONTENT_UNEXPECTED = "ERR11018";
     private static final String REQUIRED_RESPONSE_HEADER_MISSING = "ERR11019";
+    private static final String CONTENT_TYPE_MISMATCH = "ERR10015";
+
     private static final String JSON_MEDIA_TYPE = "application/json";
     private static final String GOOD_STATUS_CODE = "200";
     private static final String DEFAULT_STATUS_CODE = "default";
@@ -63,7 +66,7 @@ public class ResponseValidator {
      * @param exchange HttpServerExchange in handler
      * @return Status return null if no validation errors
      */
-    public Status validateResponseContent(Object responseContent, HttpServerExchange exchange) {
+    public Status validateResponseContent(String responseContent, HttpServerExchange exchange) {
         return validateResponseContent(responseContent, exchange.getRequestURI(), exchange.getRequestMethod().toString().toLowerCase(), String.valueOf(exchange.getStatusCode()));
     }
 
@@ -75,7 +78,7 @@ public class ResponseValidator {
      * @param httpMethod eg. "put" or "get"
      * @return Status return null if no validation errors
      */
-    public Status validateResponseContent(Object responseContent, String uri, String httpMethod) {
+    public Status validateResponseContent(String responseContent, String uri, String httpMethod) {
         return validateResponseContent(responseContent, uri, httpMethod, GOOD_STATUS_CODE);
     }
 
@@ -88,7 +91,7 @@ public class ResponseValidator {
      * @param statusCode eg. 200, 400
      * @return Status return null if no validation errors
      */
-    public Status validateResponseContent(Object responseContent, String uri, String httpMethod, String statusCode) {
+    public Status validateResponseContent(String responseContent, String uri, String httpMethod, String statusCode) {
         return validateResponseContent(responseContent, uri, httpMethod, statusCode, JSON_MEDIA_TYPE);
     }
 
@@ -102,7 +105,7 @@ public class ResponseValidator {
      * @param mediaTypeName eg. "application/json"
      * @return Status return null if no validation errors
      */
-    public Status validateResponseContent(Object responseContent, String uri, String httpMethod, String statusCode, String mediaTypeName) {
+    public Status validateResponseContent(String responseContent, String uri, String httpMethod, String statusCode, String mediaTypeName) {
         OpenApiOperation operation = null;
         try {
             operation = getOpenApiOperation(uri, httpMethod);
@@ -124,11 +127,7 @@ public class ResponseValidator {
      * @param mediaTypeName eg. "application/json"
      * @return Status return null if no validation errors
      */
-    public Status validateResponseContent(Object responseContent, OpenApiOperation openApiOperation, String statusCode, String mediaTypeName) {
-        //try to convert json string to structured object
-        if(responseContent instanceof String) {
-            responseContent = convertStrToObjTree((String)responseContent);
-        }
+    public Status validateResponseContent(String responseContent, OpenApiOperation openApiOperation, String statusCode, String mediaTypeName) {
         JsonNode schema = getContentSchema(openApiOperation, statusCode, mediaTypeName);
         //if cannot find schema based on status code, try to get from "default"
         if(schema == null || schema.isMissingNode()) {
@@ -146,7 +145,19 @@ public class ResponseValidator {
         }
         config.setTypeLoose(false);
         config.setHandleNullableField(ValidatorHandler.config.isHandleNullableField());
-        return schemaValidator.validate(responseContent, schema, config);
+
+        JsonNode responseNode;
+        responseContent = responseContent.trim();
+        if(responseContent.startsWith("{") || responseContent.startsWith("[")) {
+            try {
+                responseNode = Config.getInstance().getMapper().readTree(responseContent);
+            } catch (Exception e) {
+                return new Status(CONTENT_TYPE_MISMATCH, "application/json");
+            }
+        } else {
+            return new Status(CONTENT_TYPE_MISMATCH, "application/json");
+        }
+        return schemaValidator.validate(responseNode, schema, config);
     }
 
     /**
@@ -258,7 +269,7 @@ public class ResponseValidator {
         } else {
             Optional<Status> optional = headerValues
                     .stream()
-                    .map((v) -> schemaValidator.validate(v, Overlay.toJson((SchemaImpl)operationHeader.getSchema()),  config))
+                    .map((v) -> schemaValidator.validate(new TextNode(v), Overlay.toJson((SchemaImpl)operationHeader.getSchema()),  config))
                     .filter(s -> s != null)
                     .findFirst();
             if(optional.isPresent()) {
