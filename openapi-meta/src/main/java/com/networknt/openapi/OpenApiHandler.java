@@ -357,10 +357,10 @@ public class OpenApiHandler implements MiddlewareHandler {
     }
 
     public static Map<String, ?> getPathParameters(final HttpServerExchange exchange, final boolean deserializedValueOnly) {
-        Map<String, Object> deserializedPathParamters = exchange.getAttachment(DESERIALIZED_PATH_PARAMETERS);
+        Map<String, Object> deserializedPathParameters = exchange.getAttachment(DESERIALIZED_PATH_PARAMETERS);
 
-        return deserializedValueOnly ? nonNullMap(deserializedPathParamters)
-                : mergeMaps(deserializedPathParamters, exchange.getPathParameters());
+        return deserializedValueOnly ? nonNullMap(deserializedPathParameters)
+                : mergeMaps(deserializedPathParameters, exchange.getPathParameters());
     }
 
     public static Map<String, ?> getHeaderParameters(final HttpServerExchange exchange) {
