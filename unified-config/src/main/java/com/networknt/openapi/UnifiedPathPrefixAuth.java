@@ -6,9 +6,11 @@ public class UnifiedPathPrefixAuth {
     String prefix;
     boolean basic;
     boolean jwt;
+    boolean sjwt;
     boolean swt;
     boolean apikey;
     List<String> jwkServiceIds;
+    List<String> sjwkServiceIds;
     List<String> swtServiceIds;
 
     public String getPrefix() {
@@ -33,6 +35,14 @@ public class UnifiedPathPrefixAuth {
 
     public void setJwt(boolean jwt) {
         this.jwt = jwt;
+    }
+
+    public boolean isSjwt() {
+        return sjwt;
+    }
+
+    public void setSjwt(boolean sjwt) {
+        this.sjwt = sjwt;
     }
 
     public boolean isSwt() {
@@ -65,5 +75,13 @@ public class UnifiedPathPrefixAuth {
 
     public void setSwtServiceIds(List<String> swtServiceIds) {
         this.swtServiceIds = swtServiceIds;
+    }
+
+    public List<String> getSjwkServiceIds() {
+        return sjwkServiceIds;
+    }
+
+    public void setSjwkServiceIds(List<String> sjwkServiceIds) {
+        this.sjwkServiceIds = sjwkServiceIds;
     }
 }

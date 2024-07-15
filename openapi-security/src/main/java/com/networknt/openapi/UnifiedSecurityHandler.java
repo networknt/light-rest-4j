@@ -3,8 +3,11 @@ package com.networknt.openapi;
 import com.networknt.apikey.ApiKeyHandler;
 import com.networknt.basicauth.BasicAuthHandler;
 import com.networknt.config.Config;
+import com.networknt.config.PathPrefixAuth;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
+import com.networknt.security.JwtVerifier;
+import com.networknt.security.SecurityConfig;
 import com.networknt.utility.ModuleRegistry;
 import com.networknt.utility.StringUtils;
 import io.undertow.Handlers;
@@ -15,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * This is a security handler that combines Anonymous, ApiKey, Basic and OAuth together to avoid all of them
@@ -26,11 +30,13 @@ import java.util.Map;
  */
 public class UnifiedSecurityHandler implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(UnifiedSecurityHandler.class);
+    static final String OPENAPI_SECURITY_CONFIG = "openapi-security";
     static final String BEARER_PREFIX = "BEARER";
     static final String BASIC_PREFIX = "BASIC";
     static final String API_KEY = "apikey";
     static final String JWT = "jwt";
     static final String SWT = "swt";
+    static final String SJWT = "sjwt";
     static final String MISSING_AUTH_TOKEN = "ERR10002";
     static final String INVALID_AUTHORIZATION_HEADER = "ERR12003";
     static final String HANDLER_NOT_FOUND = "ERR11200";
@@ -38,10 +44,12 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
     static UnifiedSecurityConfig config;
     // make this static variable public so that it can be accessed from the server-info module
     private volatile HttpHandler next;
+    public static JwtVerifier jwtVerifier;
 
     public UnifiedSecurityHandler() {
         logger.info("UnifiedSecurityHandler starts");
         config = UnifiedSecurityConfig.load();
+        jwtVerifier = new JwtVerifier(SecurityConfig.load(OPENAPI_SECURITY_CONFIG));
     }
 
     @Override
@@ -60,15 +68,17 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
             boolean found = false;
             // iterate each entry to check enabled security methods.
             for(UnifiedPathPrefixAuth pathPrefixAuth: config.getPathPrefixAuths()) {
-                if(logger.isTraceEnabled()) logger.trace("Check with requestPath = " + reqPath + " prefix = " + pathPrefixAuth.getPrefix());
+                if(logger.isTraceEnabled())
+                    logger.trace("Check with requestPath = {} prefix = {}", reqPath, pathPrefixAuth.getPrefix());
                 if(reqPath.startsWith(pathPrefixAuth.getPrefix())) {
                     found = true;
-                    if(logger.isTraceEnabled()) logger.trace("Found with requestPath = " + reqPath + " prefix = " + pathPrefixAuth.getPrefix());
+                    if(logger.isTraceEnabled())
+                        logger.trace("Found with requestPath = {} prefix = {}", reqPath, pathPrefixAuth.getPrefix());
                     // check jwt and basic first with authorization header, then check the apikey if it is enabled.
-                    if(pathPrefixAuth.isBasic() || pathPrefixAuth.isJwt() || pathPrefixAuth.isSwt()) {
+                    if(pathPrefixAuth.isBasic() || pathPrefixAuth.isJwt() || pathPrefixAuth.isSwt() || pathPrefixAuth.isSjwt()) {
                         String authorization = exchange.getRequestHeaders().getFirst(Headers.AUTHORIZATION);
                         if(authorization == null) {
-                            logger.error("Basic or JWT or SWT is enabled and authorization header is missing.");
+                            logger.error("Basic or JWT or SWT or SJWT is enabled and authorization header is missing.");
                             // set the WWW-Authenticate header to Basic realm="realm"
                             if(pathPrefixAuth.isBasic()) {
                                 if(logger.isTraceEnabled()) logger.trace("Basic is enabled and set WWW-Authenticate header to Basic realm=\"Default Realm\"");
@@ -80,7 +90,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                             exchange.endExchange();
                             return;
                         } else {
-                            // make sure that the length is greater than 5.
+                            // authorization is available. make sure that the length is greater than 5.
                             if(authorization.trim().length() <= 5) {
                                 logger.error("Invalid/Unsupported authorization header {}", authorization);
                                 setExchangeStatus(exchange, INVALID_AUTHORIZATION_HEADER, authorization);
@@ -106,18 +116,103 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                         break;
                                     } else {
                                         // verification is not passed and an error is returned. Don't call the next handler.
+                                        // the error is set by the handler.handleBasicAuth method and the exchange is ended.
                                         return;
                                     }
                                 }
                             } else if (BEARER_PREFIX.equalsIgnoreCase(authorization.substring(0, 6))) {
-                                // in the case that a bearer token is used, there are three scenarios: both jwt and swt are true, only jwt is true and only swt is true
-                                // in the first case, we need to identify if the token is jwt or swt before calling the right handler to verify it.
+                                // in the case that a bearer token is used, there are three token types: jwt, sjwt and swt. we need to identify the type
+                                // and then call the right handler if the type is configured as true.
                                 Map<String, HttpHandler> handlers = Handler.getHandlers();
-                                if(pathPrefixAuth.isJwt() && pathPrefixAuth.isSwt()) {
-                                    // both jwt and swt are enabled.
-                                    boolean isJwt = StringUtils.isJwtToken(authorization);
-                                    if(logger.isTraceEnabled()) logger.trace("Both jwt and swt are true and check token is jwt = {}", isJwt);
-                                    if(isJwt) {
+                                // remove the Bearer prefix to get the token.
+                                String token = authorization.substring(7);
+                                // first to identify the token type.
+                                boolean isJwtOrSjwt = StringUtils.isJwtToken(token);
+                                if(logger.isTraceEnabled()) logger.trace("Bearer token is jwt or sjwt = {}", isJwtOrSjwt);
+                                if(isJwtOrSjwt) {
+                                    // if sjwt is true, need to parse the token to see if it has scope or scp claim to identify if it is a jwt or sjwt.
+                                    if(pathPrefixAuth.isSjwt()) {
+                                        if(logger.isTraceEnabled()) logger.trace("SJWT is enabled.");
+                                        // check if jwt is true.
+                                        if(pathPrefixAuth.isJwt()) {
+                                            if(logger.isTraceEnabled()) logger.trace("JWT is enabled along with swt.");
+                                            // we need to check if the token has scope.
+                                            boolean isScopeInJwt = jwtVerifier.isScopeInJwt(token, pathPrefixAuth.getPrefix());
+                                            if(logger.isTraceEnabled()) logger.trace("Check token has scope = {}", isScopeInJwt);
+                                            if(isScopeInJwt) {
+                                                // normal jwt, call jwtVerifier to verify the token.
+                                                if(logger.isTraceEnabled()) logger.trace("Both jwt and sjwt are true and it has scope. This is a jwt token.");
+                                                JwtVerifyHandler handler = (JwtVerifyHandler) handlers.get(JWT);
+                                                if (handler == null) {
+                                                    logger.error("Cannot find JwtVerifyHandler with alias name jwt.");
+                                                    setExchangeStatus(exchange, HANDLER_NOT_FOUND, "com.networknt.openapi.JwtVerifyHandler@jwt");
+                                                    exchange.endExchange();
+                                                    return;
+                                                } else {
+                                                    // if the handler is not enabled in the configuration, break here to call next handler.
+                                                    if(!handler.isEnabled()) {
+                                                        break;
+                                                    }
+                                                    // get the jwkServiceIds list.
+                                                    if (handler.handleJwt(exchange, pathPrefixAuth.getPrefix(), reqPath, pathPrefixAuth.getJwkServiceIds())) {
+                                                        // verification is passed, go to the next handler in the chain.
+                                                        break;
+                                                    } else {
+                                                        // verification is not passed and an error is returned. Don't call the next handler.
+                                                        return;
+                                                    }
+                                                }
+                                            } else {
+                                                // No scope in the token. It is a sjwt, call sjwtVerifier to verify the token.
+                                                if(logger.isTraceEnabled()) logger.trace("Both jwt and sjwt are true and no scope in the token. It is a sjwt token.");
+                                                SimpleJwtVerifyHandler handler = (SimpleJwtVerifyHandler) handlers.get(SJWT);
+                                                if (handler == null) {
+                                                    logger.error("Cannot find SimpleJwtVerifyHandler with alias name sjwt.");
+                                                    setExchangeStatus(exchange, HANDLER_NOT_FOUND, "com.networknt.openapi.SimpleJwtVerifyHandler@sjwt");
+                                                    exchange.endExchange();
+                                                    return;
+                                                } else {
+                                                    // if the handler is not enabled in the configuration, break here to call next handler.
+                                                    if(!handler.isEnabled()) {
+                                                        break;
+                                                    }
+                                                    // get the jwkServiceIds list.
+                                                    if (handler.handleJwt(exchange, pathPrefixAuth.getPrefix(), reqPath, pathPrefixAuth.getSjwkServiceIds())) {
+                                                        // verification is passed, go to the next handler in the chain.
+                                                        break;
+                                                    } else {
+                                                        // verification is not passed and an error is returned. Don't call the next handler.
+                                                        return;
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            // jwt is not true. this is must be a sjwt token without scope.
+                                            if(logger.isTraceEnabled()) logger.trace("jwt is not true and sjwt is true. This is a sjwt token.");
+                                            SimpleJwtVerifyHandler handler = (SimpleJwtVerifyHandler) handlers.get(SJWT);
+                                            if (handler == null) {
+                                                logger.error("Cannot find SimpleJwtVerifyHandler with alias name sjwt.");
+                                                setExchangeStatus(exchange, HANDLER_NOT_FOUND, "com.networknt.openapi.SimpleJwtVerifyHandler@sjwt");
+                                                exchange.endExchange();
+                                                return;
+                                            } else {
+                                                // if the handler is not enabled in the configuration, break here to call next handler.
+                                                if(!handler.isEnabled()) {
+                                                    break;
+                                                }
+                                                // get the jwkServiceIds list.
+                                                if (handler.handleJwt(exchange, pathPrefixAuth.getPrefix(), reqPath, pathPrefixAuth.getSjwkServiceIds())) {
+                                                    // verification is passed, go to the next handler in the chain.
+                                                    break;
+                                                } else {
+                                                    // verification is not passed and an error is returned. Don't call the next handler.
+                                                    return;
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        // this is just a standard jwt token with scopes.
+                                        if(logger.isTraceEnabled()) logger.trace("SJWT is not enabled and this is a jwt token.");
                                         JwtVerifyHandler handler = (JwtVerifyHandler) handlers.get(JWT);
                                         if (handler == null) {
                                             logger.error("Cannot find JwtVerifyHandler with alias name jwt.");
@@ -138,52 +233,10 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                                 return;
                                             }
                                         }
-                                    } else {
-                                        SwtVerifyHandler handler = (SwtVerifyHandler) handlers.get(SWT);
-                                        if (handler == null) {
-                                            logger.error("Cannot find SwtVerifyHandler with alias name swt.");
-                                            setExchangeStatus(exchange, HANDLER_NOT_FOUND, "com.networknt.openapi.SwtVerifyHandler@swt");
-                                            exchange.endExchange();
-                                            return;
-                                        } else {
-                                            // if the handler is not enabled in the configuration, break here to call next handler.
-                                            if(!handler.isEnabled()) {
-                                                break;
-                                            }
-                                            // get the jwkServiceIds list.
-                                            if (handler.handleSwt(exchange, reqPath, pathPrefixAuth.getSwtServiceIds())) {
-                                                // verification is passed, go to the next handler in the chain.
-                                                break;
-                                            } else {
-                                                // verification is not passed and an error is returned. Don't call the next handler.
-                                                return;
-                                            }
-                                        }
-                                    }
-                                } else if(pathPrefixAuth.isJwt()) {
-                                    // only jwt is enabled
-                                    JwtVerifyHandler handler = (JwtVerifyHandler) handlers.get(JWT);
-                                    if (handler == null) {
-                                        logger.error("Cannot find JwtVerifyHandler with alias name jwt.");
-                                        setExchangeStatus(exchange, HANDLER_NOT_FOUND, "com.networknt.openapi.JwtVerifyHandler@jwt");
-                                        exchange.endExchange();
-                                        return;
-                                    } else {
-                                        // if the handler is not enabled in the configuration, break here to call next handler.
-                                        if(!handler.isEnabled()) {
-                                            break;
-                                        }
-                                        // get the jwkServiceIds list.
-                                        if (handler.handleJwt(exchange, pathPrefixAuth.getPrefix(), reqPath, pathPrefixAuth.getJwkServiceIds())) {
-                                            // verification is passed, go to the next handler in the chain.
-                                            break;
-                                        } else {
-                                            // verification is not passed and an error is returned. Don't call the next handler.
-                                            return;
-                                        }
                                     }
                                 } else {
-                                    // only swt is enabled
+                                    // assume it is a swt token.
+                                    if(logger.isTraceEnabled()) logger.trace("Bearer token is swt.");
                                     SwtVerifyHandler handler = (SwtVerifyHandler) handlers.get(SWT);
                                     if (handler == null) {
                                         logger.error("Cannot find SwtVerifyHandler with alias name swt.");
@@ -206,6 +259,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                     }
                                 }
                             } else {
+                                // not BASIC or BEARER, return an error.
                                 String s = authorization.length() > 10 ? authorization.substring(0, 10) : authorization;
                                 logger.error("Invalid/Unsupported authorization header {}", s);
                                 setExchangeStatus(exchange, INVALID_AUTHORIZATION_HEADER, s);
@@ -256,7 +310,6 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
         if(logger.isDebugEnabled()) logger.debug("UnifiedSecurityHandler.handleRequest ends.");
         Handler.next(exchange, next);
     }
-
 
     @Override
     public HttpHandler getNext() {
