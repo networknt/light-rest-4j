@@ -20,9 +20,11 @@ public class UnifiedSecurityConfig {
     public static final String PREFIX = "prefix";
     public static final String BASIC = "basic";
     public static final String JWT = "jwt";
+    public static final String SJWT = "sjwt";
     public static final String SWT = "swt";
     public static final String APIKEY = "apikey";
     public static final String JWK_SERVICE_IDS = "jwkServiceIds";
+    public static final String SJWK_SERVICE_IDS = "sjwkServiceIds";
     public static final String SWT_SERVICE_IDS = "swtServiceIds";
     boolean enabled;
     List<String> anonymousPrefixes;
@@ -164,6 +166,7 @@ public class UnifiedSecurityConfig {
             unifiedPathPrefixAuth.setPrefix((String)value.get(PREFIX));
             unifiedPathPrefixAuth.setBasic(value.get(BASIC) == null ? false : (Boolean)value.get(BASIC));
             unifiedPathPrefixAuth.setJwt(value.get(JWT) == null ? false : (Boolean)value.get(JWT));
+            unifiedPathPrefixAuth.setSjwt(value.get(SJWT) == null ? false : (Boolean)value.get(SJWT));
             unifiedPathPrefixAuth.setSwt(value.get(SWT) == null ? false : (Boolean)value.get(SWT));
             unifiedPathPrefixAuth.setApikey(value.get(APIKEY) == null ? false : (Boolean)value.get(APIKEY));
             Object jwkIds = value.get(JWK_SERVICE_IDS);
@@ -184,6 +187,25 @@ public class UnifiedSecurityConfig {
             } else if(jwkIds instanceof List ) {
                 // it must be a json array.
                 unifiedPathPrefixAuth.setJwkServiceIds((List)jwkIds);
+            }
+            Object sjwkIds = value.get(SJWK_SERVICE_IDS);
+            if(sjwkIds instanceof String) {
+                String s = (String)value.get(SJWK_SERVICE_IDS);
+                if(s.startsWith("[")) {
+                    // json format
+                    try {
+                        unifiedPathPrefixAuth.setSjwkServiceIds(Config.getInstance().getMapper().readValue(s, new TypeReference<List<String>>() {}));
+                    } catch (Exception e) {
+                        logger.error("could not parse the sjwkServiceIds json with a list of strings.", e);
+                        throw new ConfigException("could not parse the sjwkServiceIds json with a list of strings.");
+                    }
+                } else {
+                    // comma separated
+                    unifiedPathPrefixAuth.setSjwkServiceIds(Arrays.asList(s.split("\\s*,\\s*")));
+                }
+            } else if(jwkIds instanceof List ) {
+                // it must be a json array.
+                unifiedPathPrefixAuth.setSjwkServiceIds((List)sjwkIds);
             }
             Object swtIds = value.get(SWT_SERVICE_IDS);
             if(swtIds instanceof String) {
