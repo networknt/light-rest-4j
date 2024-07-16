@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.networknt.config.Config;
 import com.networknt.httpstring.AttachmentConstants;
+import com.networknt.schema.PathType;
 import io.undertow.util.Headers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,9 +119,11 @@ public class RequestValidator {
             }
             return null;
         }
-        SchemaValidatorsConfig config = new SchemaValidatorsConfig();
-        config.setTypeLoose(false);
-        config.setHandleNullableField(ValidatorHandler.config.isHandleNullableField());
+        SchemaValidatorsConfig config = SchemaValidatorsConfig.builder()
+                .typeLoose(false)
+                .pathType(PathType.JSON_POINTER)
+                .nullableKeywordEnabled(ValidatorHandler.config.isHandleNullableField())
+                .build();
 
         // the body can be converted to JsonNode here. If not, an error is returned.
         JsonNode requestNode;
@@ -191,7 +194,7 @@ public class RequestValidator {
 	                logger.info("Path parameter cannot be decoded, it will be used directly");
 	            }
 
-                return schemaValidator.validate(new TextNode(paramValue), Overlay.toJson((SchemaImpl)(parameter.get().getSchema())));
+                return schemaValidator.validate(new TextNode(paramValue), Overlay.toJson((SchemaImpl)(parameter.get().getSchema())), paramName);
             }
         }
         return status;
@@ -233,7 +236,7 @@ public class RequestValidator {
 
             Optional<Status> optional = queryParameterValues
                     .stream()
-                    .map((v) -> schemaValidator.validate(new TextNode(v), Overlay.toJson((SchemaImpl)queryParameter.getSchema())))
+                    .map((v) -> schemaValidator.validate(new TextNode(v), Overlay.toJson((SchemaImpl)queryParameter.getSchema()), queryParameter.getName()))
                     .filter(s -> s != null)
                     .findFirst();
 
@@ -243,7 +246,7 @@ public class RequestValidator {
         // thus array validation should be applied, for example, validate the length of the array.
         } else {
             final JsonNode content = Config.getInstance().getMapper().valueToTree(queryParameterValues);
-            return schemaValidator.validate(content, Overlay.toJson((SchemaImpl)queryParameter.getSchema()));
+            return schemaValidator.validate(content, Overlay.toJson((SchemaImpl)queryParameter.getSchema()), queryParameter.getName());
         }
         return null;
     }
@@ -343,7 +346,7 @@ public class RequestValidator {
         } else {
             Optional<Status> optional = headerValues
                     .stream()
-                    .map((v) -> schemaValidator.validate(new TextNode(v), Overlay.toJson((SchemaImpl)headerParameter.getSchema())))
+                    .map((v) -> schemaValidator.validate(new TextNode(v), Overlay.toJson((SchemaImpl)headerParameter.getSchema()), headerParameter.getName()))
                     .filter(s -> s != null)
                     .findFirst();
             return optional.orElse(null);
@@ -363,7 +366,7 @@ public class RequestValidator {
 		        		validationResult.addSkipped(p);
 		        	}else {
 		        		JsonNode jsonNode = Config.getInstance().getMapper().valueToTree(deserializedValue);
-                        Status s = schemaValidator.validate(jsonNode, Overlay.toJson((SchemaImpl)(p.getSchema())));
+                        Status s = schemaValidator.validate(jsonNode, Overlay.toJson((SchemaImpl)(p.getSchema())), p.getName());
 		        		validationResult.addStatus(s);
 		        	}
 		        });
