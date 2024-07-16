@@ -170,7 +170,7 @@ public class SimpleJwtVerifyHandler extends UndertowVerifyHandler implements Mid
                         }
                     }
                     if (logger.isTraceEnabled())
-                        logger.trace("complete JWT verification for request path = {}", exchange.getRequestURI());
+                        logger.trace("complete SJWT verification for request path = {}", exchange.getRequestURI());
 
                     if (logger.isDebugEnabled())
                         logger.debug("SimpleJwtVerifyHandler.handleRequest ends.");

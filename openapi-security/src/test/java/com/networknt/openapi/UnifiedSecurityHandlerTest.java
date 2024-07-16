@@ -90,12 +90,8 @@ public class UnifiedSecurityHandlerTest {
                     Map<String, Object> examples = new HashMap<>();
                     examples.put("application/xml", StringEscapeUtils.unescapeHtml4("&lt;Pet&gt;  &lt;id&gt;123456&lt;/id&gt;  &lt;name&gt;doggie&lt;/name&gt;  &lt;photoUrls&gt;    &lt;photoUrls&gt;string&lt;/photoUrls&gt;  &lt;/photoUrls&gt;  &lt;tags&gt;  &lt;/tags&gt;  &lt;status&gt;string&lt;/status&gt;&lt;/Pet&gt;"));
                     examples.put("application/json", StringEscapeUtils.unescapeHtml4("{  &quot;photoUrls&quot; : [ &quot;aeiou&quot; ],  &quot;name&quot; : &quot;doggie&quot;,  &quot;id&quot; : 123456789,  &quot;category&quot; : {    &quot;name&quot; : &quot;aeiou&quot;,    &quot;id&quot; : 123456789  },  &quot;tags&quot; : [ {    &quot;name&quot; : &quot;aeiou&quot;,    &quot;id&quot; : 123456789  } ],  &quot;status&quot; : &quot;aeiou&quot;}"));
-                    if (examples.size() > 0) {
-                        exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
-                        exchange.getResponseSender().send((String) examples.get("application/json"));
-                    } else {
-                        exchange.endExchange();
-                    }
+                    exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");
+                    exchange.getResponseSender().send((String) examples.get("application/json"));
                 })
                 .add(Methods.GET, "/oauth2/N2CMw0HGQXeLvC1wBfln2A/keys", exchange -> {
                     exchange.getResponseHeaders().add(new HttpString("Content-Type"), "application/json");

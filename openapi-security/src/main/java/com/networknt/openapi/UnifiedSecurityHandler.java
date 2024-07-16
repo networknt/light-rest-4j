@@ -135,7 +135,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                         if(logger.isTraceEnabled()) logger.trace("SJWT is enabled.");
                                         // check if jwt is true.
                                         if(pathPrefixAuth.isJwt()) {
-                                            if(logger.isTraceEnabled()) logger.trace("JWT is enabled along with swt.");
+                                            if(logger.isTraceEnabled()) logger.trace("JWT is enabled along with SJWT.");
                                             // we need to check if the token has scope.
                                             boolean isScopeInJwt = jwtVerifier.isScopeInJwt(token, pathPrefixAuth.getPrefix());
                                             if(logger.isTraceEnabled()) logger.trace("Check token has scope = {}", isScopeInJwt);
