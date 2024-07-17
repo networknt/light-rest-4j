@@ -10,6 +10,7 @@ handler.basePath: /
 handler.handlers:
   - com.networknt.openapi.OpenApiHandler@specification
   - com.networknt.openapi.JwtVerifyHandler@jwt
+  - com.networknt.openapi.SimpleJwtVerifyHandler@sjwt
   - com.networknt.openapi.SwtVerifyHandler@swt
   - com.networknt.basicauth.BasicAuthHandler@basic
   - com.networknt.openapi.UnifiedSecurityHandler@unified
