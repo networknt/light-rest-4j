@@ -612,6 +612,21 @@ public class PojoSchema implements Schema {
 	}
 
 	@Override
+	public Boolean getUnevaluatedProperties() {
+		return null;
+	}
+
+	@Override
+	public boolean isUnevaluatedProperties() {
+		return false;
+	}
+
+	@Override
+	public void setUnevaluatedProperties(Boolean additionalProperties) {
+
+	}
+
+	@Override
 	public String getDescription() {
 		// TODO Auto-generated method stub
 		return null;
