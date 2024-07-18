@@ -109,7 +109,7 @@
         <version.swagger-core>1.5.18</version.swagger-core>
         <version.jsr305>3.0.2</version.jsr305>
         <versions.maven-version>2.4</versions.maven-version>
-        <version.json-schema-validator>1.4.3</version.json-schema-validator>
+        <version.json-schema-validator>1.5.0</version.json-schema-validator>
         <version.yaml-rule>1.0.3</version.yaml-rule>
         <version.maven-javadoc>3.4.1</version.maven-javadoc>
     </properties>
