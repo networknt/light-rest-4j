@@ -56,6 +56,11 @@
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
+            <artifactId>unified-security</artifactId>
+            <version>${version.light-4j}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
             <artifactId>handler</artifactId>
         </dependency>
         <dependency>

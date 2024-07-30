@@ -1,33 +1,16 @@
 package com.networknt.openapi;
 
 import com.networknt.config.Config;
-import com.networknt.exception.ExpiredTokenException;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.handler.config.HandlerConfig;
-import com.networknt.httpstring.AttachmentConstants;
-import com.networknt.httpstring.HttpStringConstants;
-import com.networknt.oas.model.Operation;
-import com.networknt.oas.model.Path;
-import com.networknt.security.IJwtVerifyHandler;
-import com.networknt.security.JwtVerifier;
-import com.networknt.security.SecurityConfig;
-import com.networknt.security.UndertowVerifyHandler;
-import com.networknt.utility.Constants;
+import com.networknt.security.*;
 import com.networknt.utility.ModuleRegistry;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HeaderMap;
-import io.undertow.util.Headers;
-import io.undertow.util.HttpString;
-import org.jose4j.jwt.JwtClaims;
-import org.jose4j.jwt.MalformedClaimException;
-import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
 
 /**
  * This is very simple jwt verify handler that is used to verify jwt token without scopes. Other than scopes, it is
@@ -35,13 +18,9 @@ import java.util.*;
  *
  * @author Steve Hu
  */
-public class SimpleJwtVerifyHandler extends UndertowVerifyHandler implements MiddlewareHandler, IJwtVerifyHandler {
+public class SimpleJwtVerifyHandler extends AbstractSimpleJwtVerifyHandler {
     static final Logger logger = LoggerFactory.getLogger(SimpleJwtVerifyHandler.class);
     static final String OPENAPI_SECURITY_CONFIG = "openapi-security";
-    static final String STATUS_INVALID_AUTH_TOKEN = "ERR10000";
-    static final String STATUS_AUTH_TOKEN_EXPIRED = "ERR10001";
-    static final String STATUS_MISSING_AUTH_TOKEN = "ERR10002";
-    static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
 
     static SecurityConfig config;
 
@@ -87,151 +66,6 @@ public class SimpleJwtVerifyHandler extends UndertowVerifyHandler implements Mid
         }
     }
 
-    public boolean handleJwt(HttpServerExchange exchange, String pathPrefix, String reqPath, List<String> jwkServiceIds) throws Exception {
-        Map<String, Object> auditInfo = null;
-        HeaderMap headerMap = exchange.getRequestHeaders();
-        String authorization = headerMap.getFirst(Headers.AUTHORIZATION);
-
-        if (logger.isTraceEnabled() && authorization != null && authorization.length() > 10)
-            logger.trace("Authorization header = {}", authorization.substring(0, 10));
-        // if an empty authorization header or a value length less than 6 ("Basic "), return an error
-        if(authorization == null ) {
-            setExchangeStatus(exchange, STATUS_MISSING_AUTH_TOKEN);
-            exchange.endExchange();
-            if (logger.isDebugEnabled()) logger.debug("SimpleJwtVerifyHandler.handleRequest ends with an error.");
-            return false;
-        } else if(authorization.trim().length() < 6) {
-            setExchangeStatus(exchange, STATUS_INVALID_AUTH_TOKEN);
-            exchange.endExchange();
-            if (logger.isDebugEnabled()) logger.debug("SimpleJwtVerifyHandler.handleRequest ends with an error.");
-            return false;
-        } else {
-            authorization = this.getScopeToken(authorization, headerMap);
-
-            boolean ignoreExpiry = config.isIgnoreJwtExpiry();
-
-            String jwt = JwtVerifier.getTokenFromAuthorization(authorization);
-
-            if (jwt != null) {
-
-                if (logger.isTraceEnabled())
-                    logger.trace("parsed jwt from authorization = {}", jwt.substring(0, 10));
-
-                try {
-
-                    JwtClaims claims = jwtVerifier.verifyJwt(jwt, ignoreExpiry, true, pathPrefix, reqPath, jwkServiceIds);
-
-                    if (logger.isTraceEnabled())
-                        logger.trace("claims = {}", claims.toJson());
-
-                    /* if no auditInfo has been set previously, we populate here */
-                    auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
-                    if (auditInfo == null) {
-                        auditInfo = new HashMap<>();
-                        exchange.putAttachment(AttachmentConstants.AUDIT_INFO, auditInfo);
-                    }
-
-                    String clientId = claims.getStringClaimValue(Constants.CLIENT_ID_STRING);
-                    String userId = claims.getStringClaimValue(Constants.USER_ID_STRING);
-                    String issuer = claims.getStringClaimValue(Constants.ISS_STRING);
-                    // try to get the cid as some OAuth tokens name it as cid like Okta.
-                    if (clientId == null)
-                        clientId = claims.getStringClaimValue(Constants.CID_STRING);
-
-
-                    // try to get the uid as some OAuth tokens name it as uid like Okta.
-                    if (userId == null)
-                        userId = claims.getStringClaimValue(Constants.UID_STRING);
-
-                    auditInfo.put(Constants.USER_ID_STRING, userId);
-                    auditInfo.put(Constants.SUBJECT_CLAIMS, claims);
-                    auditInfo.put(Constants.CLIENT_ID_STRING, clientId);
-                    auditInfo.put(Constants.ISSUER_CLAIMS, issuer);
-
-                    if (!config.isEnableH2c() && checkForH2CRequest(headerMap)) {
-                        setExchangeStatus(exchange, STATUS_METHOD_NOT_ALLOWED);
-                        if (logger.isDebugEnabled()) logger.debug("SimpleJwtVerifyHandler.handleRequest ends with an error.");
-                        return false;
-                    }
-
-                    String callerId = headerMap.getFirst(HttpStringConstants.CALLER_ID);
-
-                    if (callerId != null)
-                        auditInfo.put(Constants.CALLER_ID_STRING, callerId);
-
-                    // pass through claims through request headers after verification is done.
-                    if(config.getPassThroughClaims() != null && config.getPassThroughClaims().size() > 0) {
-                        for(Map.Entry<String, String> entry: config.getPassThroughClaims().entrySet()) {
-                            String key = entry.getKey();
-                            String header = entry.getValue();
-                            Object value = claims.getClaimValue(key);
-                            if(logger.isTraceEnabled()) logger.trace("pass through header {} with value {}", header, value);
-                            headerMap.put(new HttpString(header), value.toString());
-                        }
-                    }
-                    if (logger.isTraceEnabled())
-                        logger.trace("complete SJWT verification for request path = {}", exchange.getRequestURI());
-
-                    if (logger.isDebugEnabled())
-                        logger.debug("SimpleJwtVerifyHandler.handleRequest ends.");
-
-                    return true;
-                } catch (InvalidJwtException e) {
-
-                    // only log it and unauthorized is returned.
-                    logger.error("InvalidJwtException: ", e);
-
-                    if (logger.isDebugEnabled())
-                        logger.debug("SimpleJwtVerifyHandler.handleRequest ends with an error.");
-
-                    setExchangeStatus(exchange, STATUS_INVALID_AUTH_TOKEN);
-                    exchange.endExchange();
-                    return false;
-                } catch (ExpiredTokenException e) {
-
-                    logger.error("ExpiredTokenException", e);
-
-                    if (logger.isDebugEnabled())
-                        logger.debug("SimpleJwtVerifyHandler.handleRequest ends with an error.");
-
-                    setExchangeStatus(exchange, STATUS_AUTH_TOKEN_EXPIRED);
-                    exchange.endExchange();
-                    return false;
-                }
-            } else {
-                if (logger.isDebugEnabled())
-                    logger.debug("SimpleJwtVerifyHandler.handleRequest ends with an error.");
-
-                setExchangeStatus(exchange, STATUS_MISSING_AUTH_TOKEN);
-                exchange.endExchange();
-                return false;
-            }
-        }
-    }
-    /**
-     * Get authToken from X-Scope-Token header.
-     * This covers situations where there is a secondary auth token.
-     *
-     * @param authorization - The auth token from authorization header
-     * @param headerMap - complete header map
-     * @return - return either x-scope-token or the initial auth token
-     */
-    protected String getScopeToken(String authorization, HeaderMap headerMap) {
-        String returnToken = authorization;
-        // in the gateway case, the authorization header might be a basic header for the native API or other authentication headers.
-        // this will allow the Basic authentication be wrapped up with a JWT token between proxy client and proxy server for native.
-        if (returnToken != null && !returnToken.substring(0, 6).equalsIgnoreCase("Bearer")) {
-
-            // get the jwt token from the X-Scope-Token header in this case and allow the verification done with the secondary token.
-            returnToken = headerMap.getFirst(HttpStringConstants.SCOPE_TOKEN);
-
-            if (logger.isTraceEnabled() && returnToken != null && returnToken.length() > 10)
-                logger.trace("The replaced authorization from X-Scope-Token header = {}", returnToken.substring(0, 10));
-        }
-        return returnToken;
-    }
-
-
     @Override
     public HttpHandler getNext() {
         return next;
@@ -261,8 +95,4 @@ public class SimpleJwtVerifyHandler extends UndertowVerifyHandler implements Mid
         ModuleRegistry.registerModule(OPENAPI_SECURITY_CONFIG, SimpleJwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(OPENAPI_SECURITY_CONFIG), null);
     }
 
-    @Override
-    public JwtVerifier getJwtVerifier() {
-        return jwtVerifier;
-    }
 }
