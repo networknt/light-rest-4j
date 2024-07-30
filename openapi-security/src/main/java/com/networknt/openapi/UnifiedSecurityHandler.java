@@ -3,11 +3,13 @@ package com.networknt.openapi;
 import com.networknt.apikey.ApiKeyHandler;
 import com.networknt.basicauth.BasicAuthHandler;
 import com.networknt.config.Config;
-import com.networknt.config.PathPrefixAuth;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.security.JwtVerifier;
 import com.networknt.security.SecurityConfig;
+import com.networknt.security.UnifiedPathPrefixAuth;
+import com.networknt.security.UnifiedSecurityConfig;
+import com.networknt.status.Status;
 import com.networknt.utility.ModuleRegistry;
 import com.networknt.utility.StringUtils;
 import io.undertow.Handlers;
@@ -56,13 +58,31 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
     public void handleRequest(HttpServerExchange exchange) throws Exception {
         if (logger.isDebugEnabled())
             logger.debug("UnifiedSecurityHandler.handleRequest starts.");
+        Status status = verifyUnifiedSecurity(exchange);
+        if (status != null) {
+            if (logger.isDebugEnabled())
+                logger.debug("UnifiedSecurityHandler.handleRequest ends with an error.");
+            setExchangeStatus(exchange, status);
+            exchange.endExchange();
+            return;
+        }
+        if(logger.isDebugEnabled()) logger.debug("UnifiedSecurityHandler.handleRequest ends.");
+        Handler.next(exchange, next);
+    }
+
+    /**
+     * Return a status object if there are any error. Otherwise, return null if all checks are passed.
+     *
+     * @param exchange HttpServerExchange
+     * @return Status object if there are any error. Null if there is no error.
+     */
+    public Status verifyUnifiedSecurity(HttpServerExchange exchange) throws Exception {
         String reqPath = exchange.getRequestPath();
         // check if the path prefix is in the anonymousPrefixes list. If yes, skip all other check and goes to next handler.
         if (config.getAnonymousPrefixes() != null && config.getAnonymousPrefixes().stream().anyMatch(reqPath::startsWith)) {
             if(logger.isTraceEnabled())
                 logger.trace("Skip request path base on anonymousPrefixes for " + reqPath);
-            Handler.next(exchange, next);
-            return;
+            return null;
         }
         if(config.getPathPrefixAuths() != null) {
             boolean found = false;
@@ -84,18 +104,14 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                 if(logger.isTraceEnabled()) logger.trace("Basic is enabled and set WWW-Authenticate header to Basic realm=\"Default Realm\"");
                                 exchange.getResponseHeaders().put(Headers.WWW_AUTHENTICATE, "Basic realm=\"Default Realm\"");
                             }
-                            setExchangeStatus(exchange, MISSING_AUTH_TOKEN);
                             if(logger.isDebugEnabled())
                                 logger.debug("UnifiedSecurityHandler.handleRequest ends with an error.");
-                            exchange.endExchange();
-                            return;
+                            return new Status(MISSING_AUTH_TOKEN);
                         } else {
                             // authorization is available. make sure that the length is greater than 5.
                             if(authorization.trim().length() <= 5) {
                                 logger.error("Invalid/Unsupported authorization header {}", authorization);
-                                setExchangeStatus(exchange, INVALID_AUTHORIZATION_HEADER, authorization);
-                                exchange.endExchange();
-                                return;
+                                return new Status(INVALID_AUTHORIZATION_HEADER, authorization);
                             }
                             // check if it is basic or bearer and handler it differently.
                             if(BASIC_PREFIX.equalsIgnoreCase(authorization.substring(0, 5))) {
@@ -103,9 +119,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                 BasicAuthHandler handler = (BasicAuthHandler) handlers.get(BASIC_PREFIX.toLowerCase());
                                 if(handler == null) {
                                     logger.error("Cannot find BasicAuthHandler with alias name basic.");
-                                    setExchangeStatus(exchange, HANDLER_NOT_FOUND, "com.networknt.basicauth.BasicAuthHandler@basic");
-                                    exchange.endExchange();
-                                    return;
+                                    return new Status(HANDLER_NOT_FOUND, "com.networknt.basicauth.BasicAuthHandler@basic");
                                 } else {
                                     // if the handler is not enabled in the configuration, break here to call next handler.
                                     if(!handler.isEnabled()) {
@@ -117,7 +131,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                     } else {
                                         // verification is not passed and an error is returned. Don't call the next handler.
                                         // the error is set by the handler.handleBasicAuth method and the exchange is ended.
-                                        return;
+                                        return null;
                                     }
                                 }
                             } else if (BEARER_PREFIX.equalsIgnoreCase(authorization.substring(0, 6))) {
@@ -145,9 +159,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                                 JwtVerifyHandler handler = (JwtVerifyHandler) handlers.get(JWT);
                                                 if (handler == null) {
                                                     logger.error("Cannot find JwtVerifyHandler with alias name jwt.");
-                                                    setExchangeStatus(exchange, HANDLER_NOT_FOUND, "com.networknt.openapi.JwtVerifyHandler@jwt");
-                                                    exchange.endExchange();
-                                                    return;
+                                                    return new Status(HANDLER_NOT_FOUND, "com.networknt.openapi.JwtVerifyHandler@jwt");
                                                 } else {
                                                     // if the handler is not enabled in the configuration, break here to call next handler.
                                                     if(!handler.isEnabled()) {
@@ -159,7 +171,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                                         break;
                                                     } else {
                                                         // verification is not passed and an error is returned. Don't call the next handler.
-                                                        return;
+                                                        return null;
                                                     }
                                                 }
                                             } else {
@@ -168,9 +180,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                                 SimpleJwtVerifyHandler handler = (SimpleJwtVerifyHandler) handlers.get(SJWT);
                                                 if (handler == null) {
                                                     logger.error("Cannot find SimpleJwtVerifyHandler with alias name sjwt.");
-                                                    setExchangeStatus(exchange, HANDLER_NOT_FOUND, "com.networknt.openapi.SimpleJwtVerifyHandler@sjwt");
-                                                    exchange.endExchange();
-                                                    return;
+                                                    return new Status(HANDLER_NOT_FOUND, "com.networknt.openapi.SimpleJwtVerifyHandler@sjwt");
                                                 } else {
                                                     // if the handler is not enabled in the configuration, break here to call next handler.
                                                     if(!handler.isEnabled()) {
@@ -182,7 +192,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                                         break;
                                                     } else {
                                                         // verification is not passed and an error is returned. Don't call the next handler.
-                                                        return;
+                                                        return null;
                                                     }
                                                 }
                                             }
@@ -192,9 +202,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                             SimpleJwtVerifyHandler handler = (SimpleJwtVerifyHandler) handlers.get(SJWT);
                                             if (handler == null) {
                                                 logger.error("Cannot find SimpleJwtVerifyHandler with alias name sjwt.");
-                                                setExchangeStatus(exchange, HANDLER_NOT_FOUND, "com.networknt.openapi.SimpleJwtVerifyHandler@sjwt");
-                                                exchange.endExchange();
-                                                return;
+                                                return new Status(HANDLER_NOT_FOUND, "com.networknt.openapi.SimpleJwtVerifyHandler@sjwt");
                                             } else {
                                                 // if the handler is not enabled in the configuration, break here to call next handler.
                                                 if(!handler.isEnabled()) {
@@ -206,7 +214,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                                     break;
                                                 } else {
                                                     // verification is not passed and an error is returned. Don't call the next handler.
-                                                    return;
+                                                    return null;
                                                 }
                                             }
                                         }
@@ -216,9 +224,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                         JwtVerifyHandler handler = (JwtVerifyHandler) handlers.get(JWT);
                                         if (handler == null) {
                                             logger.error("Cannot find JwtVerifyHandler with alias name jwt.");
-                                            setExchangeStatus(exchange, HANDLER_NOT_FOUND, "com.networknt.openapi.JwtVerifyHandler@jwt");
-                                            exchange.endExchange();
-                                            return;
+                                            return new Status(HANDLER_NOT_FOUND, "com.networknt.openapi.JwtVerifyHandler@jwt");
                                         } else {
                                             // if the handler is not enabled in the configuration, break here to call next handler.
                                             if(!handler.isEnabled()) {
@@ -230,7 +236,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                                 break;
                                             } else {
                                                 // verification is not passed and an error is returned. Don't call the next handler.
-                                                return;
+                                                return null;
                                             }
                                         }
                                     }
@@ -240,9 +246,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                     SwtVerifyHandler handler = (SwtVerifyHandler) handlers.get(SWT);
                                     if (handler == null) {
                                         logger.error("Cannot find SwtVerifyHandler with alias name swt.");
-                                        setExchangeStatus(exchange, HANDLER_NOT_FOUND, "com.networknt.openapi.SwtVerifyHandler@swt");
-                                        exchange.endExchange();
-                                        return;
+                                        return new Status(HANDLER_NOT_FOUND, "com.networknt.openapi.SwtVerifyHandler@swt");
                                     } else {
                                         // if the handler is not enabled in the configuration, break here to call next handler.
                                         if(!handler.isEnabled()) {
@@ -254,7 +258,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                             break;
                                         } else {
                                             // verification is not passed and an error is returned. Don't call the next handler.
-                                            return;
+                                            return null;
                                         }
                                     }
                                 }
@@ -262,9 +266,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                 // not BASIC or BEARER, return an error.
                                 String s = authorization.length() > 10 ? authorization.substring(0, 10) : authorization;
                                 logger.error("Invalid/Unsupported authorization header {}", s);
-                                setExchangeStatus(exchange, INVALID_AUTHORIZATION_HEADER, s);
-                                exchange.endExchange();
-                                return;
+                                return new Status(INVALID_AUTHORIZATION_HEADER, s);
                             }
                         }
                     } else if (pathPrefixAuth.isApikey()) {
@@ -272,9 +274,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                         ApiKeyHandler handler = (ApiKeyHandler) handlers.get(API_KEY);
                         if(handler == null) {
                             logger.error("Cannot find ApiKeyHandler with alias name apikey.");
-                            setExchangeStatus(exchange, HANDLER_NOT_FOUND, "com.networknt.apikey.ApiKeyHandler@apikey");
-                            exchange.endExchange();
-                            return;
+                            return new Status(HANDLER_NOT_FOUND, "com.networknt.apikey.ApiKeyHandler@apikey");
                         } else {
                             // if the handler is not enabled in the configuration, break here to call next handler.
                             if(!handler.isEnabled()) {
@@ -285,7 +285,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
                                 break;
                             } else {
                                 // verification is not passed and an error is returned. need to bypass the next handler.
-                                return;
+                                return null;
                             }
                         }
 
@@ -295,20 +295,14 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
             if(!found) {
                 // cannot find the prefix auth entry for request path.
                 logger.error("Cannot find prefix entry in pathPrefixAuths for " + reqPath);
-                setExchangeStatus(exchange, MISSING_PATH_PREFIX_AUTH, reqPath);
-                exchange.endExchange();
-                return;
+                return new Status(MISSING_PATH_PREFIX_AUTH, reqPath);
             }
         } else {
             // pathPrefixAuths is not defined in the values.yml
             logger.error("Cannot find pathPrefixAuths definition for " + reqPath);
-            setExchangeStatus(exchange, MISSING_PATH_PREFIX_AUTH, reqPath);
-            exchange.endExchange();
-            return;
+            return new Status(MISSING_PATH_PREFIX_AUTH, reqPath);
         }
-
-        if(logger.isDebugEnabled()) logger.debug("UnifiedSecurityHandler.handleRequest ends.");
-        Handler.next(exchange, next);
+        return null;
     }
 
     @Override
