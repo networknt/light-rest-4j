@@ -32,13 +32,6 @@ public class SwtVerifyHandler extends AbstractSwtVerifyHandler {
     static final String STATUS_INVALID_REQUEST_PATH = "ERR10007";
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
 
-    static final String OPENAPI_SECURITY_CONFIG = "openapi-security";
-
-    public static SwtVerifier swtVerifier;
-
-    static SecurityConfig config;
-    private volatile HttpHandler next;
-
     String basePath;
 
     @Override
@@ -60,13 +53,13 @@ public class SwtVerifyHandler extends AbstractSwtVerifyHandler {
 
     @Override
     public void register() {
-        ModuleRegistry.registerModule(OPENAPI_SECURITY_CONFIG, SwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(OPENAPI_SECURITY_CONFIG), null);
+        ModuleRegistry.registerModule(SecurityConfig.CONFIG_NAME, SwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SecurityConfig.CONFIG_NAME), null);
     }
 
     @Override
     public void reload() {
-        config.reload(OPENAPI_SECURITY_CONFIG);
-        ModuleRegistry.registerModule(OPENAPI_SECURITY_CONFIG, SwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(OPENAPI_SECURITY_CONFIG), null);
+        config.reload();
+        ModuleRegistry.registerModule(SecurityConfig.CONFIG_NAME, SwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SecurityConfig.CONFIG_NAME), null);
     }
 
     @Override
@@ -173,7 +166,7 @@ public class SwtVerifyHandler extends AbstractSwtVerifyHandler {
     public SwtVerifyHandler() {
         // at this moment, we assume that the OpenApiHandler is fully loaded with a single spec or multiple specs.
         // And the basePath is the correct one from the OpenApiHandler helper or helperMap if multiple is used.
-        config = SecurityConfig.load(OPENAPI_SECURITY_CONFIG);
+        config = SecurityConfig.load();
         swtVerifier = new SwtVerifier(config);
         // in case that the specification doesn't exist, get the basePath from the handler.yml for endpoint lookup.
         HandlerConfig handlerConfig = HandlerConfig.load();
