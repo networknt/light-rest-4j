@@ -20,21 +20,13 @@ import org.slf4j.LoggerFactory;
  */
 public class SimpleJwtVerifyHandler extends AbstractSimpleJwtVerifyHandler {
     static final Logger logger = LoggerFactory.getLogger(SimpleJwtVerifyHandler.class);
-    static final String OPENAPI_SECURITY_CONFIG = "openapi-security";
-
-    static SecurityConfig config;
-
-    // make this static variable public so that it can be accessed from the server-info module
-    public static JwtVerifier jwtVerifier;
 
     String basePath;
-
-    private volatile HttpHandler next;
 
     public SimpleJwtVerifyHandler() {
         // at this moment, we assume that the OpenApiHandler is fully loaded with a single spec or multiple specs.
         // And the basePath is the correct one from the OpenApiHandler helper or helperMap if multiple is used.
-        config = SecurityConfig.load(OPENAPI_SECURITY_CONFIG);
+        config = SecurityConfig.load();
         jwtVerifier = new JwtVerifier(config);
         // in case that the specification doesn't exist, get the basePath from the handler.yml for endpoint lookup.
         HandlerConfig handlerConfig = HandlerConfig.load();
@@ -85,14 +77,14 @@ public class SimpleJwtVerifyHandler extends AbstractSimpleJwtVerifyHandler {
 
     @Override
     public void register() {
-        ModuleRegistry.registerModule(OPENAPI_SECURITY_CONFIG, SimpleJwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(OPENAPI_SECURITY_CONFIG), null);
+        ModuleRegistry.registerModule(SecurityConfig.CONFIG_NAME, SimpleJwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SecurityConfig.CONFIG_NAME), null);
     }
 
     @Override
     public void reload() {
-        config.reload(OPENAPI_SECURITY_CONFIG);
+        config.reload();
         jwtVerifier = new JwtVerifier(config);
-        ModuleRegistry.registerModule(OPENAPI_SECURITY_CONFIG, SimpleJwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(OPENAPI_SECURITY_CONFIG), null);
+        ModuleRegistry.registerModule(SecurityConfig.CONFIG_NAME, SimpleJwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SecurityConfig.CONFIG_NAME), null);
     }
 
 }

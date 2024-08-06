@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 /**
  * This is a security handler that combines Anonymous, ApiKey, Basic and OAuth together to avoid all of them
@@ -32,7 +31,6 @@ import java.util.concurrent.ExecutionException;
  */
 public class UnifiedSecurityHandler implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(UnifiedSecurityHandler.class);
-    static final String OPENAPI_SECURITY_CONFIG = "openapi-security";
     static final String BEARER_PREFIX = "BEARER";
     static final String BASIC_PREFIX = "BASIC";
     static final String API_KEY = "apikey";
@@ -51,7 +49,7 @@ public class UnifiedSecurityHandler implements MiddlewareHandler {
     public UnifiedSecurityHandler() {
         logger.info("UnifiedSecurityHandler starts");
         config = UnifiedSecurityConfig.load();
-        jwtVerifier = new JwtVerifier(SecurityConfig.load(OPENAPI_SECURITY_CONFIG));
+        jwtVerifier = new JwtVerifier(SecurityConfig.load());
     }
 
     @Override
