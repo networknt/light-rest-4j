@@ -52,6 +52,6 @@ client.tokenKeyClientSecret: f6h1FTI8Q3-7UScPZDzfXA
 client.tokenKeyEnableHttp2: false
 client.timeout: 60000
 
-# openapi-security.yml
-openapi-security.skipPathPrefixes:
+# security.yml
+security.skipPathPrefixes:
   - /oauth2
