@@ -13,7 +13,7 @@ handler.handlers:
   - com.networknt.openapi.SimpleJwtVerifyHandler@sjwt
   - com.networknt.openapi.SwtVerifyHandler@swt
   - com.networknt.basicauth.BasicAuthHandler@basic
-  - com.networknt.openapi.UnifiedSecurityHandler@unified
+  - com.networknt.security.UnifiedSecurityHandler@unified
   - com.networknt.apikey.ApiKeyHandler@apikey
 
 handler.chains.default:
