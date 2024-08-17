@@ -1,5 +1,21 @@
 # Change Log
 
+## [2.1.35](https://github.com/networknt/light-rest-4j/tree/2.1.35) (2024-08-17)
+
+
+**Merged pull requests:**
+
+
+- fixes \#392 remove UnifiedSecurityHandler from openapi-security as it … [\#393](https://github.com/networknt/light-rest-4j/pull/393) ([stevehu](https://github.com/stevehu))
+- fixes \#390 update values.yml to change openapi-security to security [\#391](https://github.com/networknt/light-rest-4j/pull/391) ([stevehu](https://github.com/stevehu))
+- fixes \#388 use security.yml for config and remove dup JwtVerifier ins… [\#389](https://github.com/networknt/light-rest-4j/pull/389) ([stevehu](https://github.com/stevehu))
+- fixes \#386 move unified-config and some security classes to light-4j [\#387](https://github.com/networknt/light-rest-4j/pull/387) ([stevehu](https://github.com/stevehu))
+- fixes \#384 Fix the PojoSchema to add new methods as openapi-parser is… [\#385](https://github.com/networknt/light-rest-4j/pull/385) ([stevehu](https://github.com/stevehu))
+- fixes \#382 update test cases to add use sig for the jwk response [\#383](https://github.com/networknt/light-rest-4j/pull/383) ([stevehu](https://github.com/stevehu))
+- fixes \#380 validator error doesnot have the name for the header, path… [\#381](https://github.com/networknt/light-rest-4j/pull/381) ([stevehu](https://github.com/stevehu))
+- fixes \#378 Add another jwt verifier for tokens without scopes [\#379](https://github.com/networknt/light-rest-4j/pull/379) ([stevehu](https://github.com/stevehu))
+- fixes \#358 upgrade the json-schema-validator to 1.4.3 [\#376](https://github.com/networknt/light-rest-4j/pull/376) ([stevehu](https://github.com/stevehu))
+- fixes \#374 update the exception handler when loading openapi.yaml [\#375](https://github.com/networknt/light-rest-4j/pull/375) ([stevehu](https://github.com/stevehu))
 ## [2.1.34](https://github.com/networknt/light-rest-4j/tree/2.1.34) (2024-06-22)
 
 
