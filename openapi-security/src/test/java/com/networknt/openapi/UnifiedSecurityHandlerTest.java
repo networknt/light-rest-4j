@@ -564,4 +564,37 @@ public class UnifiedSecurityHandlerTest {
         }
     }
 
+    @Test
+    public void testInvalidToken() throws Exception {
+        final Http2Client client = Http2Client.getInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ClientConnection connection;
+        try {
+            connection = client.connect(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+        } catch (Exception e) {
+            throw new ClientException(e);
+        }
+        final AtomicReference<ClientResponse> reference = new AtomicReference<>();
+        try {
+            ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
+            request.getRequestHeaders().put(Headers.HOST, "localhost");
+            request.getRequestHeaders().put(Headers.AUTHORIZATION, "abc");
+            connection.sendRequest(request, client.createClientCallback(reference, latch));
+            latch.await();
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+            throw new ClientException(e);
+        } finally {
+            IoUtils.safeClose(connection);
+        }
+        int statusCode = reference.get().getResponseCode();
+        String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
+        Assert.assertEquals(401, statusCode);
+        if (statusCode == 401) {
+            Status status = Config.getInstance().getMapper().readValue(responseBody, Status.class);
+            Assert.assertNotNull(status);
+            Assert.assertEquals("ERR12003", status.getCode());
+        }
+    }
+
 }
