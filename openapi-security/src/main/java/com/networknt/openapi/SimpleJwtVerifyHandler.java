@@ -34,31 +34,6 @@ public class SimpleJwtVerifyHandler extends AbstractSimpleJwtVerifyHandler {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public void handleRequest(final HttpServerExchange exchange) throws Exception {
-
-        if (logger.isDebugEnabled())
-            logger.debug("SimpleJwtVerifyHandler.handleRequest starts.");
-
-        String reqPath = exchange.getRequestPath();
-
-        // if request path is in the skipPathPrefixes in the config, call the next handler directly to skip the security check.
-        if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(reqPath::startsWith)) {
-            if(logger.isTraceEnabled())
-                logger.trace("Skip request path base on skipPathPrefixes for {}", reqPath);
-            Handler.next(exchange, next);
-            if (logger.isDebugEnabled())
-                logger.debug("SimpleJwtVerifyHandler.handleRequest ends.");
-            return;
-        }
-        // only UnifiedSecurityHandler will have the jwkServiceIds as the third parameter.
-        if(handleJwt(exchange, null, reqPath, null)) {
-            if(logger.isDebugEnabled()) logger.debug("SimpleJwtVerifyHandler.handleRequest ends.");
-            Handler.next(exchange, next);
-        }
-    }
-
-    @Override
     public HttpHandler getNext() {
         return next;
     }

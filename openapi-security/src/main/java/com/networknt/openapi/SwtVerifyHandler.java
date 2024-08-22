@@ -63,30 +63,6 @@ public class SwtVerifyHandler extends AbstractSwtVerifyHandler {
     }
 
     @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
-        if (logger.isDebugEnabled())
-            logger.debug("SwtVerifyHandler.handleRequest starts.");
-
-        String reqPath = exchange.getRequestPath();
-
-        // if request path is in the skipPathPrefixes in the config, call the next handler directly to skip the security check.
-        if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(reqPath::startsWith)) {
-            if(logger.isTraceEnabled())
-                logger.trace("Skip request path base on skipPathPrefixes for " + reqPath);
-            Handler.next(exchange, next);
-            if (logger.isDebugEnabled())
-                logger.debug("SwtVerifyHandler.handleRequest ends.");
-            return;
-        }
-        // only UnifiedSecurityHandler will have the jwkServiceIds as the third parameter.
-        if(handleSwt(exchange, reqPath, null)) {
-            if(logger.isDebugEnabled()) logger.debug("SwtVerifyHandler.handleRequest ends.");
-            Handler.next(exchange, next);
-        }
-    }
-
-
-    @Override
     public List<String> getSpecScopes(HttpServerExchange exchange, Map<String, Object> auditInfo) throws Exception {
         /* get openapi operation */
         OpenApiOperation openApiOperation = (OpenApiOperation) auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
