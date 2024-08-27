@@ -1,5 +1,13 @@
 # Change Log
 
+## [2.1.36](https://github.com/networknt/light-rest-4j/tree/2.1.36) (2024-08-27)
+
+
+**Merged pull requests:**
+
+
+- fixes \#396 use the handleRequest from abstract handlers for security … [\#397](https://github.com/networknt/light-rest-4j/pull/397) ([stevehu](https://github.com/stevehu))
+- fixes \#394 Add a test case for invalid token for UnifiedSecurityHandler [\#395](https://github.com/networknt/light-rest-4j/pull/395) ([stevehu](https://github.com/stevehu))
 ## [2.1.35](https://github.com/networknt/light-rest-4j/tree/2.1.35) (2024-08-17)
 
 
