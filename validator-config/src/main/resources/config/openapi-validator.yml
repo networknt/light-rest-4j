@@ -4,6 +4,9 @@
 enabled: ${openapi-validator.enabled:true}
 # Log error message if validation error occurs
 logError: ${openapi-validator.logError:true}
+# By default, the json-schema-validator will return the error message using JSON_POINTER path type. If you want
+# to make sure that the error message is the same as the older version, you can set the legacyPathType to true.
+legacyPathType: ${openapi-validator.legacyPathType:false}
 # Skip body validation set to true if used in light-router, light-proxy and light-spring-boot.
 skipBodyValidation: ${openapi-validator.skipBodyValidation:false}
 # Enable response validation.

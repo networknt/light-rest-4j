@@ -36,6 +36,7 @@ public class ValidatorConfig {
     private static final Logger logger = LoggerFactory.getLogger(ValidatorConfig.class);
     private static final String ENABLED = "enabled";
     private static final String LOG_ERROR = "logError";
+    private static final String LEGACY_PATH_TYPE = "legacyPathType";
     private static final String SKIP_BODY_VALIDATION = "skipBodyValidation";
     private static final String VALIDATE_RESPONSE = "validateResponse";
     private static final String HANDLE_NULLABLE_FIELD = "handleNullableField";
@@ -46,6 +47,7 @@ public class ValidatorConfig {
 
     boolean enabled;
     boolean logError;
+    boolean legacyPathType = false;
     boolean skipBodyValidation = false;
     boolean validateResponse;
     boolean handleNullableField = true;
@@ -93,6 +95,14 @@ public class ValidatorConfig {
 
     public void setLogError(boolean logError) { this.logError = logError; }
 
+    public boolean isLegacyPathType() {
+        return legacyPathType;
+    }
+
+    public void setLegacyPathType(boolean legacyPathType) {
+        this.legacyPathType = legacyPathType;
+    }
+
     public boolean isSkipBodyValidation() {
         return skipBodyValidation;
     }
@@ -139,6 +149,8 @@ public class ValidatorConfig {
             if(object != null) enabled = Config.loadBooleanValue(ENABLED, object);
             object = getMappedConfig().get(LOG_ERROR);
             if(object != null) logError = Config.loadBooleanValue(LOG_ERROR, object);
+            object = getMappedConfig().get(LEGACY_PATH_TYPE);
+            if(object != null) legacyPathType = Config.loadBooleanValue(LEGACY_PATH_TYPE, object);
             object = getMappedConfig().get(SKIP_BODY_VALIDATION);
             if(object != null) skipBodyValidation = Config.loadBooleanValue(SKIP_BODY_VALIDATION, object);
             object = getMappedConfig().get(VALIDATE_RESPONSE);
