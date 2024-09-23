@@ -51,7 +51,7 @@ public class SchemaValidator {
      *
      */
     public SchemaValidator() {
-        this(null);
+        this(null, false);
     }
 
     /**
@@ -60,12 +60,12 @@ public class SchemaValidator {
      * @param api The API to build the validator for. If provided, is used to retrieve schemas in components
      *            for use in references.
      */
-    public SchemaValidator(final OpenApi3 api) {
+    public SchemaValidator(final OpenApi3 api, final boolean legacyPathType) {
         this.api = api;
         this.jsonNode = Overlay.toJson((OpenApi3Impl)api).get("components");
         this.defaultConfig = SchemaValidatorsConfig.builder()
                 .typeLoose(true)
-                .pathType(PathType.JSON_POINTER)
+                .pathType(legacyPathType ? PathType.LEGACY : PathType.JSON_POINTER)
                 .build();
     }
 

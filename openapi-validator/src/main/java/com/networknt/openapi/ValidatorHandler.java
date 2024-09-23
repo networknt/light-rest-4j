@@ -68,14 +68,14 @@ public class ValidatorHandler implements MiddlewareHandler {
         }
 
         if(OpenApiHandler.helper != null) {
-            final SchemaValidator schemaValidator = new SchemaValidator(OpenApiHandler.helper.openApi3);
+            final SchemaValidator schemaValidator = new SchemaValidator(OpenApiHandler.helper.openApi3, config.legacyPathType);
             this.requestValidator = new RequestValidator(schemaValidator);
             this.responseValidator = new ResponseValidator(schemaValidator);
         } else {
             requestValidatorMap = new HashMap<>();
             responseValidatorMap = new HashMap<>();
             for(Map.Entry<String, OpenApiHelper> entry: OpenApiHandler.helperMap.entrySet()) {
-                final SchemaValidator schemaValidator = new SchemaValidator(entry.getValue().openApi3);
+                final SchemaValidator schemaValidator = new SchemaValidator(entry.getValue().openApi3, config.legacyPathType);
                 RequestValidator reqV = new RequestValidator(schemaValidator);
                 requestValidatorMap.put(entry.getKey(), reqV);
                 ResponseValidator resV = new ResponseValidator(schemaValidator);
