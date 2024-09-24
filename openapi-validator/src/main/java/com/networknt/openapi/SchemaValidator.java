@@ -51,7 +51,17 @@ public class SchemaValidator {
      *
      */
     public SchemaValidator() {
-        this(null, false);
+        this(null);
+    }
+
+    /**
+     * Build a new validator with an API specification.
+     * <p>
+     * This will not perform any validation of $ref references that reference local schemas.
+     *
+     */
+    public SchemaValidator(final OpenApi3 api) {
+        this(api, false);
     }
 
     /**
