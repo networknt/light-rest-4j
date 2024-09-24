@@ -121,7 +121,7 @@ public class RequestValidator {
         }
         SchemaValidatorsConfig config = SchemaValidatorsConfig.builder()
                 .typeLoose(false)
-                .pathType(PathType.JSON_POINTER)
+                .pathType(ValidatorHandler.config.isLegacyPathType() ? PathType.LEGACY : PathType.JSON_POINTER)
                 .nullableKeywordEnabled(ValidatorHandler.config.isHandleNullableField())
                 .build();
 
