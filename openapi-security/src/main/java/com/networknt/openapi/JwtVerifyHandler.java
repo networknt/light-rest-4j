@@ -70,6 +70,17 @@ public class JwtVerifyHandler extends AbstractJwtVerifyHandler {
     }
 
     @Override
+    public boolean isSkipAuth(HttpServerExchange exchange) {
+        String reqPath = exchange.getRequestPath();
+        if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(reqPath::startsWith)) {
+            if(logger.isTraceEnabled()) logger.trace("Skip auth base on skipPathPrefixes for {}", reqPath);
+            return true;
+        }
+        // there is no other ways to skip the auth for openapi security handler.
+        return false;
+    }
+
+    @Override
     public List<String> getSpecScopes(HttpServerExchange exchange, Map<String, Object> auditInfo) throws Exception {
         /* get openapi operation */
         OpenApiOperation openApiOperation = (OpenApiOperation) auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
