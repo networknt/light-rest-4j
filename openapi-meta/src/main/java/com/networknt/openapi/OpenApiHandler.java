@@ -185,8 +185,12 @@ public class OpenApiHandler implements MiddlewareHandler {
                     } catch (Throwable t) {// do not crash the handler
                         logger.error(t.getMessage(), t);
                     }
-
-                    String endpoint = openApiPathString.normalised() + "@" + httpMethod.toString().toLowerCase();
+                    String endpoint = null;
+                    if(h.basePath != null && !h.basePath.isEmpty()) {
+                        endpoint = h.basePath + openApiPathString.normalised() + "@" + httpMethod.toLowerCase();
+                    } else {
+                        endpoint = openApiPathString.normalised() + "@" + httpMethod.toLowerCase();
+                    }
                     Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO) == null
                             ? new HashMap<>()
                             : exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
@@ -236,7 +240,12 @@ public class OpenApiHandler implements MiddlewareHandler {
                 logger.error(t.getMessage(), t);
             }
 
-            String endpoint = openApiPathString.normalised() + "@" + httpMethod.toString().toLowerCase();
+            String endpoint = null;
+            if(helper.basePath != null && !helper.basePath.isEmpty()) {
+                endpoint = helper.basePath + openApiPathString.normalised() + "@" + httpMethod.toLowerCase();
+            } else {
+                endpoint = openApiPathString.normalised() + "@" + httpMethod.toLowerCase();
+            }
             Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO) == null
                     ? new HashMap<>()
                     : exchange.getAttachment(AttachmentConstants.AUDIT_INFO);

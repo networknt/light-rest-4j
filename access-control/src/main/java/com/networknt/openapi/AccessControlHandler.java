@@ -53,8 +53,8 @@ public class AccessControlHandler implements MiddlewareHandler {
     static final String ACCESS_CONTROL_ERROR = "ERR10067";
     static final String ACCESS_CONTROL_MISSING = "ERR10069";
     static final String STARTUP_HOOK_NOT_LOADED = "ERR11019";
-    static final String REQUEST_ACCESS = "request-access";
-    static final String RESPONSE_FILTER = "response-filter";
+    static final String REQUEST_ACCESS = "req-acc";
+    static final String PERMISSION = "permission";
     static final String RULE_ID = "ruleId";
     private volatile HttpHandler next;
     private final RuleEngine engine;
@@ -72,8 +72,8 @@ public class AccessControlHandler implements MiddlewareHandler {
         if (logger.isDebugEnabled()) logger.debug("AccessControlHandler.handleRequest starts.");
         String reqPath = exchange.getRequestPath();
         // if request path is in the skipPathPrefixes in the config, call the next handler directly to skip the security check.
-        if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(s -> reqPath.startsWith(s))) {
-            if(logger.isTraceEnabled()) logger.trace("Skip request path base on skipPathPrefixes for " + reqPath);
+        if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(reqPath::startsWith)) {
+            if(logger.isTraceEnabled()) logger.trace("Skip request path base on skipPathPrefixes for {}", reqPath);
             if (logger.isDebugEnabled()) logger.debug("AccessControlHandler.handleRequest ends with path skipped.");
             Handler.next(exchange, next);
             return;
@@ -81,7 +81,7 @@ public class AccessControlHandler implements MiddlewareHandler {
 
         Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
 
-        // This map is the input for the rule. For different access control rules, the input might be different.
+        // This map is the input for the rule. For different req-acc access control rules, the input might be different.
         // so we just put as many objects into the map in case the rule needs it for the access control calculation.
         Map<String, Object> ruleEnginePayload = new HashMap<>();
 
@@ -98,13 +98,12 @@ public class AccessControlHandler implements MiddlewareHandler {
         }
 
         // get the access rules (maybe multiple) based on the endpoint.
-        Map<String, List<Map<String, Object>>> requestRules = (Map<String, List<Map<String, Object>>>) RuleLoaderStartupHook.endpointRules.get(endpoint);
+        Map<String, Object> requestRules = (Map<String, Object>) RuleLoaderStartupHook.endpointRules.get(endpoint);
 
         // if there is no access rule for this endpoint, check the default deny flag in the config.
         if (requestRules == null) {
             if (config.defaultDeny) {
-                logger.error("Access control rule is missing and default deny is true for endpoint " + endpoint);
-                if (logger.isDebugEnabled()) logger.debug("AccessControlHandler.handleRequest ends with an error.");
+                logger.error("Access control rule is missing and default deny is true for endpoint {}", endpoint);
                 setExchangeStatus(exchange, ACCESS_CONTROL_MISSING, endpoint);
             } else {
                 if (logger.isDebugEnabled()) logger.debug("AccessControlHandler.handleRequest ends.");
@@ -146,28 +145,44 @@ public class AccessControlHandler implements MiddlewareHandler {
      * @param requestRules - rule(s) defined for the endpoint
      * @throws Exception - Rule engine exception
      */
-    protected void executeRules(HttpServerExchange exchange, Map<String, Object> ruleEnginePayload, Map<String, List<Map<String, Object>>> requestRules) throws Exception {
-        boolean finalResult = true;
-        List<Map<String, Object>> accessRules = requestRules.get(REQUEST_ACCESS);
-        Map result = null;
-        String ruleId = null;
+    protected void executeRules(HttpServerExchange exchange, Map<String, Object> ruleEnginePayload, Map<String, Object> requestRules) throws Exception {
+        boolean finalResult = false;  // Initialize to false for "any" logic, and will change in for loop
+        List<String> accessRuleIds = (List<String>)requestRules.get(REQUEST_ACCESS);
+        Map<String, Object> permissionMap = (Map<String, Object>)requestRules.get(PERMISSION);
+        Map<String, Object> result = null;
+        String accessRuleLogic = config.getAccessRuleLogic(); // any or all
 
-        // iterate the rules and execute them in sequence. Allow access only when all rules return true.
-        for (Map<String, Object> ruleMap : accessRules) {
-            ruleId = (String) ruleMap.get(RULE_ID);
-            ruleEnginePayload.putAll(ruleMap);
-            result = engine.executeRule(ruleId, ruleEnginePayload);
-            boolean res = (Boolean) result.get(RuleConstants.RESULT);
-            if (!res) {
-                finalResult = false;
-                break;
+        if (accessRuleLogic.equalsIgnoreCase("all")) {
+            finalResult = true; // Default to true for "all" logic and only can be false in the loop
+            for (String ruleId : accessRuleIds) {
+                ruleEnginePayload.putAll(permissionMap);
+                result = engine.executeRule(ruleId, ruleEnginePayload);
+                boolean res = (Boolean) result.get(RuleConstants.RESULT);
+                if (!res) {
+                    finalResult = false; // if one fails all will fail
+                    break;
+                }
             }
+        } else if (accessRuleLogic.equalsIgnoreCase("any")) {
+            finalResult = false; // Default to false for "any" logic and only can be true in the loop
+            for (String ruleId : accessRuleIds) {
+                ruleEnginePayload.putAll(permissionMap);
+                result = engine.executeRule(ruleId, ruleEnginePayload);
+                boolean res = (Boolean) result.get(RuleConstants.RESULT);
+                if (res) {
+                    finalResult = true; // if one pass all pass
+                    break;
+                }
+            }
+        } else {
+            throw new IllegalArgumentException("Invalid accessRuleLogic: " + accessRuleLogic); // Handle invalid values
         }
+
         if (finalResult) {
             this.next(exchange);
         } else {
             logger.error(JsonMapper.toJson(result));
-            setExchangeStatus(exchange, ACCESS_CONTROL_ERROR, ruleId);
+            setExchangeStatus(exchange, ACCESS_CONTROL_ERROR, accessRuleIds.toString());
         }
     }
 
