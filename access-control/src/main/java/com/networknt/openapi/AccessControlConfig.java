@@ -30,6 +30,7 @@ class AccessControlConfig {
     private static final Logger logger = LoggerFactory.getLogger(AccessControlConfig.class);
     public static final String CONFIG_NAME = "access-control";
     private static final String ENABLED = "enabled";
+    private static final String ACCESS_RULE_LOGIC = "accessRuleLogic";
     private static final String DEFAULT_DENY = "defaultDeny";
     private static final String SKIP_PATH_PREFIXES = "skipPathPrefixes";
 
@@ -37,6 +38,7 @@ class AccessControlConfig {
     private final Config config;
 
     boolean enabled;
+    String accessRuleLogic;
     boolean defaultDeny;
     private List<String> skipPathPrefixes;
 
@@ -72,6 +74,14 @@ class AccessControlConfig {
         this.enabled = enabled;
     }
 
+    public String getAccessRuleLogic() {
+        return accessRuleLogic;
+    }
+
+    public void setAccessRuleLogic(String accessRuleLogic) {
+        this.accessRuleLogic = accessRuleLogic;
+    }
+
     public boolean isDefaultDeny() {
         return defaultDeny;
     }
@@ -100,6 +110,8 @@ class AccessControlConfig {
             if(object != null) enabled = Config.loadBooleanValue(ENABLED, object);
             object = getMappedConfig().get(DEFAULT_DENY);
             if(object != null) defaultDeny = Config.loadBooleanValue(DEFAULT_DENY, object);
+            object = getMappedConfig().get(ACCESS_RULE_LOGIC);
+            if(object != null) accessRuleLogic = (String)object;
         }
     }
 
@@ -110,7 +122,7 @@ class AccessControlConfig {
             if(object instanceof String) {
                 String s = (String)object;
                 s = s.trim();
-                if(logger.isTraceEnabled()) logger.trace("s = " + s);
+                if(logger.isTraceEnabled()) logger.trace("s = {}", s);
                 if(s.startsWith("[")) {
                     // json format
                     try {

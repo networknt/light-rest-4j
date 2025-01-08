@@ -2,6 +2,9 @@
 # one before the business handler to handle the fine-grained authorization in the business domain.
 # Enable Access Control Handler
 enabled: ${access-control.enabled:true}
+# If there are multiple rules, the logic to combine them can be any or all. The default is any, and it
+# means that any rule is satisfied, the access is granted. If all is set, all rules must be satisfied.
+accessRuleLogic: ${access-control.accessRuleLogic:any}
 # If there is no access rule defined for the endpoint, default access is denied. Users can overwrite
 # this default action by setting this config value to false. If true, the handle will force users to
 # define the rules for each endpoint when the access control handler is enabled.
