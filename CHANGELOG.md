@@ -1,5 +1,15 @@
 # Change Log
 
+## [2.2.0](https://github.com/networknt/light-rest-4j/tree/2.2.0) (2025-02-11)
+
+
+**Merged pull requests:**
+
+
+- fixes \#409 update AccessControlHandler for FGA [\#410](https://github.com/networknt/light-rest-4j/pull/410) ([stevehu](https://github.com/stevehu))
+- fixes \#407 implement isSkipAuth method in the jwt handler [\#408](https://github.com/networknt/light-rest-4j/pull/408) ([stevehu](https://github.com/stevehu))
+
+
 ## [2.1.37](https://github.com/networknt/light-rest-4j/tree/2.1.37) (2024-09-20)
 
 
