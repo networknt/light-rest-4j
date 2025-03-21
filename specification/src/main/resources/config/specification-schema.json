@@ -1,0 +1,17 @@
+{
+  "$schema" : "http://json-schema.org/draft-07/schema#",
+  "type" : "object",
+  "required" : [ "fileName", "contentType" ],
+  "properties" : {
+    "fileName" : {
+      "type" : "string",
+      "description" : "The filename with path of the specification file, and usually it is openapi.yaml",
+      "default" : "openapi.yaml"
+    },
+    "contentType" : {
+      "type" : "string",
+      "description" : "The content type of the specification file. In most cases, we are using yaml format.",
+      "default" : "text/yaml"
+    }
+  }
+}

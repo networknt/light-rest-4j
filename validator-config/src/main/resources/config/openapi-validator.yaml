@@ -1,0 +1,26 @@
+# Default openapi-validator configuration
+# Enable request validation. Response validation is not done on the server but client.
+enabled: ${openapi-validator.enabled:true}
+# Log error message if validation error occurs
+logError: ${openapi-validator.logError:true}
+# By default, the json-schema-validator will return the error message using JSON_POINTER path type. If you want
+# to make sure that the error message is the same as the older version, you can set the legacyPathType to true.
+legacyPathType: ${openapi-validator.legacyPathType:false}
+# Skip body validation set to true if used in light-router, light-proxy and light-spring-boot.
+skipBodyValidation: ${openapi-validator.skipBodyValidation:false}
+# Enable response validation.
+validateResponse: ${openapi-validator.validateResponse:false}
+# When a field is set as nullable in the OpenAPI specification, the schema validator validates that it is nullable
+# however continues with validation against the nullable field
+# 
+# If handleNullableField is set to true && incoming field is nullable && value is field: null --> succeed
+# If handleNullableField is set to false && incoming field is nullable && value is field: null --> it is up to the type
+# validator using the SchemaValidator to handle it.
+handleNullableField: ${openapi-validator.handleNullableField:true}
+# Define a list of path prefixes to skip the validation to ease the configuration for the
+# handler.yml so that users can define some endpoints without validation even through it uses
+# the default chain. This is particularly useful in the light-gateway use case as the same
+# instance might be shared with multiple consumers and providers with different validation
+# requirement. The format is a list of strings separated with commas or a JSON list in
+# values.yml definition from config server, or you can use yaml format in this file.
+skipPathPrefixes: ${openapi-validator.skipPathPrefixes:}
