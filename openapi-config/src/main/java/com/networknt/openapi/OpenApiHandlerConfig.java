@@ -3,11 +3,21 @@ package com.networknt.openapi;
 import com.networknt.config.Config;
 import com.networknt.config.ConfigException;
 import com.networknt.config.JsonMapper;
+import com.networknt.config.schema.BooleanField;
+import com.networknt.config.schema.ConfigSchema;
+import com.networknt.config.schema.MapField;
+import com.networknt.config.schema.OutputFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+@ConfigSchema(
+        configName = "openapi-handler",
+        configKey = "openapi-handler",
+        configDescription = "openapi-handler.yml",
+        outputFormats = {OutputFormat.JSON_SCHEMA, OutputFormat.YAML}
+)
 public class OpenApiHandlerConfig {
     private static final Logger logger = LoggerFactory.getLogger(OpenApiHandlerConfig.class);
     public static final String CONFIG_NAME = "openapi-handler";
@@ -15,8 +25,41 @@ public class OpenApiHandlerConfig {
     private static final String IGNORE_INVALID_PATH = "ignoreInvalidPath";
     private static final String PATH_SPEC_MAPPING = "pathSpecMapping";
 
+    @BooleanField(
+        configFieldName = MULTIPLE_SPEC,
+        externalizedKeyName = MULTIPLE_SPEC,
+        externalized = true,
+        description = "This configuration file is used to support multiple OpenAPI " +
+                "specifications in the same light-rest-4j instance.\n" +
+                "An indicator to allow multiple openapi specifications. " +
+                "Default to false which only allow one spec named openapi.yml or openapi.yaml or openapi.json."
+    )
     boolean multipleSpec;
+
+    @BooleanField(
+            configFieldName = IGNORE_INVALID_PATH,
+            externalizedKeyName = IGNORE_INVALID_PATH,
+            externalized = true,
+            description = "When the OpenApiHandler is used in a shared gateway and some backend APIs have no " +
+                    "specifications deployed on the gateway, the handler will return\n" +
+                    "an invalid request path error to the client. " +
+                    "To allow the call to pass through the OpenApiHandler and route to the backend APIs, you can set this\n" +
+                    "flag to true. In this mode, the handler will only add the endpoint " +
+                    "specification to the auditInfo if it can find it. " +
+                    "Otherwise, it will pass through."
+    )
     boolean ignoreInvalidPath;
+
+    @MapField(
+            configFieldName = PATH_SPEC_MAPPING,
+            externalizedKeyName = PATH_SPEC_MAPPING,
+            externalized = true,
+            description = "Path to spec mapping. One or more base paths can map to the same specifications. " +
+                    "The key is the base path and the value is the specification name.\n" +
+                    "If users want to use multiple specification files in the same instance, " +
+                    "each specification must have a unique base path and it must be set as key.",
+            valueType = String.class
+    )
     Map<String, Object> pathSpecMapping;
 
     private final Config config;

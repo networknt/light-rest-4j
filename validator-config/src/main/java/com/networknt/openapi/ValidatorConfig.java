@@ -18,6 +18,10 @@ package com.networknt.openapi;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.networknt.config.Config;
 import com.networknt.config.ConfigException;
+import com.networknt.config.schema.ArrayField;
+import com.networknt.config.schema.BooleanField;
+import com.networknt.config.schema.ConfigSchema;
+import com.networknt.config.schema.OutputFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +35,12 @@ import java.util.Map;
  *
  * @author Steve Hu
  */
+@ConfigSchema(
+        configKey = "openapi-validator",
+        configName = "openapi-validator",
+        configDescription = "Default openapi-validator configuration",
+        outputFormats = {OutputFormat.JSON_SCHEMA, OutputFormat.YAML}
+)
 public class ValidatorConfig {
     public static final String CONFIG_NAME = "openapi-validator";
     private static final Logger logger = LoggerFactory.getLogger(ValidatorConfig.class);
@@ -45,12 +55,75 @@ public class ValidatorConfig {
     private Map<String, Object> mappedConfig;
     private final Config config;
 
+    @BooleanField(
+            configFieldName = ENABLED,
+            externalizedKeyName = ENABLED,
+            externalized = true,
+            defaultValue = true,
+            description = "Enable request validation. Response validation is not done on the server but client."
+    )
     boolean enabled;
+
+    @BooleanField(
+            configFieldName = LOG_ERROR,
+            externalizedKeyName = LOG_ERROR,
+            externalized = true,
+            defaultValue = true,
+            description = "Log error message if validation error occurs"
+    )
     boolean logError;
-    boolean legacyPathType = false;
-    boolean skipBodyValidation = false;
+
+    @BooleanField(
+            configFieldName = LEGACY_PATH_TYPE,
+            externalizedKeyName = LEGACY_PATH_TYPE,
+            externalized = true,
+            description = "By default, the json-schema-validator will return the error message using JSON_POINTER path type. If you want\n" +
+                    "to make sure that the error message is the same as the older version, you can set the legacyPathType to true."
+    )
+    boolean legacyPathType;
+
+    @BooleanField(
+            configFieldName = SKIP_BODY_VALIDATION,
+            externalizedKeyName = SKIP_BODY_VALIDATION,
+            externalized = true,
+            description = "Skip body validation set to true if used in light-router, light-proxy and light-spring-boot."
+    )
+    boolean skipBodyValidation;
+
+    @BooleanField(
+            configFieldName = VALIDATE_RESPONSE,
+            externalizedKeyName = VALIDATE_RESPONSE,
+            externalized = true,
+            description = "Enable response validation."
+    )
     boolean validateResponse;
-    boolean handleNullableField = true;
+
+    @BooleanField(
+            configFieldName = HANDLE_NULLABLE_FIELD,
+            externalizedKeyName = HANDLE_NULLABLE_FIELD,
+            externalized = true,
+            defaultValue = true,
+            description = "When a field is set as nullable in the OpenAPI specification, the schema validator validates that it is nullable\n" +
+                    "however continues with validation against the nullable field\n" +
+                    "\n" +
+                    "If handleNullableField is set to true && incoming field is nullable && value is field: null --> succeed\n" +
+                    "If handleNullableField is set to false && incoming field is nullable && value is field: null --> it is up to the type\n" +
+                    "validator using the SchemaValidator to handle it."
+    )
+    boolean handleNullableField;
+
+    @ArrayField(
+            configFieldName = SKIP_PATH_PREFIXES,
+            externalizedKeyName = SKIP_PATH_PREFIXES,
+            externalized = true,
+            description = "Define a list of path prefixes to skip the validation to ease the configuration for the\n" +
+                    "handler.yml so that users can define some endpoints without validation even through it uses\n" +
+                    "the default chain. This is particularly useful in the light-gateway use case as the same\n" +
+                    "instance might be shared with multiple consumers and providers with different validation\n" +
+                    "requirement. The format is a list of strings separated with commas or a JSON list in\n" +
+                    "values.yml definition from config server, or you can use yaml format in this file.",
+            items = String.class
+    )
     private List<String> skipPathPrefixes;
 
     private ValidatorConfig(String configName) {
