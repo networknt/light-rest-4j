@@ -1,5 +1,14 @@
 # Change Log
 
+## [2.2.1](https://github.com/networknt/light-rest-4j/tree/2.2.1) (2025-03-22)
+
+
+**Merged pull requests:**
+
+
+- Added generated json-schema and yaml annotations to REST configs. [\#412](https://github.com/networknt/light-rest-4j/pull/412) ([KalevGonvick](https://github.com/KalevGonvick))
+
+
 ## [2.2.0](https://github.com/networknt/light-rest-4j/tree/2.2.0) (2025-02-12)
 
 
