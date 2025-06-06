@@ -27,6 +27,7 @@
 
     <artifactId>openapi-validator</artifactId>
     <packaging>jar</packaging>
+    <name>openapi-validator</name>
     <description>An OpenAPI specification 3.0 handler that validates request based on specification.</description>
 
     <dependencies>

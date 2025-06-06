@@ -27,6 +27,7 @@
 
     <artifactId>validator-config</artifactId>
     <packaging>jar</packaging>
+    <name>validator-config</name>
     <description>A config module for openapi-validator and light-aws-lambda.</description>
 
     <dependencies>

@@ -27,6 +27,7 @@
 
     <artifactId>openapi-config</artifactId>
     <packaging>jar</packaging>
+    <name>openapi-config</name>
     <description>An OpenAPI config module to support admin endpoint injection.
     </description>
 

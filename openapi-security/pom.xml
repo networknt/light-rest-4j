@@ -27,6 +27,7 @@
 
     <artifactId>openapi-security</artifactId>
     <packaging>jar</packaging>
+    <name>openapi-security</name>
     <description>An OpenAPI Specification 3.0 security module that contains all handlers to protect your server</description>
 
     <dependencies>

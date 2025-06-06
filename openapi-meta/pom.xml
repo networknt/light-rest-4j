@@ -27,6 +27,7 @@
 
     <artifactId>openapi-meta</artifactId>
     <packaging>jar</packaging>
+    <name>openapi-meta</name>
     <description>An OpenAPI Specification 3.0 meta handler module that cache the spec and attached context related operation to the request based on uri and method.
     </description>
 

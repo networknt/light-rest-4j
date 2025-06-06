@@ -27,6 +27,7 @@
 
     <artifactId>access-control</artifactId>
     <packaging>jar</packaging>
+    <name>access-control</name>
     <description>A module that contains fine-grained authorization handlers to address business domain security</description>
 
     <dependencies>
