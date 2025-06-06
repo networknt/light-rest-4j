@@ -116,6 +116,7 @@
         <version.yaml-rule>2.0.1</version.yaml-rule>
         <version.maven-javadoc>3.4.1</version.maven-javadoc>
         <version.nexus-staging-maven>1.7.0</version.nexus-staging-maven>
+        <version.maven-gpg>3.2.7</version.maven-gpg>
     </properties>
 
     <modules>
@@ -577,7 +578,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.6</version>
+                        <version>${version.maven-gpg}</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
