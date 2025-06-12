@@ -59,7 +59,7 @@ public class ValidatorConfig {
             configFieldName = ENABLED,
             externalizedKeyName = ENABLED,
             externalized = true,
-            defaultValue = true,
+            defaultValue = "true",
             description = "Enable request validation. Response validation is not done on the server but client."
     )
     boolean enabled;
@@ -68,7 +68,7 @@ public class ValidatorConfig {
             configFieldName = LOG_ERROR,
             externalizedKeyName = LOG_ERROR,
             externalized = true,
-            defaultValue = true,
+            defaultValue = "true",
             description = "Log error message if validation error occurs"
     )
     boolean logError;
@@ -102,7 +102,7 @@ public class ValidatorConfig {
             configFieldName = HANDLE_NULLABLE_FIELD,
             externalizedKeyName = HANDLE_NULLABLE_FIELD,
             externalized = true,
-            defaultValue = true,
+            defaultValue = "true",
             description = "When a field is set as nullable in the OpenAPI specification, the schema validator validates that it is nullable\n" +
                     "however continues with validation against the nullable field\n" +
                     "\n" +

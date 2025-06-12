@@ -49,7 +49,7 @@ class AccessControlConfig {
             configFieldName = ENABLED,
             externalizedKeyName =  ENABLED,
             externalized = true,
-            defaultValue = true,
+            defaultValue = "true",
             description = "Enable Access Control Handler"
     )
     boolean enabled;
@@ -68,7 +68,7 @@ class AccessControlConfig {
             configFieldName = DEFAULT_DENY,
             externalizedKeyName = DEFAULT_DENY,
             externalized = true,
-            defaultValue = true,
+            defaultValue = "true",
             description = "If there is no access rule defined for the endpoint, default access is denied. Users can overwrite\n" +
                     "this default action by setting this config value to false. If true, the handle will force users to\n" +
                     "define the rules for each endpoint when the access control handler is enabled."
