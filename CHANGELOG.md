@@ -1,5 +1,12 @@
 # Change Log
 
+## [2.3.1](https://github.com/networknt/light-rest-4j/tree/2.3.1) (2025-09-19)
+
+
+**Merged pull requests:**
+
+
+- [pre-commit.ci] pre-commit autoupdate [\#417](https://github.com/networknt/light-rest-4j/pull/417) ([pre-commit-ci](https://github.com/apps/pre-commit-ci))
 ## [2.3.0](https://github.com/networknt/light-rest-4j/tree/2.3.0) (2025-06-25)
 
 
