@@ -77,6 +77,7 @@ public class ValidatorConfig {
             configFieldName = LEGACY_PATH_TYPE,
             externalizedKeyName = LEGACY_PATH_TYPE,
             externalized = true,
+            defaultValue = "false",
             description = "By default, the json-schema-validator will return the error message using JSON_POINTER path type. If you want\n" +
                     "to make sure that the error message is the same as the older version, you can set the legacyPathType to true."
     )
@@ -86,6 +87,7 @@ public class ValidatorConfig {
             configFieldName = SKIP_BODY_VALIDATION,
             externalizedKeyName = SKIP_BODY_VALIDATION,
             externalized = true,
+            defaultValue = "false",
             description = "Skip body validation set to true if used in light-router, light-proxy and light-spring-boot."
     )
     boolean skipBodyValidation;
@@ -94,6 +96,7 @@ public class ValidatorConfig {
             configFieldName = VALIDATE_RESPONSE,
             externalizedKeyName = VALIDATE_RESPONSE,
             externalized = true,
+            defaultValue = "false",
             description = "Enable response validation."
     )
     boolean validateResponse;

@@ -1,4 +1,3 @@
----
 # Specification type and file name definition
 # The filename with path of the specification file, and usually it is openapi.yaml
 fileName: ${specification.fileName:openapi.yaml}

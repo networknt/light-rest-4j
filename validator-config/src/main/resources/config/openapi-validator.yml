@@ -1,5 +1,4 @@
 # Default openapi-validator configuration
----
 # Enable request validation. Response validation is not done on the server but client.
 enabled: ${openapi-validator.enabled:true}
 # Log error message if validation error occurs
@@ -13,12 +12,11 @@ skipBodyValidation: ${openapi-validator.skipBodyValidation:false}
 validateResponse: ${openapi-validator.validateResponse:false}
 # When a field is set as nullable in the OpenAPI specification, the schema validator validates that it is nullable
 # however continues with validation against the nullable field
-
+# 
 # If handleNullableField is set to true && incoming field is nullable && value is field: null --> succeed
 # If handleNullableField is set to false && incoming field is nullable && value is field: null --> it is up to the type
 # validator using the SchemaValidator to handle it.
 handleNullableField: ${openapi-validator.handleNullableField:true}
-
 # Define a list of path prefixes to skip the validation to ease the configuration for the
 # handler.yml so that users can define some endpoints without validation even through it uses
 # the default chain. This is particularly useful in the light-gateway use case as the same

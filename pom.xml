@@ -566,6 +566,9 @@
 
     <profiles>
         <profile>
+            <id>schema-generation</id>
+        </profile>
+        <profile>
             <id>release-sign-artifacts</id>
             <activation>
                 <property>

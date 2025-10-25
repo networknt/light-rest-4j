@@ -5,8 +5,7 @@
   "properties" : {
     "enabled" : {
       "type" : "boolean",
-      "description" : "Enable Access Control Handler",
-      "default" : true
+      "description" : "Enable Access Control Handler"
     },
     "accessRuleLogic" : {
       "type" : "string",
@@ -15,8 +14,7 @@
     },
     "defaultDeny" : {
       "type" : "boolean",
-      "description" : "If there is no access rule defined for the endpoint, default access is denied. Users can overwrite\nthis default action by setting this config value to false. If true, the handle will force users to\ndefine the rules for each endpoint when the access control handler is enabled.",
-      "default" : true
+      "description" : "If there is no access rule defined for the endpoint, default access is denied. Users can overwrite\nthis default action by setting this config value to false. If true, the handle will force users to\ndefine the rules for each endpoint when the access control handler is enabled."
     },
     "skipPathPrefixes" : {
       "type" : "array",
