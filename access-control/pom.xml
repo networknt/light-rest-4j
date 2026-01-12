@@ -45,6 +45,10 @@
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
+            <artifactId>access-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
             <artifactId>openapi-parser</artifactId>
         </dependency>
         <dependency>

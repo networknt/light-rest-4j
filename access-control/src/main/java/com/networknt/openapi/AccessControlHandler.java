@@ -15,7 +15,7 @@
  */
 package com.networknt.openapi;
 
-import com.networknt.body.BodyHandler;
+import com.networknt.access.AccessControlConfig;
 import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
 import com.networknt.handler.Handler;
@@ -102,7 +102,7 @@ public class AccessControlHandler implements MiddlewareHandler {
 
         // if there is no access rule for this endpoint, check the default deny flag in the config.
         if (requestRules == null) {
-            if (config.defaultDeny) {
+            if (config.isDefaultDeny()) {
                 logger.error("Access control rule is missing and default deny is true for endpoint {}", endpoint);
                 setExchangeStatus(exchange, ACCESS_CONTROL_MISSING, endpoint);
             } else {
