@@ -28,7 +28,6 @@ public class OpenApiHandlerConfig {
     @BooleanField(
         configFieldName = MULTIPLE_SPEC,
         externalizedKeyName = MULTIPLE_SPEC,
-        externalized = true,
         defaultValue = "false",
         description = "This configuration file is used to support multiple OpenAPI " +
                 "specifications in the same light-rest-4j instance.\n" +
@@ -40,7 +39,6 @@ public class OpenApiHandlerConfig {
     @BooleanField(
             configFieldName = IGNORE_INVALID_PATH,
             externalizedKeyName = IGNORE_INVALID_PATH,
-            externalized = true,
             defaultValue = "false",
             description = "When the OpenApiHandler is used in a shared gateway and some backend APIs have no " +
                     "specifications deployed on the gateway, the handler will return\n" +
@@ -55,7 +53,6 @@ public class OpenApiHandlerConfig {
     @MapField(
             configFieldName = PATH_SPEC_MAPPING,
             externalizedKeyName = PATH_SPEC_MAPPING,
-            externalized = true,
             description = "Path to spec mapping. One or more base paths can map to the same specifications. " +
                     "The key is the base path and the value is the specification name.\n" +
                     "If users want to use multiple specification files in the same instance, " +

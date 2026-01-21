@@ -58,7 +58,6 @@ public class ValidatorConfig {
     @BooleanField(
             configFieldName = ENABLED,
             externalizedKeyName = ENABLED,
-            externalized = true,
             defaultValue = "true",
             description = "Enable request validation. Response validation is not done on the server but client."
     )
@@ -67,7 +66,6 @@ public class ValidatorConfig {
     @BooleanField(
             configFieldName = LOG_ERROR,
             externalizedKeyName = LOG_ERROR,
-            externalized = true,
             defaultValue = "true",
             description = "Log error message if validation error occurs"
     )
@@ -76,7 +74,6 @@ public class ValidatorConfig {
     @BooleanField(
             configFieldName = LEGACY_PATH_TYPE,
             externalizedKeyName = LEGACY_PATH_TYPE,
-            externalized = true,
             defaultValue = "false",
             description = "By default, the json-schema-validator will return the error message using JSON_POINTER path type. If you want\n" +
                     "to make sure that the error message is the same as the older version, you can set the legacyPathType to true."
@@ -86,7 +83,6 @@ public class ValidatorConfig {
     @BooleanField(
             configFieldName = SKIP_BODY_VALIDATION,
             externalizedKeyName = SKIP_BODY_VALIDATION,
-            externalized = true,
             defaultValue = "false",
             description = "Skip body validation set to true if used in light-router, light-proxy and light-spring-boot."
     )
@@ -95,7 +91,6 @@ public class ValidatorConfig {
     @BooleanField(
             configFieldName = VALIDATE_RESPONSE,
             externalizedKeyName = VALIDATE_RESPONSE,
-            externalized = true,
             defaultValue = "false",
             description = "Enable response validation."
     )
@@ -104,7 +99,6 @@ public class ValidatorConfig {
     @BooleanField(
             configFieldName = HANDLE_NULLABLE_FIELD,
             externalizedKeyName = HANDLE_NULLABLE_FIELD,
-            externalized = true,
             defaultValue = "true",
             description = "When a field is set as nullable in the OpenAPI specification, the schema validator validates that it is nullable\n" +
                     "however continues with validation against the nullable field\n" +
@@ -118,7 +112,6 @@ public class ValidatorConfig {
     @ArrayField(
             configFieldName = SKIP_PATH_PREFIXES,
             externalizedKeyName = SKIP_PATH_PREFIXES,
-            externalized = true,
             description = "Define a list of path prefixes to skip the validation to ease the configuration for the\n" +
                     "handler.yml so that users can define some endpoints without validation even through it uses\n" +
                     "the default chain. This is particularly useful in the light-gateway use case as the same\n" +

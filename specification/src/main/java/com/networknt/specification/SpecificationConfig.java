@@ -38,7 +38,6 @@ public class SpecificationConfig {
     @StringField(
             configFieldName = FILE_NAME,
             externalizedKeyName = FILE_NAME,
-            externalized = true,
             defaultValue = "openapi.yaml",
             description = "The filename with path of the specification file, and usually it is openapi.yaml"
     )
@@ -47,7 +46,6 @@ public class SpecificationConfig {
     @StringField(
             configFieldName = CONTENT_TYPE,
             externalizedKeyName = CONTENT_TYPE,
-            externalized = true,
             defaultValue = "text/yaml",
             description = "The content type of the specification file. In most cases, we are using yaml format."
     )
