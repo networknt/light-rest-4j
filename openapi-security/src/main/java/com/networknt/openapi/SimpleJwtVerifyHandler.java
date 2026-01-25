@@ -5,7 +5,7 @@ import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.handler.config.HandlerConfig;
 import com.networknt.security.*;
-import com.networknt.utility.ModuleRegistry;
+import com.networknt.server.ModuleRegistry;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -57,9 +57,7 @@ public class SimpleJwtVerifyHandler extends AbstractSimpleJwtVerifyHandler {
 
     @Override
     public void reload() {
-        config.reload();
-        jwtVerifier = new JwtVerifier(config);
-        ModuleRegistry.registerModule(SecurityConfig.CONFIG_NAME, SimpleJwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SecurityConfig.CONFIG_NAME), null);
+        SecurityConfig.reload();
     }
 
 }

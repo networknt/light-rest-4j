@@ -24,7 +24,7 @@ import com.networknt.handler.config.HandlerConfig;
 import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
-import com.networknt.utility.ModuleRegistry;
+import com.networknt.server.ModuleRegistry;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -51,34 +51,41 @@ public class ValidatorHandler implements MiddlewareHandler {
 
     static final Logger logger = LoggerFactory.getLogger(ValidatorHandler.class);
 
-    static ValidatorConfig config;
+    static volatile ValidatorConfig config;
+    private static volatile OpenApiHandlerConfig openApiHandlerConfig;
 
     private volatile HttpHandler next;
+    private String configName = OPENAPI_CONFIG_NAME;
     // keep the single requestValidator instance as it covers 99 percent of use cases for best performance.
-    RequestValidator requestValidator;
-    Map<String, RequestValidator> requestValidatorMap;
+    private volatile RequestValidator requestValidator;
+    private volatile Map<String, RequestValidator> requestValidatorMap;
 
-    ResponseValidator responseValidator;
-    Map<String, ResponseValidator> responseValidatorMap;
+    private volatile ResponseValidator responseValidator;
+    private volatile Map<String, ResponseValidator> responseValidatorMap;
 
     public ValidatorHandler() {
-        config = ValidatorConfig.load(OPENAPI_CONFIG_NAME);
-        if(config == null) {
-            config = ValidatorConfig.load(CONFIG_NAME);
+        config = ValidatorConfig.load(configName);
+        if(config.getMappedConfig() == null || config.getMappedConfig().isEmpty()) {
+            configName = CONFIG_NAME;
+            config = ValidatorConfig.load(configName);
         }
+        openApiHandlerConfig = OpenApiHandler.config;
+        initialize();
+    }
 
+    private void initialize() {
         if(OpenApiHandler.helper != null) {
-            final SchemaValidator schemaValidator = new SchemaValidator(OpenApiHandler.helper.openApi3, config.legacyPathType);
-            this.requestValidator = new RequestValidator(schemaValidator);
-            this.responseValidator = new ResponseValidator(schemaValidator);
+            final SchemaValidator schemaValidator = new SchemaValidator(OpenApiHandler.helper.openApi3, config.isLegacyPathType());
+            this.requestValidator = new RequestValidator(schemaValidator, config);
+            this.responseValidator = new ResponseValidator(schemaValidator, config);
         } else {
             requestValidatorMap = new HashMap<>();
             responseValidatorMap = new HashMap<>();
             for(Map.Entry<String, OpenApiHelper> entry: OpenApiHandler.helperMap.entrySet()) {
-                final SchemaValidator schemaValidator = new SchemaValidator(entry.getValue().openApi3, config.legacyPathType);
-                RequestValidator reqV = new RequestValidator(schemaValidator);
+                final SchemaValidator schemaValidator = new SchemaValidator(entry.getValue().openApi3, config.isLegacyPathType());
+                RequestValidator reqV = new RequestValidator(schemaValidator, config);
                 requestValidatorMap.put(entry.getKey(), reqV);
-                ResponseValidator resV = new ResponseValidator(schemaValidator);
+                ResponseValidator resV = new ResponseValidator(schemaValidator, config);
                 responseValidatorMap.put(entry.getKey(), resV);
             }
         }
@@ -86,6 +93,16 @@ public class ValidatorHandler implements MiddlewareHandler {
 
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
+        ValidatorConfig validatorConfig = ValidatorConfig.load(configName);
+        if (validatorConfig != config || OpenApiHandler.config != openApiHandlerConfig) {
+            synchronized (ValidatorHandler.class) {
+                if (validatorConfig != config || OpenApiHandler.config != openApiHandlerConfig) {
+                    config = validatorConfig;
+                    openApiHandlerConfig = OpenApiHandler.config;
+                    initialize();
+                }
+            }
+        }
         if (logger.isDebugEnabled()) logger.debug("ValidatorHandler.handleRequest starts.");
         String reqPath = exchange.getRequestPath();
         // if request path is in the skipPathPrefixes in the config, call the next handler directly to skip the validation.
@@ -111,13 +128,13 @@ public class ValidatorHandler implements MiddlewareHandler {
         if(status != null) {
             if (logger.isDebugEnabled()) logger.debug("ValidatorHandler.handleRequest ends with an error.");
             setExchangeStatus(exchange, status);
-            if(config.logError) {
+            if(config.isLogError()) {
                 logger.error("There is an Validation Error:");
             }
             return;
         }
 
-        if(config.validateResponse) {
+        if(config.isValidateResponse()) {
             validateResponse(exchange, openApiOperation);
         }
         if (logger.isDebugEnabled()) logger.debug("ValidatorHandler.handleRequest ends.");
@@ -186,15 +203,11 @@ public class ValidatorHandler implements MiddlewareHandler {
 
     @Override
     public void register() {
-        ModuleRegistry.registerModule(OPENAPI_CONFIG_NAME, ValidatorHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(OPENAPI_CONFIG_NAME), null);
+        ModuleRegistry.registerModule(configName, ValidatorHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(configName), null);
     }
 
     @Override
     public void reload() {
-        config.reload(OPENAPI_CONFIG_NAME);
-        if(config == null) {
-            config.reload(CONFIG_NAME);
-        }
-        ModuleRegistry.registerModule(OPENAPI_CONFIG_NAME, ValidatorHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(OPENAPI_CONFIG_NAME), null);
+        ValidatorConfig.reload(configName);
     }
 }

@@ -17,8 +17,10 @@
 package com.networknt.specification;
 
 import com.networknt.config.Config;
-import com.networknt.handler.LightHttpHandler;
-import com.networknt.utility.ModuleRegistry;
+import com.networknt.handler.MiddlewareHandler;
+import com.networknt.server.ModuleRegistry;
+import io.undertow.Handlers;
+import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
 
@@ -27,19 +29,47 @@ import io.undertow.util.HttpString;
  *
  * @author Gavin Chen
  */
-public class SpecDisplayHandler implements LightHttpHandler {
-    static SpecificationConfig config = (SpecificationConfig)Config.getInstance().getJsonObjectConfig(SpecificationConfig.CONFIG_NAME, SpecificationConfig.class);
-    public SpecDisplayHandler(){
+public class SpecDisplayHandler implements MiddlewareHandler {
+    private static SpecificationConfig config;
+    private volatile HttpHandler next;
+
+    public SpecDisplayHandler() {
+        config = SpecificationConfig.load();
         if(logger.isInfoEnabled()) logger.info("SpecDisplayHandler is constructed");
-        ModuleRegistry.registerModule(SpecificationConfig.CONFIG_NAME, SpecDisplayHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SpecificationConfig.CONFIG_NAME), null);
     }
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        SpecificationConfig config = (SpecificationConfig)Config.getInstance().getJsonObjectConfig(SpecificationConfig.CONFIG_NAME, SpecificationConfig.class);
         final String payload = Config.getInstance().getStringFromFile(config.getFileName());
         exchange.getResponseHeaders().add(new HttpString("Content-Type"), config.getContentType());
         exchange.getResponseSender().send(payload);
     }
 
+    @Override
+    public HttpHandler getNext() {
+        return next;
+    }
+
+    @Override
+    public MiddlewareHandler setNext(HttpHandler next) {
+        Handlers.handlerNotNull(next);
+        this.next = next;
+        return this;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
+    @Override
+    public void register() {
+        ModuleRegistry.registerModule(SpecificationConfig.CONFIG_NAME, SpecDisplayHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SpecificationConfig.CONFIG_NAME), null);
+    }
+
+    @Override
+    public void reload() {
+        SpecificationConfig.reload();
+        config = SpecificationConfig.load();
+    }
 }

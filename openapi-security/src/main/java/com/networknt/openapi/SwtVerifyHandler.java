@@ -12,7 +12,7 @@ import com.networknt.security.AbstractSwtVerifyHandler;
 import com.networknt.security.SwtVerifier;
 import com.networknt.security.SecurityConfig;
 import com.networknt.utility.Constants;
-import com.networknt.utility.ModuleRegistry;
+import com.networknt.server.ModuleRegistry;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -58,8 +58,7 @@ public class SwtVerifyHandler extends AbstractSwtVerifyHandler {
 
     @Override
     public void reload() {
-        config.reload();
-        ModuleRegistry.registerModule(SecurityConfig.CONFIG_NAME, SwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SecurityConfig.CONFIG_NAME), null);
+        SecurityConfig.reload();
     }
 
     @Override

@@ -25,7 +25,7 @@ import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.rule.RuleConstants;
 import com.networknt.rule.RuleEngine;
 import com.networknt.rule.RuleLoaderStartupHook;
-import com.networknt.utility.ModuleRegistry;
+import com.networknt.server.ModuleRegistry;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -69,6 +69,7 @@ public class AccessControlHandler implements MiddlewareHandler {
     @Override
     @SuppressWarnings("unchecked")
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
+        config = AccessControlConfig.load();
         if (logger.isDebugEnabled()) logger.debug("AccessControlHandler.handleRequest starts.");
         String reqPath = exchange.getRequestPath();
         // if request path is in the skipPathPrefixes in the config, call the next handler directly to skip the security check.
@@ -230,13 +231,6 @@ public class AccessControlHandler implements MiddlewareHandler {
 
     @Override
     public void register() {
-        ModuleRegistry.registerModule(AccessControlConfig.CONFIG_NAME, AccessControlHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(AccessControlConfig.CONFIG_NAME), null);
     }
 
-    @Override
-    public void reload() {
-        config.reload();
-        ModuleRegistry.registerModule(AccessControlConfig.CONFIG_NAME, AccessControlHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(AccessControlConfig.CONFIG_NAME), null);
-        if (logger.isInfoEnabled()) logger.info("AccessControlHandler is reloaded.");
-    }
 }

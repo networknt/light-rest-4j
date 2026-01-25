@@ -24,11 +24,10 @@ import com.networknt.config.schema.ConfigSchema;
 import com.networknt.config.schema.OutputFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.networknt.server.ModuleRegistry;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
 
 /**
  * Validator configuration class that maps to validator.yml properties
@@ -54,6 +53,8 @@ public class ValidatorConfig {
 
     private Map<String, Object> mappedConfig;
     private final Config config;
+    private String configName;
+    private static final Map<String, ValidatorConfig> instances = new ConcurrentHashMap<>();
 
     @BooleanField(
             configFieldName = ENABLED,
@@ -123,33 +124,48 @@ public class ValidatorConfig {
     private List<String> skipPathPrefixes;
 
     private ValidatorConfig(String configName) {
+        this.configName = configName;
         config = Config.getInstance();
         mappedConfig = config.getJsonMapConfigNoCache(configName);
         setConfigData();
         setConfigList();
     }
-    private ValidatorConfig() {
-        this(CONFIG_NAME);
-    }
 
     public static ValidatorConfig load(String configName) {
-        return new ValidatorConfig(configName);
+        ValidatorConfig instance = instances.get(configName);
+        if (instance != null) {
+            return instance;
+        }
+        synchronized (ValidatorConfig.class) {
+            instance = instances.get(configName);
+            if (instance != null) {
+                return instance;
+            }
+            instance = new ValidatorConfig(configName);
+            instances.put(configName, instance);
+            if (CONFIG_NAME.equals(configName)) {
+                ModuleRegistry.registerModule(CONFIG_NAME, ValidatorConfig.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(CONFIG_NAME), null);
+            }
+            return instance;
+        }
     }
 
     public static ValidatorConfig load() {
-        return new ValidatorConfig();
+        return load(CONFIG_NAME);
     }
 
-    public void reload() {
-        mappedConfig = config.getJsonMapConfigNoCache(CONFIG_NAME);
-        setConfigData();
-        setConfigList();
+    public static void reload() {
+        reload(CONFIG_NAME);
     }
 
-    public void reload(String configName) {
-        mappedConfig = config.getJsonMapConfigNoCache(configName);
-        setConfigData();
-        setConfigList();
+    public static void reload(String configName) {
+        synchronized (ValidatorConfig.class) {
+            ValidatorConfig instance = new ValidatorConfig(configName);
+            instances.put(configName, instance);
+            if (CONFIG_NAME.equals(configName)) {
+                ModuleRegistry.registerModule(CONFIG_NAME, ValidatorConfig.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(CONFIG_NAME), null);
+            }
+        }
     }
 
     public boolean isEnabled() {
@@ -206,6 +222,10 @@ public class ValidatorConfig {
 
     public Map<String, Object> getMappedConfig() {
         return mappedConfig;
+    }
+
+    public String getConfigName() {
+        return configName;
     }
 
     Config getConfig() {

@@ -29,7 +29,7 @@ import com.networknt.oas.model.SecurityParameter;
 import com.networknt.oas.model.SecurityRequirement;
 import com.networknt.security.*;
 import com.networknt.utility.Constants;
-import com.networknt.utility.ModuleRegistry;
+import com.networknt.server.ModuleRegistry;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -183,9 +183,7 @@ public class JwtVerifyHandler extends AbstractJwtVerifyHandler {
 
     @Override
     public void reload() {
-        config.reload();
-        jwtVerifier = new JwtVerifier(config);
-        ModuleRegistry.registerModule(SecurityConfig.CONFIG_NAME, JwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SecurityConfig.CONFIG_NAME), null);
+        SecurityConfig.reload();
     }
 
     @Override

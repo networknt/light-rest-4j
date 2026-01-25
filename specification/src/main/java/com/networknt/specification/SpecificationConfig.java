@@ -16,9 +16,14 @@
 
 package com.networknt.specification;
 
+import com.networknt.config.Config;
 import com.networknt.config.schema.ConfigSchema;
 import com.networknt.config.schema.OutputFormat;
 import com.networknt.config.schema.StringField;
+import com.networknt.server.ModuleRegistry;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Config class for Spec display Handler
@@ -41,7 +46,16 @@ public class SpecificationConfig {
             defaultValue = "openapi.yaml",
             description = "The filename with path of the specification file, and usually it is openapi.yaml"
     )
-    String fileName;
+    private String configName;
+    private static final Map<String, SpecificationConfig> instances = new ConcurrentHashMap<>();
+
+    @StringField(
+            configFieldName = FILE_NAME,
+            externalizedKeyName = FILE_NAME,
+            defaultValue = "openapi.yaml",
+            description = "The filename with path of the specification file, and usually it is openapi.yaml"
+    )
+    private String fileName;
 
     @StringField(
             configFieldName = CONTENT_TYPE,
@@ -49,7 +63,53 @@ public class SpecificationConfig {
             defaultValue = "text/yaml",
             description = "The content type of the specification file. In most cases, we are using yaml format."
     )
-    String contentType;
+    private String contentType;
+
+    private SpecificationConfig(String configName) {
+        this.configName = configName;
+        Config config = Config.getInstance();
+        Map<String, Object> mappedConfig = config.getJsonMapConfigNoCache(configName);
+        if (mappedConfig != null) {
+            setConfigData(mappedConfig);
+        }
+    }
+
+    public static SpecificationConfig load() {
+        return load(CONFIG_NAME);
+    }
+
+    public static SpecificationConfig load(String configName) {
+        SpecificationConfig instance = instances.get(configName);
+        if (instance != null) {
+            return instance;
+        }
+        synchronized (SpecificationConfig.class) {
+            instance = instances.get(configName);
+            if (instance != null) {
+                return instance;
+            }
+            instance = new SpecificationConfig(configName);
+            instances.put(configName, instance);
+            if (CONFIG_NAME.equals(configName)) {
+                ModuleRegistry.registerModule(CONFIG_NAME, SpecificationConfig.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(CONFIG_NAME), null);
+            }
+            return instance;
+        }
+    }
+
+    public static void reload() {
+        reload(CONFIG_NAME);
+    }
+
+    public static void reload(String configName) {
+        synchronized (SpecificationConfig.class) {
+            SpecificationConfig instance = new SpecificationConfig(configName);
+            instances.put(configName, instance);
+            if (CONFIG_NAME.equals(configName)) {
+                ModuleRegistry.registerModule(CONFIG_NAME, SpecificationConfig.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(CONFIG_NAME), null);
+            }
+        }
+    }
 
     public SpecificationConfig() {
     }
@@ -68,5 +128,16 @@ public class SpecificationConfig {
 
     public void setContentType(String contentType) {
         this.contentType = contentType;
+    }
+
+    public String getConfigName() {
+        return configName;
+    }
+
+    private void setConfigData(Map<String, Object> mappedConfig) {
+        Object object = mappedConfig.get(FILE_NAME);
+        if (object != null) fileName = (String) object;
+        object = mappedConfig.get(CONTENT_TYPE);
+        if (object != null) contentType = (String) object;
     }
 }

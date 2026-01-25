@@ -27,7 +27,7 @@ import com.networknt.oas.model.Path;
 import com.networknt.openapi.parameter.ParameterDeserializer;
 import com.networknt.service.SingletonServiceFactory;
 import com.networknt.utility.Constants;
-import com.networknt.utility.ModuleRegistry;
+import com.networknt.server.ModuleRegistry;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -65,8 +65,9 @@ public class OpenApiHandler implements MiddlewareHandler {
     static final String STATUS_INVALID_REQUEST_PATH = "ERR10007";
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
     HandlerConfig handlerConfig;
+    private String configName = OpenApiHandlerConfig.CONFIG_NAME;
 
-    static OpenApiHandlerConfig config;
+    static volatile OpenApiHandlerConfig config;
 
     // for multiple specifications use case. The key is the basePath and the value is the instance of OpenApiHelper.
     public static Map<String, OpenApiHelper> helperMap;
@@ -76,14 +77,18 @@ public class OpenApiHandler implements MiddlewareHandler {
     public static OpenApiHelper helper;
 
     private volatile HttpHandler next;
+    private final Map<String, Object> inject;
 
     public OpenApiHandler(OpenApiHandlerConfig cfg) {
         if(logger.isInfoEnabled()) logger.info("OpenApiHandler is constructed with cfg.");
         config = cfg;
-        Map<String, Object> inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
+        this.configName = cfg.getConfigName();
+        inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
+        initialize();
+    }
 
+    private void initialize() {
         if (config.isMultipleSpec()) {
-
             // multiple specifications in the same handler.
             Map<String, Object> pathSpecMapping = config.getPathSpecMapping();
             helperMap = new HashMap<>();
@@ -144,6 +149,15 @@ public class OpenApiHandler implements MiddlewareHandler {
 
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
+        OpenApiHandlerConfig openApiHandlerConfig = OpenApiHandlerConfig.load(configName);
+        if (openApiHandlerConfig != config) {
+            synchronized (OpenApiHandler.class) {
+                if (openApiHandlerConfig != config) {
+                    config = openApiHandlerConfig;
+                    initialize();
+                }
+            }
+        }
         if (logger.isDebugEnabled())
             logger.debug("OpenApiHandler.handleRequest starts.");
 
@@ -317,13 +331,6 @@ public class OpenApiHandler implements MiddlewareHandler {
 
     @Override
     public void register() {
-        ModuleRegistry.registerModule(OpenApiHandlerConfig.CONFIG_NAME, OpenApiHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(OpenApiHandlerConfig.CONFIG_NAME), null);
-    }
-
-    @Override
-    public void reload() {
-        config.reload();
-        ModuleRegistry.registerModule(OpenApiHandlerConfig.CONFIG_NAME, OpenApiHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(OpenApiHandlerConfig.CONFIG_NAME), null);
     }
 
     /**
