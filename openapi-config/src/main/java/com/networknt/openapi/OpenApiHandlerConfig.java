@@ -11,7 +11,6 @@ import com.networknt.server.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.*;
 
 @ConfigSchema(
@@ -27,7 +26,8 @@ public class OpenApiHandlerConfig {
     private static final String IGNORE_INVALID_PATH = "ignoreInvalidPath";
     private static final String PATH_SPEC_MAPPING = "pathSpecMapping";
 
-    private String configName;
+    private final Map<String, Object> mappedConfig;
+    private static OpenApiHandlerConfig instance;
 
     @BooleanField(
         configFieldName = MULTIPLE_SPEC,
@@ -68,60 +68,44 @@ public class OpenApiHandlerConfig {
     Map<String, Object> pathSpecMapping;
 
 
-    private Map<String, Object> mappedConfig;
-
     private OpenApiHandlerConfig() {
         this(CONFIG_NAME);
     }
 
     /**
      * Please note that this constructor is only for testing to load different config files
-     * to test different configurations.
      * @param configName String
      */
     private OpenApiHandlerConfig(String configName) {
-        this.configName = configName;
-        mappedConfig = Config.getInstance().getJsonMapConfigNoCache(configName);
+        mappedConfig = Config.getInstance().getJsonMapConfig(configName);
         setConfigData();
         setConfigMap();
     }
-
-    private static final Map<String, OpenApiHandlerConfig> instances = new ConcurrentHashMap<>();
 
     public static OpenApiHandlerConfig load() {
         return load(CONFIG_NAME);
     }
 
     public static OpenApiHandlerConfig load(String configName) {
-        OpenApiHandlerConfig instance = instances.get(configName);
-        if (instance != null) {
-            return instance;
-        }
-        synchronized (OpenApiHandlerConfig.class) {
-            instance = instances.get(configName);
-            if (instance != null) {
+        if (CONFIG_NAME.equals(configName)) {
+            Map<String, Object> mappedConfig = Config.getInstance().getJsonMapConfig(configName);
+            if (instance != null && instance.getMappedConfig() == mappedConfig) {
                 return instance;
             }
-            instance = new OpenApiHandlerConfig(configName);
-            instances.put(configName, instance);
-            if (CONFIG_NAME.equals(configName)) {
+            synchronized (OpenApiHandlerConfig.class) {
+                mappedConfig = Config.getInstance().getJsonMapConfig(configName);
+                if (instance != null && instance.getMappedConfig() == mappedConfig) {
+                    return instance;
+                }
+                instance = new OpenApiHandlerConfig(configName);
                 ModuleRegistry.registerModule(CONFIG_NAME, OpenApiHandlerConfig.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(CONFIG_NAME), null);
+                return instance;
             }
-            return instance;
         }
+        return new OpenApiHandlerConfig(configName);
     }
 
-    public static void reload() {
-        synchronized (OpenApiHandlerConfig.class) {
-            OpenApiHandlerConfig instance = new OpenApiHandlerConfig(CONFIG_NAME);
-            instances.put(CONFIG_NAME, instance);
-            ModuleRegistry.registerModule(CONFIG_NAME, OpenApiHandlerConfig.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(CONFIG_NAME), null);
-        }
-    }
 
-    public String getConfigName() {
-        return configName;
-    }
 
     public Map<String, Object> getMappedConfig() {
         return mappedConfig;

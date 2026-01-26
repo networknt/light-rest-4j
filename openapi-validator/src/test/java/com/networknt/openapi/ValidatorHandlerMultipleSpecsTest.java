@@ -51,7 +51,7 @@ public class ValidatorHandlerMultipleSpecsTest {
     public void setUp() {
         if(server == null) {
             logger.info("starting server");
-            OpenApiHandler openApiHandler = new OpenApiHandler(OpenApiHandlerConfig.load("openapi-handler-multiple"));
+            OpenApiHandler openApiHandler = new OpenApiHandler("openapi-handler-multiple");
             BodyHandler bodyHandler = new BodyHandler();
 
             HttpHandler handler = getPetStoreHandler();

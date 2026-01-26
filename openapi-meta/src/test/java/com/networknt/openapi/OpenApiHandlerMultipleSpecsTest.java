@@ -60,7 +60,7 @@ public class OpenApiHandlerMultipleSpecsTest {
         if(server == null) {
             logger.info("starting server");
             HttpHandler handler = getTestHandler();
-            OpenApiHandler openApiHandler = new OpenApiHandler(OpenApiHandlerConfig.load("openapi-handler-multiple"));
+            OpenApiHandler openApiHandler = new OpenApiHandler("openapi-handler-multiple");
             openApiHandler.setNext(handler);
             handler = openApiHandler;
             server = Undertow.builder()

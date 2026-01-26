@@ -65,9 +65,11 @@ public class OpenApiHandler implements MiddlewareHandler {
     static final String STATUS_INVALID_REQUEST_PATH = "ERR10007";
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
     HandlerConfig handlerConfig;
-    private String configName = OpenApiHandlerConfig.CONFIG_NAME;
 
-    static volatile OpenApiHandlerConfig config;
+    private volatile String configName = OpenApiHandlerConfig.CONFIG_NAME;
+    private volatile OpenApiHandlerConfig config;
+    private volatile Map<String, Object> inject;
+
 
     // for multiple specifications use case. The key is the basePath and the value is the instance of OpenApiHelper.
     public static Map<String, OpenApiHelper> helperMap;
@@ -77,17 +79,23 @@ public class OpenApiHandler implements MiddlewareHandler {
     public static OpenApiHelper helper;
 
     private volatile HttpHandler next;
-    private final Map<String, Object> inject;
 
-    public OpenApiHandler(OpenApiHandlerConfig cfg) {
-        if(logger.isInfoEnabled()) logger.info("OpenApiHandler is constructed with cfg.");
-        config = cfg;
-        this.configName = cfg.getConfigName();
+    public OpenApiHandler(String configName) {
+        if(logger.isInfoEnabled()) logger.info("OpenApiHandler is constructed with configName {}.", configName);
+        this.configName = configName;
+        config = OpenApiHandlerConfig.load(configName);
         inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
-        initialize();
+        initialize(config);
     }
 
-    private void initialize() {
+    public OpenApiHandler() {
+        if(logger.isInfoEnabled()) logger.info("OpenApiHandler is constructed.");
+        config = OpenApiHandlerConfig.load(configName);
+        inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
+        initialize(config);
+    }
+
+    private void initialize(OpenApiHandlerConfig config) {
         if (config.isMultipleSpec()) {
             // multiple specifications in the same handler.
             Map<String, Object> pathSpecMapping = config.getPathSpecMapping();
@@ -143,18 +151,16 @@ public class OpenApiHandler implements MiddlewareHandler {
         }
     }
 
-    public OpenApiHandler() {
-        this(OpenApiHandlerConfig.load());
-    }
-
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
-        OpenApiHandlerConfig openApiHandlerConfig = OpenApiHandlerConfig.load(configName);
-        if (openApiHandlerConfig != config) {
+        OpenApiHandlerConfig newConfig = OpenApiHandlerConfig.load(configName);
+        if (newConfig != config) {
             synchronized (OpenApiHandler.class) {
-                if (openApiHandlerConfig != config) {
-                    config = openApiHandlerConfig;
-                    initialize();
+                if (newConfig != config) {
+                    config = newConfig;
+                    inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
+                    initialize(config);
+                    if(logger.isInfoEnabled()) logger.info("OpenApiHandler is reloaded.");
                 }
             }
         }
@@ -322,7 +328,7 @@ public class OpenApiHandler implements MiddlewareHandler {
     public boolean isEnabled() {
         boolean enabled = false;
         if (config.multipleSpec) {
-            enabled = config.getMappedConfig().size() > 0;
+            enabled = !config.getMappedConfig().isEmpty();
         } else {
             enabled = helper.openApi3 != null;
         }

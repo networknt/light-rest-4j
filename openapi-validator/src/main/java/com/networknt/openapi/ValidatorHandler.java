@@ -16,19 +16,15 @@
 
 package com.networknt.openapi;
 
-import com.networknt.config.Config;
 import com.networknt.dump.StoreResponseStreamSinkConduit;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
-import com.networknt.handler.config.HandlerConfig;
 import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
-import com.networknt.server.ModuleRegistry;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import org.jose4j.http.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +65,7 @@ public class ValidatorHandler implements MiddlewareHandler {
             configName = CONFIG_NAME;
             config = ValidatorConfig.load(configName);
         }
-        openApiHandlerConfig = OpenApiHandler.config;
+        openApiHandlerConfig = OpenApiHandlerConfig.load();
         initialize();
     }
 
@@ -94,11 +90,11 @@ public class ValidatorHandler implements MiddlewareHandler {
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
         ValidatorConfig validatorConfig = ValidatorConfig.load(configName);
-        if (validatorConfig != config || OpenApiHandler.config != openApiHandlerConfig) {
+        if (validatorConfig != config || OpenApiHandlerConfig.load() != openApiHandlerConfig) {
             synchronized (ValidatorHandler.class) {
-                if (validatorConfig != config || OpenApiHandler.config != openApiHandlerConfig) {
+                if (validatorConfig != config || OpenApiHandlerConfig.load() != openApiHandlerConfig) {
                     config = validatorConfig;
-                    openApiHandlerConfig = OpenApiHandler.config;
+                    openApiHandlerConfig = OpenApiHandlerConfig.load();
                     initialize();
                 }
             }

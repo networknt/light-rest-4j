@@ -46,7 +46,7 @@ public class JwtVerifierHandlerMultipleSpecsTest {
             HttpHandler handler = getTestHandler();
             JwtVerifyHandler jwtVerifyHandler = new JwtVerifyHandler();
             jwtVerifyHandler.setNext(handler);
-            OpenApiHandler openApiHandler = new OpenApiHandler(OpenApiHandlerConfig.load("openapi-handler-multiple"));
+            OpenApiHandler openApiHandler = new OpenApiHandler("openapi-handler-multiple");
             openApiHandler.setNext(jwtVerifyHandler);
             server1 = Undertow.builder()
                     .addHttpListener(7081, "localhost")
