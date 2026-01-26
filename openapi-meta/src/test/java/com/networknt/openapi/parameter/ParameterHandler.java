@@ -73,9 +73,4 @@ public class ParameterHandler implements MiddlewareHandler {
 		return true;
 	}
 
-	@Override
-	public void register() {
-
-	}
-
 }

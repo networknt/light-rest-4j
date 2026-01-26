@@ -98,14 +98,11 @@ public class SpecSwaggerUIHandler implements MiddlewareHandler {
     public boolean isEnabled() {
         return true;
     }
-
-    @Override
-    public void register() {
-    }
-
+    /*
     @Override
     public void reload() {
         SpecificationConfig.reload();
         config = SpecificationConfig.load();
     }
+    */
 }

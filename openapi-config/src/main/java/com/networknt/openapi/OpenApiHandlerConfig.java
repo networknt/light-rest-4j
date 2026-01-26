@@ -67,7 +67,7 @@ public class OpenApiHandlerConfig {
     )
     Map<String, Object> pathSpecMapping;
 
-    private final Config config;
+
     private Map<String, Object> mappedConfig;
 
     private OpenApiHandlerConfig() {
@@ -81,8 +81,7 @@ public class OpenApiHandlerConfig {
      */
     private OpenApiHandlerConfig(String configName) {
         this.configName = configName;
-        config = Config.getInstance();
-        mappedConfig = config.getJsonMapConfigNoCache(configName);
+        mappedConfig = Config.getInstance().getJsonMapConfigNoCache(configName);
         setConfigData();
         setConfigMap();
     }

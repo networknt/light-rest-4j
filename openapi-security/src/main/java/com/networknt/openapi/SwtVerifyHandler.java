@@ -52,16 +52,6 @@ public class SwtVerifyHandler extends AbstractSwtVerifyHandler {
     }
 
     @Override
-    public void register() {
-        ModuleRegistry.registerModule(SecurityConfig.CONFIG_NAME, SwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SecurityConfig.CONFIG_NAME), null);
-    }
-
-    @Override
-    public void reload() {
-        SecurityConfig.reload();
-    }
-
-    @Override
     public List<String> getSpecScopes(HttpServerExchange exchange, Map<String, Object> auditInfo) throws Exception {
         /* get openapi operation */
         OpenApiOperation openApiOperation = (OpenApiOperation) auditInfo.get(Constants.OPENAPI_OPERATION_STRING);

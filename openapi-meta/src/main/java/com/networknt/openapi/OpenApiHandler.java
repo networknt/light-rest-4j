@@ -329,10 +329,6 @@ public class OpenApiHandler implements MiddlewareHandler {
         return enabled;
     }
 
-    @Override
-    public void register() {
-    }
-
     /**
      * merge two maps. The values in preferredMap take priority.
      *

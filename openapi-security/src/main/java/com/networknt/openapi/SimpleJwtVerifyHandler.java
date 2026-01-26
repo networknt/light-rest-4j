@@ -50,14 +50,4 @@ public class SimpleJwtVerifyHandler extends AbstractSimpleJwtVerifyHandler {
         return config.isEnableVerifyJwt();
     }
 
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(SecurityConfig.CONFIG_NAME, SimpleJwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SecurityConfig.CONFIG_NAME), null);
-    }
-
-    @Override
-    public void reload() {
-        SecurityConfig.reload();
-    }
-
 }

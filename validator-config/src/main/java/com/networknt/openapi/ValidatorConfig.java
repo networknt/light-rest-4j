@@ -52,7 +52,7 @@ public class ValidatorConfig {
     private static final String SKIP_PATH_PREFIXES = "skipPathPrefixes";
 
     private Map<String, Object> mappedConfig;
-    private final Config config;
+
     private String configName;
     private static final Map<String, ValidatorConfig> instances = new ConcurrentHashMap<>();
 
@@ -125,8 +125,7 @@ public class ValidatorConfig {
 
     private ValidatorConfig(String configName) {
         this.configName = configName;
-        config = Config.getInstance();
-        mappedConfig = config.getJsonMapConfigNoCache(configName);
+        mappedConfig = Config.getInstance().getJsonMapConfigNoCache(configName);
         setConfigData();
         setConfigList();
     }
@@ -228,9 +227,7 @@ public class ValidatorConfig {
         return configName;
     }
 
-    Config getConfig() {
-        return config;
-    }
+
 
     private void setConfigData() {
         if(getMappedConfig() != null) {

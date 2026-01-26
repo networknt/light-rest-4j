@@ -228,9 +228,4 @@ public class AccessControlHandler implements MiddlewareHandler {
     public boolean isEnabled() {
         return config.isEnabled();
     }
-
-    @Override
-    public void register() {
-    }
-
 }

@@ -201,13 +201,4 @@ public class ValidatorHandler implements MiddlewareHandler {
         return config.isEnabled();
     }
 
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(configName, ValidatorHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(configName), null);
-    }
-
-    @Override
-    public void reload() {
-        ValidatorConfig.reload(configName);
-    }
 }

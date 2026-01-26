@@ -177,16 +177,6 @@ public class JwtVerifyHandler extends AbstractJwtVerifyHandler {
     }
 
     @Override
-    public void register() {
-        ModuleRegistry.registerModule(SecurityConfig.CONFIG_NAME, JwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SecurityConfig.CONFIG_NAME), null);
-    }
-
-    @Override
-    public void reload() {
-        SecurityConfig.reload();
-    }
-
-    @Override
     public JwtVerifier getJwtVerifier() {
         return jwtVerifier;
     }

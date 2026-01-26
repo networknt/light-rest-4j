@@ -61,15 +61,11 @@ public class SpecDisplayHandler implements MiddlewareHandler {
     public boolean isEnabled() {
         return true;
     }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(SpecificationConfig.CONFIG_NAME, SpecDisplayHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SpecificationConfig.CONFIG_NAME), null);
-    }
-
+    /*
     @Override
     public void reload() {
         SpecificationConfig.reload();
         config = SpecificationConfig.load();
     }
+    */
 }
