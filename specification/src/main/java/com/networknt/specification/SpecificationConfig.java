@@ -39,9 +39,6 @@ public class SpecificationConfig {
     public static final String FILE_NAME = "fileName";
     public static final String CONTENT_TYPE = "contentType";
 
-    private volatile Map<String, Object> mappedConfig;
-    private static SpecificationConfig instance;
-
     @StringField(
             configFieldName = FILE_NAME,
             externalizedKeyName = FILE_NAME,
@@ -58,10 +55,13 @@ public class SpecificationConfig {
     )
     private String contentType;
 
+    private final Map<String, Object> mappedConfig;
+    private static SpecificationConfig instance;
+
     private SpecificationConfig(String configName) {
         mappedConfig = Config.getInstance().getJsonMapConfig(configName);
-        if (mappedConfig != null) {
-            setConfigData(mappedConfig);
+        if (this.mappedConfig != null) {
+            setConfigData(this.mappedConfig);
         }
     }
 
@@ -89,9 +89,6 @@ public class SpecificationConfig {
     }
 
 
-
-    public SpecificationConfig() {
-    }
 
     public String getFileName() {
         return fileName;

@@ -26,9 +26,6 @@ public class OpenApiHandlerConfig {
     private static final String IGNORE_INVALID_PATH = "ignoreInvalidPath";
     private static final String PATH_SPEC_MAPPING = "pathSpecMapping";
 
-    private final Map<String, Object> mappedConfig;
-    private static OpenApiHandlerConfig instance;
-
     @BooleanField(
         configFieldName = MULTIPLE_SPEC,
         externalizedKeyName = MULTIPLE_SPEC,
@@ -68,12 +65,16 @@ public class OpenApiHandlerConfig {
     Map<String, Object> pathSpecMapping;
 
 
+    private final Map<String, Object> mappedConfig;
+    private static OpenApiHandlerConfig instance;
+
     private OpenApiHandlerConfig() {
         this(CONFIG_NAME);
     }
 
     /**
      * Please note that this constructor is only for testing to load different config files
+     * to test different configurations.
      * @param configName String
      */
     private OpenApiHandlerConfig(String configName) {
