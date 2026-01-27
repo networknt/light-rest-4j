@@ -35,23 +35,6 @@ public class SwtVerifyHandler extends AbstractSwtVerifyHandler {
     String basePath;
 
     @Override
-    public HttpHandler getNext() {
-        return next;
-    }
-
-    @Override
-    public MiddlewareHandler setNext(final HttpHandler next) {
-        Handlers.handlerNotNull(next);
-        this.next = next;
-        return this;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return config.isEnableVerifySwt();
-    }
-
-    @Override
     public List<String> getSpecScopes(HttpServerExchange exchange, Map<String, Object> auditInfo) throws Exception {
         /* get openapi operation */
         OpenApiOperation openApiOperation = (OpenApiOperation) auditInfo.get(Constants.OPENAPI_OPERATION_STRING);

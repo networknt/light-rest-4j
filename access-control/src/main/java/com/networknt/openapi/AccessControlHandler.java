@@ -16,7 +16,6 @@
 package com.networknt.openapi;
 
 import com.networknt.access.AccessControlConfig;
-import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
@@ -25,7 +24,6 @@ import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.rule.RuleConstants;
 import com.networknt.rule.RuleEngine;
 import com.networknt.rule.RuleLoaderStartupHook;
-import com.networknt.server.ModuleRegistry;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -49,7 +47,6 @@ import java.util.*;
  */
 public class AccessControlHandler implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(AccessControlHandler.class);
-    static AccessControlConfig config;
     static final String ACCESS_CONTROL_ERROR = "ERR10067";
     static final String ACCESS_CONTROL_MISSING = "ERR10069";
     static final String STARTUP_HOOK_NOT_LOADED = "ERR11019";
@@ -60,7 +57,7 @@ public class AccessControlHandler implements MiddlewareHandler {
     private final RuleEngine engine;
 
     public AccessControlHandler() {
-        config = AccessControlConfig.load();
+        AccessControlConfig.load();
         engine = new RuleEngine(RuleLoaderStartupHook.rules, null);
         if (logger.isInfoEnabled())
             logger.info("AccessControlHandler is loaded.");
@@ -69,7 +66,7 @@ public class AccessControlHandler implements MiddlewareHandler {
     @Override
     @SuppressWarnings("unchecked")
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
-        config = AccessControlConfig.load();
+        AccessControlConfig config = AccessControlConfig.load();
         if (logger.isDebugEnabled()) logger.debug("AccessControlHandler.handleRequest starts.");
         String reqPath = exchange.getRequestPath();
         // if request path is in the skipPathPrefixes in the config, call the next handler directly to skip the security check.
@@ -111,7 +108,7 @@ public class AccessControlHandler implements MiddlewareHandler {
                 next(exchange);
             }
         } else {
-            this.executeRules(exchange, ruleEnginePayload, requestRules);
+            this.executeRules(exchange, ruleEnginePayload, requestRules, config);
         }
     }
 
@@ -146,7 +143,7 @@ public class AccessControlHandler implements MiddlewareHandler {
      * @param requestRules - rule(s) defined for the endpoint
      * @throws Exception - Rule engine exception
      */
-    protected void executeRules(HttpServerExchange exchange, Map<String, Object> ruleEnginePayload, Map<String, Object> requestRules) throws Exception {
+    protected void executeRules(HttpServerExchange exchange, Map<String, Object> ruleEnginePayload, Map<String, Object> requestRules, AccessControlConfig config) throws Exception {
         boolean finalResult = false;  // Initialize to false for "any" logic, and will change in for loop
         List<String> accessRuleIds = (List<String>)requestRules.get(REQUEST_ACCESS);
         Map<String, Object> permissionMap = (Map<String, Object>)requestRules.get(PERMISSION);
@@ -226,6 +223,6 @@ public class AccessControlHandler implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        return config.isEnabled();
+        return AccessControlConfig.load().isEnabled();
     }
 }

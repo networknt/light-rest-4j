@@ -23,6 +23,7 @@ import java.util.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.networknt.body.BodyConfig;
 import com.networknt.config.Config;
 import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.schema.PathType;
@@ -110,7 +111,7 @@ public class RequestValidator {
 
         if (requestBody == null) {
             if (specBody.getRequired() != null && specBody.getRequired()) {
-                if(BodyHandler.config.isEnabled()) {
+                if(BodyConfig.load().isEnabled()) {
                     // BodyHandler is enabled and there is no error returned, that means the request body is empty. This is a validation error.
                     return new Status(VALIDATOR_REQUEST_BODY_MISSING, openApiOperation.getMethod(), openApiOperation.getPathString().original());
                 } else {

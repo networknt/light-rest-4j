@@ -63,14 +63,11 @@ public class SpecSwaggerUIHandler implements MiddlewareHandler {
             "</script>\n" +
             "</body>\n" +
             "</html>";
-    private static SpecificationConfig config;
     private volatile HttpHandler next;
 
     public SpecSwaggerUIHandler() {
-        config = SpecificationConfig.load();
+        SpecificationConfig.load();
     }
-
-
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
@@ -98,11 +95,4 @@ public class SpecSwaggerUIHandler implements MiddlewareHandler {
     public boolean isEnabled() {
         return true;
     }
-    /*
-    @Override
-    public void reload() {
-        SpecificationConfig.reload();
-        config = SpecificationConfig.load();
-    }
-    */
 }

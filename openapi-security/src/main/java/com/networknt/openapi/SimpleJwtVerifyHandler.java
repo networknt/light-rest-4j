@@ -33,21 +33,4 @@ public class SimpleJwtVerifyHandler extends AbstractSimpleJwtVerifyHandler {
         this.basePath = handlerConfig == null ? "/" : handlerConfig.getBasePath();
     }
 
-    @Override
-    public HttpHandler getNext() {
-        return next;
-    }
-
-    @Override
-    public MiddlewareHandler setNext(final HttpHandler next) {
-        Handlers.handlerNotNull(next);
-        this.next = next;
-        return this;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return config.isEnableVerifyJwt();
-    }
-
 }

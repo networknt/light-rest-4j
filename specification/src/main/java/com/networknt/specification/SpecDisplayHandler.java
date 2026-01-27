@@ -30,16 +30,16 @@ import io.undertow.util.HttpString;
  * @author Gavin Chen
  */
 public class SpecDisplayHandler implements MiddlewareHandler {
-    private static SpecificationConfig config;
     private volatile HttpHandler next;
 
     public SpecDisplayHandler() {
-        config = SpecificationConfig.load();
+        SpecificationConfig.load();
         if(logger.isInfoEnabled()) logger.info("SpecDisplayHandler is constructed");
     }
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
+        SpecificationConfig config = SpecificationConfig.load();
         final String payload = Config.getInstance().getStringFromFile(config.getFileName());
         exchange.getResponseHeaders().add(new HttpString("Content-Type"), config.getContentType());
         exchange.getResponseSender().send(payload);
