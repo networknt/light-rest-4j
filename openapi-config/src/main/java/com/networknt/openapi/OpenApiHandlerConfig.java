@@ -7,6 +7,7 @@ import com.networknt.config.schema.BooleanField;
 import com.networknt.config.schema.ConfigSchema;
 import com.networknt.config.schema.MapField;
 import com.networknt.config.schema.OutputFormat;
+import com.networknt.server.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,8 +64,9 @@ public class OpenApiHandlerConfig {
     )
     Map<String, Object> pathSpecMapping;
 
-    private final Config config;
-    private Map<String, Object> mappedConfig;
+
+    private final Map<String, Object> mappedConfig;
+    private static volatile OpenApiHandlerConfig instance;
 
     private OpenApiHandlerConfig() {
         this(CONFIG_NAME);
@@ -76,25 +78,35 @@ public class OpenApiHandlerConfig {
      * @param configName String
      */
     private OpenApiHandlerConfig(String configName) {
-        config = Config.getInstance();
-        mappedConfig = config.getJsonMapConfigNoCache(configName);
+        mappedConfig = Config.getInstance().getJsonMapConfig(configName);
         setConfigData();
         setConfigMap();
     }
 
     public static OpenApiHandlerConfig load() {
-        return new OpenApiHandlerConfig();
+        return load(CONFIG_NAME);
     }
 
     public static OpenApiHandlerConfig load(String configName) {
+        if (CONFIG_NAME.equals(configName)) {
+            Map<String, Object> mappedConfig = Config.getInstance().getJsonMapConfig(configName);
+            if (instance != null && instance.getMappedConfig() == mappedConfig) {
+                return instance;
+            }
+            synchronized (OpenApiHandlerConfig.class) {
+                mappedConfig = Config.getInstance().getJsonMapConfig(configName);
+                if (instance != null && instance.getMappedConfig() == mappedConfig) {
+                    return instance;
+                }
+                instance = new OpenApiHandlerConfig(configName);
+                ModuleRegistry.registerModule(CONFIG_NAME, OpenApiHandlerConfig.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(CONFIG_NAME), null);
+                return instance;
+            }
+        }
         return new OpenApiHandlerConfig(configName);
     }
 
-    void reload() {
-        mappedConfig = config.getJsonMapConfigNoCache(CONFIG_NAME);
-        setConfigData();
-        setConfigMap();
-    }
+
 
     public Map<String, Object> getMappedConfig() {
         return mappedConfig;

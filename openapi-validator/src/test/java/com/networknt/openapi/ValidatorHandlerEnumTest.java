@@ -45,8 +45,7 @@ public class ValidatorHandlerEnumTest {
     public void setUp() {
         if(server == null) {
             logger.info("starting server");
-            OpenApiHandlerConfig openApiHandlerConfig = OpenApiHandlerConfig.load("openapi-handler-enum");
-            OpenApiHandler openApiHandler = new OpenApiHandler(openApiHandlerConfig);
+            OpenApiHandler openApiHandler = new OpenApiHandler("openapi-handler-enum");
             BodyHandler bodyHandler = new BodyHandler();
 
             HttpHandler handler = getPetStoreHandler();

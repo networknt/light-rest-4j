@@ -16,7 +16,10 @@
 
 package com.networknt.specification;
 import com.networknt.config.Config;
-import com.networknt.handler.LightHttpHandler;
+import com.networknt.handler.MiddlewareHandler;
+import com.networknt.server.ModuleRegistry;
+import io.undertow.Handlers;
+import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
 
@@ -25,7 +28,7 @@ import io.undertow.util.HttpString;
  *
  * @author Gavin Chen
  */
-public class SpecSwaggerUIHandler implements LightHttpHandler {
+public class SpecSwaggerUIHandler implements MiddlewareHandler {
     // The url in this html is using the spec.yaml API which is served by SpecDisplayHandler. It needs to be in sync with the handler.yml
     public static String swaggerUITemplate =
             "<html>\n" +
@@ -60,18 +63,36 @@ public class SpecSwaggerUIHandler implements LightHttpHandler {
             "</script>\n" +
             "</body>\n" +
             "</html>";
-    public SpecSwaggerUIHandler(){}
+    private volatile HttpHandler next;
 
-
+    public SpecSwaggerUIHandler() {
+        SpecificationConfig.load();
+    }
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        SpecificationConfig config = (SpecificationConfig) Config.getInstance().getJsonObjectConfig(SpecificationConfig.CONFIG_NAME, SpecificationConfig.class);
         exchange.getResponseHeaders().add(new HttpString("Content-Type"), "text/html");
         exchange.getResponseSender().send(getDisplayHtml());
     }
 
     private String getDisplayHtml() {
         return swaggerUITemplate;
+    }
+
+    @Override
+    public HttpHandler getNext() {
+        return next;
+    }
+
+    @Override
+    public MiddlewareHandler setNext(HttpHandler next) {
+        Handlers.handlerNotNull(next);
+        this.next = next;
+        return this;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
 }

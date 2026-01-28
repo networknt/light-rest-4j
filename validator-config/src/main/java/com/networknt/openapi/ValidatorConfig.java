@@ -24,11 +24,9 @@ import com.networknt.config.schema.ConfigSchema;
 import com.networknt.config.schema.OutputFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.networknt.server.ModuleRegistry;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Validator configuration class that maps to validator.yml properties
@@ -52,8 +50,8 @@ public class ValidatorConfig {
     private static final String HANDLE_NULLABLE_FIELD = "handleNullableField";
     private static final String SKIP_PATH_PREFIXES = "skipPathPrefixes";
 
-    private Map<String, Object> mappedConfig;
-    private final Config config;
+    private volatile Map<String, Object> mappedConfig;
+    private static ValidatorConfig instance;
 
     @BooleanField(
             configFieldName = ENABLED,
@@ -123,34 +121,35 @@ public class ValidatorConfig {
     private List<String> skipPathPrefixes;
 
     private ValidatorConfig(String configName) {
-        config = Config.getInstance();
-        mappedConfig = config.getJsonMapConfigNoCache(configName);
+        mappedConfig = Config.getInstance().getJsonMapConfig(configName);
         setConfigData();
         setConfigList();
     }
-    private ValidatorConfig() {
-        this(CONFIG_NAME);
-    }
 
     public static ValidatorConfig load(String configName) {
+        if (CONFIG_NAME.equals(configName)) {
+            Map<String, Object> mappedConfig = Config.getInstance().getJsonMapConfig(configName);
+            if (instance != null && instance.getMappedConfig() == mappedConfig) {
+                return instance;
+            }
+            synchronized (ValidatorConfig.class) {
+                mappedConfig = Config.getInstance().getJsonMapConfig(configName);
+                if (instance != null && instance.getMappedConfig() == mappedConfig) {
+                    return instance;
+                }
+                instance = new ValidatorConfig(configName);
+                ModuleRegistry.registerModule(CONFIG_NAME, ValidatorConfig.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(CONFIG_NAME), null);
+                return instance;
+            }
+        }
         return new ValidatorConfig(configName);
     }
 
     public static ValidatorConfig load() {
-        return new ValidatorConfig();
+        return load(CONFIG_NAME);
     }
 
-    public void reload() {
-        mappedConfig = config.getJsonMapConfigNoCache(CONFIG_NAME);
-        setConfigData();
-        setConfigList();
-    }
 
-    public void reload(String configName) {
-        mappedConfig = config.getJsonMapConfigNoCache(configName);
-        setConfigData();
-        setConfigList();
-    }
 
     public boolean isEnabled() {
         return enabled;
@@ -208,9 +207,9 @@ public class ValidatorConfig {
         return mappedConfig;
     }
 
-    Config getConfig() {
-        return config;
-    }
+
+
+
 
     private void setConfigData() {
         if(getMappedConfig() != null) {

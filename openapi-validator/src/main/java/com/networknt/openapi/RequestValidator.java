@@ -23,6 +23,7 @@ import java.util.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.networknt.body.BodyConfig;
 import com.networknt.config.Config;
 import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.schema.PathType;
@@ -61,14 +62,16 @@ public class RequestValidator {
     static final String CONTENT_TYPE_MISMATCH = "ERR10015";
 
     private final SchemaValidator schemaValidator;
+    private final ValidatorConfig config;
 
     /**
      * Construct a new request validator with the given schema validator.
      *
      * @param schemaValidator The schema validator to use when validating request bodies
      */
-    public RequestValidator(final SchemaValidator schemaValidator) {
+    public RequestValidator(final SchemaValidator schemaValidator, final ValidatorConfig config) {
         this.schemaValidator = requireNonNull(schemaValidator, "A schema validator is required");
+        this.config = config;
     }
 
     /**
@@ -89,7 +92,7 @@ public class RequestValidator {
         if (contentType==null || contentType.startsWith("application/json")) {
             Object body = exchange.getAttachment(AttachmentConstants.REQUEST_BODY);
             // skip the body validation if body parser is not in the request chain.
-            if(body == null || ValidatorHandler.config.skipBodyValidation) return null;
+            if(body == null || config.isSkipBodyValidation()) return null;
             status = validateRequestBody(body, openApiOperation);
         }
         return status;
@@ -108,7 +111,7 @@ public class RequestValidator {
 
         if (requestBody == null) {
             if (specBody.getRequired() != null && specBody.getRequired()) {
-                if(BodyHandler.config.isEnabled()) {
+                if(BodyConfig.load().isEnabled()) {
                     // BodyHandler is enabled and there is no error returned, that means the request body is empty. This is a validation error.
                     return new Status(VALIDATOR_REQUEST_BODY_MISSING, openApiOperation.getMethod(), openApiOperation.getPathString().original());
                 } else {
@@ -119,10 +122,10 @@ public class RequestValidator {
             }
             return null;
         }
-        SchemaValidatorsConfig config = SchemaValidatorsConfig.builder()
+        SchemaValidatorsConfig schemaValidatorsConfig = SchemaValidatorsConfig.builder()
                 .typeLoose(false)
-                .pathType(ValidatorHandler.config.isLegacyPathType() ? PathType.LEGACY : PathType.JSON_POINTER)
-                .nullableKeywordEnabled(ValidatorHandler.config.isHandleNullableField())
+                .pathType(config.isLegacyPathType() ? PathType.LEGACY : PathType.JSON_POINTER)
+                .nullableKeywordEnabled(config.isHandleNullableField())
                 .build();
 
         // the body can be converted to JsonNode here. If not, an error is returned.
@@ -147,7 +150,7 @@ public class RequestValidator {
         } else {
             return new Status(CONTENT_TYPE_MISMATCH, "application/json");
         }
-        return schemaValidator.validate(requestNode, Overlay.toJson((SchemaImpl)specBody.getContentMediaType("application/json").getSchema()), config);
+        return schemaValidator.validate(requestNode, Overlay.toJson((SchemaImpl)specBody.getContentMediaType("application/json").getSchema()), schemaValidatorsConfig);
     }
 
     private Status validateRequestParameters(final HttpServerExchange exchange, final NormalisedPath requestPath, final OpenApiOperation openApiOperation) {

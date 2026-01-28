@@ -27,7 +27,7 @@ import com.networknt.oas.model.Path;
 import com.networknt.openapi.parameter.ParameterDeserializer;
 import com.networknt.service.SingletonServiceFactory;
 import com.networknt.utility.Constants;
-import com.networknt.utility.ModuleRegistry;
+import com.networknt.server.ModuleRegistry;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -66,7 +66,10 @@ public class OpenApiHandler implements MiddlewareHandler {
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
     HandlerConfig handlerConfig;
 
-    static OpenApiHandlerConfig config;
+    private volatile String configName = OpenApiHandlerConfig.CONFIG_NAME;
+    private volatile OpenApiHandlerConfig config;
+    private volatile Map<String, Object> inject;
+
 
     // for multiple specifications use case. The key is the basePath and the value is the instance of OpenApiHelper.
     public static Map<String, OpenApiHelper> helperMap;
@@ -77,13 +80,23 @@ public class OpenApiHandler implements MiddlewareHandler {
 
     private volatile HttpHandler next;
 
-    public OpenApiHandler(OpenApiHandlerConfig cfg) {
-        if(logger.isInfoEnabled()) logger.info("OpenApiHandler is constructed with cfg.");
-        config = cfg;
-        Map<String, Object> inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
+    public OpenApiHandler(String configName) {
+        if(logger.isInfoEnabled()) logger.info("OpenApiHandler is constructed with configName {}.", configName);
+        this.configName = configName;
+        config = OpenApiHandlerConfig.load(configName);
+        inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
+        initialize(config);
+    }
 
+    public OpenApiHandler() {
+        if(logger.isInfoEnabled()) logger.info("OpenApiHandler is constructed.");
+        config = OpenApiHandlerConfig.load(configName);
+        inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
+        initialize(config);
+    }
+
+    private void initialize(OpenApiHandlerConfig config) {
         if (config.isMultipleSpec()) {
-
             // multiple specifications in the same handler.
             Map<String, Object> pathSpecMapping = config.getPathSpecMapping();
             helperMap = new HashMap<>();
@@ -138,12 +151,19 @@ public class OpenApiHandler implements MiddlewareHandler {
         }
     }
 
-    public OpenApiHandler() {
-        this(OpenApiHandlerConfig.load());
-    }
-
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
+        OpenApiHandlerConfig newConfig = OpenApiHandlerConfig.load(configName);
+        if (newConfig != config) {
+            synchronized (OpenApiHandler.class) {
+                if (newConfig != config) {
+                    config = newConfig;
+                    inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
+                    initialize(config);
+                    if(logger.isInfoEnabled()) logger.info("OpenApiHandler is reloaded.");
+                }
+            }
+        }
         if (logger.isDebugEnabled())
             logger.debug("OpenApiHandler.handleRequest starts.");
 
@@ -308,22 +328,11 @@ public class OpenApiHandler implements MiddlewareHandler {
     public boolean isEnabled() {
         boolean enabled = false;
         if (config.multipleSpec) {
-            enabled = config.getMappedConfig().size() > 0;
+            enabled = !config.getMappedConfig().isEmpty();
         } else {
             enabled = helper.openApi3 != null;
         }
         return enabled;
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(OpenApiHandlerConfig.CONFIG_NAME, OpenApiHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(OpenApiHandlerConfig.CONFIG_NAME), null);
-    }
-
-    @Override
-    public void reload() {
-        config.reload();
-        ModuleRegistry.registerModule(OpenApiHandlerConfig.CONFIG_NAME, OpenApiHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(OpenApiHandlerConfig.CONFIG_NAME), null);
     }
 
     /**

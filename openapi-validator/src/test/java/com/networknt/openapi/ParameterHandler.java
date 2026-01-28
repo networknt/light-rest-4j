@@ -6,7 +6,7 @@ import java.util.Map;
 
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
-import com.networknt.utility.ModuleRegistry;
+import com.networknt.server.ModuleRegistry;
 
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
@@ -71,11 +71,6 @@ public class ParameterHandler implements MiddlewareHandler {
 	@Override
 	public boolean isEnabled() {
 		return true;
-	}
-
-	@Override
-	public void register() {
-
 	}
 
 }

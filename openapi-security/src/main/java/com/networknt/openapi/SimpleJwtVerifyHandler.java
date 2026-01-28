@@ -5,7 +5,7 @@ import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
 import com.networknt.handler.config.HandlerConfig;
 import com.networknt.security.*;
-import com.networknt.utility.ModuleRegistry;
+import com.networknt.server.ModuleRegistry;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -31,35 +31,6 @@ public class SimpleJwtVerifyHandler extends AbstractSimpleJwtVerifyHandler {
         // in case that the specification doesn't exist, get the basePath from the handler.yml for endpoint lookup.
         HandlerConfig handlerConfig = HandlerConfig.load();
         this.basePath = handlerConfig == null ? "/" : handlerConfig.getBasePath();
-    }
-
-    @Override
-    public HttpHandler getNext() {
-        return next;
-    }
-
-    @Override
-    public MiddlewareHandler setNext(final HttpHandler next) {
-        Handlers.handlerNotNull(next);
-        this.next = next;
-        return this;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return config.isEnableVerifyJwt();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(SecurityConfig.CONFIG_NAME, SimpleJwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SecurityConfig.CONFIG_NAME), null);
-    }
-
-    @Override
-    public void reload() {
-        config.reload();
-        jwtVerifier = new JwtVerifier(config);
-        ModuleRegistry.registerModule(SecurityConfig.CONFIG_NAME, SimpleJwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SecurityConfig.CONFIG_NAME), null);
     }
 
 }
