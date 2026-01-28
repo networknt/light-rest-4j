@@ -66,7 +66,7 @@ public class OpenApiHandlerConfig {
 
 
     private final Map<String, Object> mappedConfig;
-    private static OpenApiHandlerConfig instance;
+    private static volatile OpenApiHandlerConfig instance;
 
     private OpenApiHandlerConfig() {
         this(CONFIG_NAME);

@@ -50,7 +50,7 @@ public class ValidatorConfig {
     private static final String HANDLE_NULLABLE_FIELD = "handleNullableField";
     private static final String SKIP_PATH_PREFIXES = "skipPathPrefixes";
 
-    private final Map<String, Object> mappedConfig;
+    private volatile Map<String, Object> mappedConfig;
     private static ValidatorConfig instance;
 
     @BooleanField(
