@@ -16,29 +16,15 @@
 
 package com.networknt.openapi;
 
-import com.networknt.config.Config;
-import com.networknt.exception.ExpiredTokenException;
 import com.networknt.handler.Handler;
-import com.networknt.handler.MiddlewareHandler;
 import com.networknt.handler.config.HandlerConfig;
-import com.networknt.httpstring.AttachmentConstants;
-import com.networknt.httpstring.HttpStringConstants;
 import com.networknt.oas.model.Operation;
 import com.networknt.oas.model.Path;
 import com.networknt.oas.model.SecurityParameter;
 import com.networknt.oas.model.SecurityRequirement;
 import com.networknt.security.*;
 import com.networknt.utility.Constants;
-import com.networknt.server.ModuleRegistry;
-import io.undertow.Handlers;
-import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HeaderMap;
-import io.undertow.util.Headers;
-import io.undertow.util.HttpString;
-import org.jose4j.jwt.JwtClaims;
-import org.jose4j.jwt.MalformedClaimException;
-import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

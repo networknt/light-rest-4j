@@ -1,8 +1,6 @@
 package com.networknt.openapi;
 
-import com.networknt.config.Config;
 import com.networknt.handler.Handler;
-import com.networknt.handler.MiddlewareHandler;
 import com.networknt.handler.config.HandlerConfig;
 import com.networknt.oas.model.Operation;
 import com.networknt.oas.model.Path;
@@ -12,9 +10,6 @@ import com.networknt.security.AbstractSwtVerifyHandler;
 import com.networknt.security.SwtVerifier;
 import com.networknt.security.SecurityConfig;
 import com.networknt.utility.Constants;
-import com.networknt.server.ModuleRegistry;
-import io.undertow.Handlers;
-import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
