@@ -7,6 +7,7 @@ import com.networknt.config.schema.BooleanField;
 import com.networknt.config.schema.ConfigSchema;
 import com.networknt.config.schema.MapField;
 import com.networknt.config.schema.OutputFormat;
+import com.networknt.server.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +29,7 @@ public class OpenApiHandlerConfig {
     @BooleanField(
         configFieldName = MULTIPLE_SPEC,
         externalizedKeyName = MULTIPLE_SPEC,
-        externalized = true,
+        defaultValue = "false",
         description = "This configuration file is used to support multiple OpenAPI " +
                 "specifications in the same light-rest-4j instance.\n" +
                 "An indicator to allow multiple openapi specifications. " +
@@ -39,7 +40,7 @@ public class OpenApiHandlerConfig {
     @BooleanField(
             configFieldName = IGNORE_INVALID_PATH,
             externalizedKeyName = IGNORE_INVALID_PATH,
-            externalized = true,
+            defaultValue = "false",
             description = "When the OpenApiHandler is used in a shared gateway and some backend APIs have no " +
                     "specifications deployed on the gateway, the handler will return\n" +
                     "an invalid request path error to the client. " +
@@ -53,17 +54,19 @@ public class OpenApiHandlerConfig {
     @MapField(
             configFieldName = PATH_SPEC_MAPPING,
             externalizedKeyName = PATH_SPEC_MAPPING,
-            externalized = true,
             description = "Path to spec mapping. One or more base paths can map to the same specifications. " +
                     "The key is the base path and the value is the specification name.\n" +
                     "If users want to use multiple specification files in the same instance, " +
-                    "each specification must have a unique base path and it must be set as key.",
+                    "each specification must have a unique base path and it must be set as key.\n" +
+                    "  v1: openapi-v1\n" +
+                    "  v2: openapi-v2",
             valueType = String.class
     )
     Map<String, Object> pathSpecMapping;
 
-    private final Config config;
-    private Map<String, Object> mappedConfig;
+
+    private final Map<String, Object> mappedConfig;
+    private static volatile OpenApiHandlerConfig instance;
 
     private OpenApiHandlerConfig() {
         this(CONFIG_NAME);
@@ -75,25 +78,35 @@ public class OpenApiHandlerConfig {
      * @param configName String
      */
     private OpenApiHandlerConfig(String configName) {
-        config = Config.getInstance();
-        mappedConfig = config.getJsonMapConfigNoCache(configName);
+        mappedConfig = Config.getInstance().getJsonMapConfig(configName);
         setConfigData();
         setConfigMap();
     }
 
     public static OpenApiHandlerConfig load() {
-        return new OpenApiHandlerConfig();
+        return load(CONFIG_NAME);
     }
 
     public static OpenApiHandlerConfig load(String configName) {
+        if (CONFIG_NAME.equals(configName)) {
+            Map<String, Object> mappedConfig = Config.getInstance().getJsonMapConfig(configName);
+            if (instance != null && instance.getMappedConfig() == mappedConfig) {
+                return instance;
+            }
+            synchronized (OpenApiHandlerConfig.class) {
+                mappedConfig = Config.getInstance().getJsonMapConfig(configName);
+                if (instance != null && instance.getMappedConfig() == mappedConfig) {
+                    return instance;
+                }
+                instance = new OpenApiHandlerConfig(configName);
+                ModuleRegistry.registerModule(CONFIG_NAME, OpenApiHandlerConfig.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(CONFIG_NAME), null);
+                return instance;
+            }
+        }
         return new OpenApiHandlerConfig(configName);
     }
 
-    void reload() {
-        mappedConfig = config.getJsonMapConfigNoCache(CONFIG_NAME);
-        setConfigData();
-        setConfigMap();
-    }
+
 
     public Map<String, Object> getMappedConfig() {
         return mappedConfig;

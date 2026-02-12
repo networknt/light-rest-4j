@@ -1,13 +1,7 @@
 package com.networknt.openapi;
 
-import com.networknt.config.Config;
-import com.networknt.handler.Handler;
-import com.networknt.handler.MiddlewareHandler;
 import com.networknt.handler.config.HandlerConfig;
 import com.networknt.security.*;
-import com.networknt.utility.ModuleRegistry;
-import io.undertow.Handlers;
-import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,10 +9,13 @@ import org.slf4j.LoggerFactory;
 /**
  * This is very simple jwt verify handler that is used to verify jwt token without scopes. Other than scopes, it is
  * the same as the normal JwtVerifyHandler.
+ * <p>
+ * This handler extends AbstractJwtVerifyHandler but does not override getSpecScopes(), so it defaults to null
+ * which skips scope verification.
  *
  * @author Steve Hu
  */
-public class SimpleJwtVerifyHandler extends AbstractSimpleJwtVerifyHandler {
+public class SimpleJwtVerifyHandler extends AbstractJwtVerifyHandler {
     static final Logger logger = LoggerFactory.getLogger(SimpleJwtVerifyHandler.class);
 
     String basePath;
@@ -34,32 +31,15 @@ public class SimpleJwtVerifyHandler extends AbstractSimpleJwtVerifyHandler {
     }
 
     @Override
-    public HttpHandler getNext() {
-        return next;
+    public boolean isSkipAuth(HttpServerExchange exchange) {
+        String reqPath = exchange.getRequestPath();
+        if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(reqPath::startsWith)) {
+            if(logger.isTraceEnabled()) logger.trace("Skip auth base on skipPathPrefixes for {}", reqPath);
+            return true;
+        }
+        return false;
     }
 
-    @Override
-    public MiddlewareHandler setNext(final HttpHandler next) {
-        Handlers.handlerNotNull(next);
-        this.next = next;
-        return this;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return config.isEnableVerifyJwt();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(SecurityConfig.CONFIG_NAME, SimpleJwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SecurityConfig.CONFIG_NAME), null);
-    }
-
-    @Override
-    public void reload() {
-        config.reload();
-        jwtVerifier = new JwtVerifier(config);
-        ModuleRegistry.registerModule(SecurityConfig.CONFIG_NAME, SimpleJwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SecurityConfig.CONFIG_NAME), null);
-    }
-
+    // Note: getSpecScopes() is NOT overridden, so it defaults to null (no scope verification)
 }
+

@@ -1,6 +1,7 @@
 package com.networknt.openapi;
 
 import com.networknt.client.Http2Client;
+import com.networknt.client.simplepool.SimpleConnectionHolder;
 import com.networknt.config.Config;
 import com.networknt.exception.ClientException;
 import com.networknt.httpstring.HttpStringConstants;
@@ -46,7 +47,7 @@ public class JwtVerifierHandlerMultipleSpecsTest {
             HttpHandler handler = getTestHandler();
             JwtVerifyHandler jwtVerifyHandler = new JwtVerifyHandler();
             jwtVerifyHandler.setNext(handler);
-            OpenApiHandler openApiHandler = new OpenApiHandler(OpenApiHandlerConfig.load("openapi-handler-multiple"));
+            OpenApiHandler openApiHandler = new OpenApiHandler("openapi-handler-multiple");
             openApiHandler.setNext(jwtVerifyHandler);
             server1 = Undertow.builder()
                     .addHttpListener(7081, "localhost")
@@ -120,12 +121,19 @@ public class JwtVerifierHandlerMultipleSpecsTest {
         logger.trace("testWithCorrectScopeInIdToken starts");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final ClientConnection connection;
+        final SimpleConnectionHolder.ConnectionToken token;
+
         try {
-            connection = client.connect(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+
+            token = client.borrow(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+
         } catch (Exception e) {
+
             throw new ClientException(e);
+
         }
+
+        final ClientConnection connection = (ClientConnection) token.getRawConnection();
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
             ClientRequest request = new ClientRequest().setPath("/petstore/pets/111").setMethod(Methods.GET);
@@ -137,7 +145,9 @@ public class JwtVerifierHandlerMultipleSpecsTest {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
-            IoUtils.safeClose(connection);
+
+            client.restore(token);
+
         }
         int statusCode = reference.get().getResponseCode();
         String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
@@ -156,12 +166,19 @@ public class JwtVerifierHandlerMultipleSpecsTest {
         logger.trace("testWithCorrectCommaSeperatedScpClaimScopeInIdToken starts");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final ClientConnection connection;
+        final SimpleConnectionHolder.ConnectionToken token;
+
         try {
-            connection = client.connect(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+
+            token = client.borrow(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+
         } catch (Exception e) {
+
             throw new ClientException(e);
+
         }
+
+        final ClientConnection connection = (ClientConnection) token.getRawConnection();
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
             ClientRequest request = new ClientRequest().setPath("/petstore/pets/111").setMethod(Methods.GET);
@@ -173,7 +190,9 @@ public class JwtVerifierHandlerMultipleSpecsTest {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
-            IoUtils.safeClose(connection);
+
+            client.restore(token);
+
         }
         int statusCode = reference.get().getResponseCode();
         Assert.assertEquals(200, statusCode);
@@ -190,12 +209,19 @@ public class JwtVerifierHandlerMultipleSpecsTest {
         logger.trace("testWithCorrectSpaceSeperatedScpClaimScopeInIdToken starts");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final ClientConnection connection;
+        final SimpleConnectionHolder.ConnectionToken token;
+
         try {
-            connection = client.connect(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+
+            token = client.borrow(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+
         } catch (Exception e) {
+
             throw new ClientException(e);
+
         }
+
+        final ClientConnection connection = (ClientConnection) token.getRawConnection();
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
             ClientRequest request = new ClientRequest().setPath("/petstore/pets/111").setMethod(Methods.GET);
@@ -207,7 +233,9 @@ public class JwtVerifierHandlerMultipleSpecsTest {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
-            IoUtils.safeClose(connection);
+
+            client.restore(token);
+
         }
         int statusCode = reference.get().getResponseCode();
         Assert.assertEquals(200, statusCode);
@@ -224,12 +252,19 @@ public class JwtVerifierHandlerMultipleSpecsTest {
         logger.trace("testWithCorrectSpaceSeperatedScopeClaimScopeInIdToken starts");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final ClientConnection connection;
+        final SimpleConnectionHolder.ConnectionToken token;
+
         try {
-            connection = client.connect(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+
+            token = client.borrow(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+
         } catch (Exception e) {
+
             throw new ClientException(e);
+
         }
+
+        final ClientConnection connection = (ClientConnection) token.getRawConnection();
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
             ClientRequest request = new ClientRequest().setPath("/petstore/pets/111").setMethod(Methods.GET);
@@ -241,7 +276,9 @@ public class JwtVerifierHandlerMultipleSpecsTest {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
-            IoUtils.safeClose(connection);
+
+            client.restore(token);
+
         }
         int statusCode = reference.get().getResponseCode();
         Assert.assertEquals(200, statusCode);
@@ -255,12 +292,19 @@ public class JwtVerifierHandlerMultipleSpecsTest {
         logger.trace("testUnmatchedScopeInIdToken starts");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final ClientConnection connection;
+        final SimpleConnectionHolder.ConnectionToken token;
+
         try {
-            connection = client.connect(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+
+            token = client.borrow(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+
         } catch (Exception e) {
+
             throw new ClientException(e);
+
         }
+
+        final ClientConnection connection = (ClientConnection) token.getRawConnection();
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
             ClientRequest request = new ClientRequest().setPath("/petstore/pets/111").setMethod(Methods.GET);
@@ -272,7 +316,9 @@ public class JwtVerifierHandlerMultipleSpecsTest {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
-            IoUtils.safeClose(connection);
+
+            client.restore(token);
+
         }
         int statusCode = reference.get().getResponseCode();
         Assert.assertEquals(403, statusCode);
@@ -288,12 +334,19 @@ public class JwtVerifierHandlerMultipleSpecsTest {
         logger.trace("testWithCorrectScopeInScopeToken starts");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final ClientConnection connection;
+        final SimpleConnectionHolder.ConnectionToken token;
+
         try {
-            connection = client.connect(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+
+            token = client.borrow(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+
         } catch (Exception e) {
+
             throw new ClientException(e);
+
         }
+
+        final ClientConnection connection = (ClientConnection) token.getRawConnection();
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
             ClientRequest request = new ClientRequest().setPath("/petstore/pets/111").setMethod(Methods.GET);
@@ -306,7 +359,9 @@ public class JwtVerifierHandlerMultipleSpecsTest {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
-            IoUtils.safeClose(connection);
+
+            client.restore(token);
+
         }
         int statusCode = reference.get().getResponseCode();
         Assert.assertEquals(200, statusCode);
@@ -320,12 +375,19 @@ public class JwtVerifierHandlerMultipleSpecsTest {
         logger.trace("testUnmatchedScopeInScopeToken starts");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final ClientConnection connection;
+        final SimpleConnectionHolder.ConnectionToken token;
+
         try {
-            connection = client.connect(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY).get();
+
+            token = client.borrow(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+
         } catch (Exception e) {
+
             throw new ClientException(e);
+
         }
+
+        final ClientConnection connection = (ClientConnection) token.getRawConnection();
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         try {
             ClientRequest request = new ClientRequest().setPath("/petstore/pets/111").setMethod(Methods.GET);
@@ -338,7 +400,9 @@ public class JwtVerifierHandlerMultipleSpecsTest {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
-            IoUtils.safeClose(connection);
+
+            client.restore(token);
+
         }
         int statusCode = reference.get().getResponseCode();
         Assert.assertEquals(403, statusCode);

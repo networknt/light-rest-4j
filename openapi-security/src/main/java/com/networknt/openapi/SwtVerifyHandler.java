@@ -1,8 +1,6 @@
 package com.networknt.openapi;
 
-import com.networknt.config.Config;
 import com.networknt.handler.Handler;
-import com.networknt.handler.MiddlewareHandler;
 import com.networknt.handler.config.HandlerConfig;
 import com.networknt.oas.model.Operation;
 import com.networknt.oas.model.Path;
@@ -12,9 +10,6 @@ import com.networknt.security.AbstractSwtVerifyHandler;
 import com.networknt.security.SwtVerifier;
 import com.networknt.security.SecurityConfig;
 import com.networknt.utility.Constants;
-import com.networknt.utility.ModuleRegistry;
-import io.undertow.Handlers;
-import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,34 +28,6 @@ public class SwtVerifyHandler extends AbstractSwtVerifyHandler {
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
 
     String basePath;
-
-    @Override
-    public HttpHandler getNext() {
-        return next;
-    }
-
-    @Override
-    public MiddlewareHandler setNext(final HttpHandler next) {
-        Handlers.handlerNotNull(next);
-        this.next = next;
-        return this;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return config.isEnableVerifySwt();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(SecurityConfig.CONFIG_NAME, SwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SecurityConfig.CONFIG_NAME), null);
-    }
-
-    @Override
-    public void reload() {
-        config.reload();
-        ModuleRegistry.registerModule(SecurityConfig.CONFIG_NAME, SwtVerifyHandler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SecurityConfig.CONFIG_NAME), null);
-    }
 
     @Override
     public List<String> getSpecScopes(HttpServerExchange exchange, Map<String, Object> auditInfo) throws Exception {

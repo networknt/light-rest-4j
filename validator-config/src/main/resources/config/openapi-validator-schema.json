@@ -5,13 +5,11 @@
   "properties" : {
     "enabled" : {
       "type" : "boolean",
-      "description" : "Enable request validation. Response validation is not done on the server but client.",
-      "default" : true
+      "description" : "Enable request validation. Response validation is not done on the server but client."
     },
     "logError" : {
       "type" : "boolean",
-      "description" : "Log error message if validation error occurs",
-      "default" : true
+      "description" : "Log error message if validation error occurs"
     },
     "legacyPathType" : {
       "type" : "boolean",
@@ -27,8 +25,7 @@
     },
     "handleNullableField" : {
       "type" : "boolean",
-      "description" : "When a field is set as nullable in the OpenAPI specification, the schema validator validates that it is nullable\nhowever continues with validation against the nullable field\n\nIf handleNullableField is set to true && incoming field is nullable && value is field: null --> succeed\nIf handleNullableField is set to false && incoming field is nullable && value is field: null --> it is up to the type\nvalidator using the SchemaValidator to handle it.",
-      "default" : true
+      "description" : "When a field is set as nullable in the OpenAPI specification, the schema validator validates that it is nullable\nhowever continues with validation against the nullable field\n\nIf handleNullableField is set to true && incoming field is nullable && value is field: null --> succeed\nIf handleNullableField is set to false && incoming field is nullable && value is field: null --> it is up to the type\nvalidator using the SchemaValidator to handle it."
     },
     "skipPathPrefixes" : {
       "type" : "array",

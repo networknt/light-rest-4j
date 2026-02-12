@@ -24,11 +24,9 @@ import com.networknt.config.schema.ConfigSchema;
 import com.networknt.config.schema.OutputFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.networknt.server.ModuleRegistry;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Validator configuration class that maps to validator.yml properties
@@ -52,13 +50,12 @@ public class ValidatorConfig {
     private static final String HANDLE_NULLABLE_FIELD = "handleNullableField";
     private static final String SKIP_PATH_PREFIXES = "skipPathPrefixes";
 
-    private Map<String, Object> mappedConfig;
-    private final Config config;
+    private volatile Map<String, Object> mappedConfig;
+    private static ValidatorConfig instance;
 
     @BooleanField(
             configFieldName = ENABLED,
             externalizedKeyName = ENABLED,
-            externalized = true,
             defaultValue = "true",
             description = "Enable request validation. Response validation is not done on the server but client."
     )
@@ -67,7 +64,6 @@ public class ValidatorConfig {
     @BooleanField(
             configFieldName = LOG_ERROR,
             externalizedKeyName = LOG_ERROR,
-            externalized = true,
             defaultValue = "true",
             description = "Log error message if validation error occurs"
     )
@@ -76,7 +72,7 @@ public class ValidatorConfig {
     @BooleanField(
             configFieldName = LEGACY_PATH_TYPE,
             externalizedKeyName = LEGACY_PATH_TYPE,
-            externalized = true,
+            defaultValue = "false",
             description = "By default, the json-schema-validator will return the error message using JSON_POINTER path type. If you want\n" +
                     "to make sure that the error message is the same as the older version, you can set the legacyPathType to true."
     )
@@ -85,7 +81,7 @@ public class ValidatorConfig {
     @BooleanField(
             configFieldName = SKIP_BODY_VALIDATION,
             externalizedKeyName = SKIP_BODY_VALIDATION,
-            externalized = true,
+            defaultValue = "false",
             description = "Skip body validation set to true if used in light-router, light-proxy and light-spring-boot."
     )
     boolean skipBodyValidation;
@@ -93,7 +89,7 @@ public class ValidatorConfig {
     @BooleanField(
             configFieldName = VALIDATE_RESPONSE,
             externalizedKeyName = VALIDATE_RESPONSE,
-            externalized = true,
+            defaultValue = "false",
             description = "Enable response validation."
     )
     boolean validateResponse;
@@ -101,7 +97,6 @@ public class ValidatorConfig {
     @BooleanField(
             configFieldName = HANDLE_NULLABLE_FIELD,
             externalizedKeyName = HANDLE_NULLABLE_FIELD,
-            externalized = true,
             defaultValue = "true",
             description = "When a field is set as nullable in the OpenAPI specification, the schema validator validates that it is nullable\n" +
                     "however continues with validation against the nullable field\n" +
@@ -115,7 +110,6 @@ public class ValidatorConfig {
     @ArrayField(
             configFieldName = SKIP_PATH_PREFIXES,
             externalizedKeyName = SKIP_PATH_PREFIXES,
-            externalized = true,
             description = "Define a list of path prefixes to skip the validation to ease the configuration for the\n" +
                     "handler.yml so that users can define some endpoints without validation even through it uses\n" +
                     "the default chain. This is particularly useful in the light-gateway use case as the same\n" +
@@ -127,34 +121,35 @@ public class ValidatorConfig {
     private List<String> skipPathPrefixes;
 
     private ValidatorConfig(String configName) {
-        config = Config.getInstance();
-        mappedConfig = config.getJsonMapConfigNoCache(configName);
+        mappedConfig = Config.getInstance().getJsonMapConfig(configName);
         setConfigData();
         setConfigList();
     }
-    private ValidatorConfig() {
-        this(CONFIG_NAME);
-    }
 
     public static ValidatorConfig load(String configName) {
+        if (CONFIG_NAME.equals(configName)) {
+            Map<String, Object> mappedConfig = Config.getInstance().getJsonMapConfig(configName);
+            if (instance != null && instance.getMappedConfig() == mappedConfig) {
+                return instance;
+            }
+            synchronized (ValidatorConfig.class) {
+                mappedConfig = Config.getInstance().getJsonMapConfig(configName);
+                if (instance != null && instance.getMappedConfig() == mappedConfig) {
+                    return instance;
+                }
+                instance = new ValidatorConfig(configName);
+                ModuleRegistry.registerModule(CONFIG_NAME, ValidatorConfig.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(CONFIG_NAME), null);
+                return instance;
+            }
+        }
         return new ValidatorConfig(configName);
     }
 
     public static ValidatorConfig load() {
-        return new ValidatorConfig();
+        return load(CONFIG_NAME);
     }
 
-    public void reload() {
-        mappedConfig = config.getJsonMapConfigNoCache(CONFIG_NAME);
-        setConfigData();
-        setConfigList();
-    }
 
-    public void reload(String configName) {
-        mappedConfig = config.getJsonMapConfigNoCache(configName);
-        setConfigData();
-        setConfigList();
-    }
 
     public boolean isEnabled() {
         return enabled;
@@ -212,9 +207,9 @@ public class ValidatorConfig {
         return mappedConfig;
     }
 
-    Config getConfig() {
-        return config;
-    }
+
+
+
 
     private void setConfigData() {
         if(getMappedConfig() != null) {

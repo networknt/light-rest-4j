@@ -1,5 +1,23 @@
 # Change Log
 
+## [2.3.2](https://github.com/networknt/light-rest-4j/tree/2.3.2) (2026-02-02)
+
+
+**Merged pull requests:**
+
+
+- Issue412 [\#422](https://github.com/networknt/light-rest-4j/pull/422) ([stevehu](https://github.com/stevehu))
+
+
+## [2.3.1](https://github.com/networknt/light-rest-4j/tree/2.3.1) (2025-09-19)
+
+
+**Merged pull requests:**
+
+
+- [pre-commit.ci] pre-commit autoupdate [\#417](https://github.com/networknt/light-rest-4j/pull/417) ([pre-commit-ci](https://github.com/apps/pre-commit-ci))
+
+
 ## [2.3.0](https://github.com/networknt/light-rest-4j/tree/2.3.0) (2025-06-25)
 
 
