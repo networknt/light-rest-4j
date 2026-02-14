@@ -36,7 +36,7 @@ import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 
 import com.networknt.client.Http2Client;
-import com.networknt.client.simplepool.SimpleConnectionHolder;
+import com.networknt.client.simplepool.SimpleConnectionState;
 import com.networknt.config.Config;
 import com.networknt.exception.ClientException;
 import com.networknt.httpstring.AttachmentConstants;
@@ -107,7 +107,7 @@ public class OpenApiHandlerTest {
         // this path is not in petstore swagger specification. get error
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -150,7 +150,7 @@ public class OpenApiHandlerTest {
         // this path is not in petstore swagger specification. get error
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -191,7 +191,7 @@ public class OpenApiHandlerTest {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 

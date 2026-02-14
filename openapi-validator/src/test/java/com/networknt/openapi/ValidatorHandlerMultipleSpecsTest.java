@@ -3,7 +3,7 @@ package com.networknt.openapi;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.networknt.body.BodyHandler;
 import com.networknt.client.Http2Client;
-import com.networknt.client.simplepool.SimpleConnectionHolder;
+import com.networknt.client.simplepool.SimpleConnectionState;
 import com.networknt.config.Config;
 import com.networknt.exception.ClientException;
 import com.networknt.status.Status;
@@ -121,7 +121,7 @@ public class ValidatorHandlerMultipleSpecsTest {
     public void testInvalidRequestPath() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -161,7 +161,7 @@ public class ValidatorHandlerMultipleSpecsTest {
     public void testInvalidMethod() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -202,7 +202,7 @@ public class ValidatorHandlerMultipleSpecsTest {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -253,7 +253,7 @@ public class ValidatorHandlerMultipleSpecsTest {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -305,7 +305,7 @@ public class ValidatorHandlerMultipleSpecsTest {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -358,7 +358,7 @@ public class ValidatorHandlerMultipleSpecsTest {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -408,7 +408,7 @@ public class ValidatorHandlerMultipleSpecsTest {
     public void testGetParam() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -448,7 +448,7 @@ public class ValidatorHandlerMultipleSpecsTest {
     public void testDeleteWithoutHeader() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -489,7 +489,7 @@ public class ValidatorHandlerMultipleSpecsTest {
     public void testDeleteWithHeader() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -544,7 +544,7 @@ public class ValidatorHandlerMultipleSpecsTest {
     public void testIssue57() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -581,7 +581,7 @@ public class ValidatorHandlerMultipleSpecsTest {
     public void testQueryParameterArray() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -685,7 +685,7 @@ public class ValidatorHandlerMultipleSpecsTest {
         final Http2Client client = Http2Client.getInstance();
         final ClientConnection connection;
         URI uri = new URI("http://localhost:7080");
-        SimpleConnectionHolder.ConnectionToken token = null;
+        SimpleConnectionState.ConnectionToken token = null;
         try {
             token = client.borrow(uri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
             connection = (ClientConnection) token.getRawConnection();

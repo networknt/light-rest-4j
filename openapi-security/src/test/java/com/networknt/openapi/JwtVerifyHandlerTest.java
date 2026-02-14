@@ -17,7 +17,7 @@
 package com.networknt.openapi;
 
 import com.networknt.client.Http2Client;
-import com.networknt.client.simplepool.SimpleConnectionHolder;
+import com.networknt.client.simplepool.SimpleConnectionState;
 import com.networknt.config.Config;
 import com.networknt.exception.ClientException;
 import com.networknt.httpstring.HttpStringConstants;
@@ -135,7 +135,7 @@ public class JwtVerifyHandlerTest {
         logger.trace("Start testWithCorrectScopeInIdToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -178,7 +178,7 @@ public class JwtVerifyHandlerTest {
         logger.trace("Start testWithCorrectCommaSeperatedScpClaimScopeInIdToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -221,7 +221,7 @@ public class JwtVerifyHandlerTest {
         logger.trace("Start testWithCorrectSpaceSeperatedScpClaimScopeInIdToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -264,7 +264,7 @@ public class JwtVerifyHandlerTest {
         logger.trace("Start testWithCorrectSpaceSeperatedScopeClaimScopeInIdToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -304,7 +304,7 @@ public class JwtVerifyHandlerTest {
         logger.trace("Start testUnmatchedScopeInIdToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -346,7 +346,7 @@ public class JwtVerifyHandlerTest {
         logger.trace("Start testWithCorrectScopeInScopeToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -387,7 +387,7 @@ public class JwtVerifyHandlerTest {
         logger.trace("Start testUnmatchedScopeInScopeToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -430,7 +430,7 @@ public class JwtVerifyHandlerTest {
         logger.trace("Start testH2CDisabledRequest");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -475,7 +475,7 @@ public class JwtVerifyHandlerTest {
         logger.trace("Start testEmptyAuthorizationHeader");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -520,7 +520,7 @@ public class JwtVerifyHandlerTest {
         logger.trace("Start testInvalidTokenWithoutExpClaim");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 

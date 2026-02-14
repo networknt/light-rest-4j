@@ -2,7 +2,7 @@ package com.networknt.openapi;
 
 import com.networknt.body.BodyConverter;
 import com.networknt.client.Http2Client;
-import com.networknt.client.simplepool.SimpleConnectionHolder;
+import com.networknt.client.simplepool.SimpleConnectionState;
 import com.networknt.config.Config;
 import com.networknt.exception.ClientException;
 import com.networknt.httpstring.HttpStringConstants;
@@ -127,7 +127,7 @@ public class SwtVerifyHandlerTest {
         logger.trace("starting testWithCorrectScopeInIdToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -167,7 +167,7 @@ public class SwtVerifyHandlerTest {
         logger.trace("starting testWithCorrectScopeInIdTokenAndClientIdSecretInHeader");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -209,7 +209,7 @@ public class SwtVerifyHandlerTest {
         logger.trace("starting testUnmatchedScopeInIdToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -256,7 +256,7 @@ public class SwtVerifyHandlerTest {
         logger.trace("starting testWithCorrectScopeInScopeToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -297,7 +297,7 @@ public class SwtVerifyHandlerTest {
         logger.trace("starting testUnmatchedScopeInScopeToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -340,7 +340,7 @@ public class SwtVerifyHandlerTest {
         logger.trace("starting testH2CDisabledRequest");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -385,7 +385,7 @@ public class SwtVerifyHandlerTest {
         logger.trace("starting testEmptyAuthorizationHeader");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 

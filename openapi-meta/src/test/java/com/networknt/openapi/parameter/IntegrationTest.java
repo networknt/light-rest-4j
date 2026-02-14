@@ -22,7 +22,7 @@ import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 
 import com.networknt.client.Http2Client;
-import com.networknt.client.simplepool.SimpleConnectionHolder;
+import com.networknt.client.simplepool.SimpleConnectionState;
 import com.networknt.openapi.OpenApiHandler;
 import com.networknt.openapi.OpenApiHandlerTest;
 import com.networknt.utility.StringUtils;
@@ -465,7 +465,7 @@ public class IntegrationTest {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 

@@ -1,7 +1,7 @@
 package com.networknt.openapi;
 
 import com.networknt.client.Http2Client;
-import com.networknt.client.simplepool.SimpleConnectionHolder;
+import com.networknt.client.simplepool.SimpleConnectionState;
 import com.networknt.config.Config;
 import com.networknt.exception.ClientException;
 import com.networknt.httpstring.HttpStringConstants;
@@ -127,7 +127,7 @@ public class UnifiedSecurityHandlerTest {
     public void testAnonymousPrefix() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -169,7 +169,7 @@ public class UnifiedSecurityHandlerTest {
     public void testWithBasicHeader() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -212,7 +212,7 @@ public class UnifiedSecurityHandlerTest {
     public void testWithBasicHeaderWithWrongPassword() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -259,7 +259,7 @@ public class UnifiedSecurityHandlerTest {
     public void testBasicWithSpace() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -304,7 +304,7 @@ public class UnifiedSecurityHandlerTest {
     public void testWithApiKeyHeader() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -346,7 +346,7 @@ public class UnifiedSecurityHandlerTest {
     public void testWithApiKeyHeaderWongKey() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -392,7 +392,7 @@ public class UnifiedSecurityHandlerTest {
     public void testWrongPathNotConfigured() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -437,7 +437,7 @@ public class UnifiedSecurityHandlerTest {
     public void testWithCorrectSpaceSeparatedScpClaimScopeInIdToken() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -480,7 +480,7 @@ public class UnifiedSecurityHandlerTest {
     public void testWithCorrectSpaceSeparatedScopeClaimScopeInIdToken() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -519,7 +519,7 @@ public class UnifiedSecurityHandlerTest {
     public void testUnmatchedScopeInIdToken() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -560,7 +560,7 @@ public class UnifiedSecurityHandlerTest {
     public void testWithCorrectScopeInScopeToken() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -600,7 +600,7 @@ public class UnifiedSecurityHandlerTest {
     public void testUnmatchedScopeInScopeToken() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -642,7 +642,7 @@ public class UnifiedSecurityHandlerTest {
     public void testH2CDisabledRequest() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -686,7 +686,7 @@ public class UnifiedSecurityHandlerTest {
     public void testInvalidToken() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
