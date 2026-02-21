@@ -1,8 +1,8 @@
 package com.networknt.openapi;
 
 import com.networknt.config.Config;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
@@ -13,7 +13,7 @@ public class DefaultInjectableSpecValidatorTest {
         Map<String, Object> inject = Config.getInstance().getJsonMapConfig("openapi-inject-test-neg");
         DefaultInjectableSpecValidator validator = new DefaultInjectableSpecValidator();
         boolean isValid = validator.isValid(openapi, inject);
-        Assert.assertFalse(isValid);
+        Assertions.assertFalse(isValid);
     }
 
     @Test
@@ -22,7 +22,7 @@ public class DefaultInjectableSpecValidatorTest {
         Map<String, Object> inject = Config.getInstance().getJsonMapConfig("openapi-inject-test-pos");
         DefaultInjectableSpecValidator validator = new DefaultInjectableSpecValidator();
         boolean isValid = validator.isValid(openapi, inject);
-        Assert.assertTrue(isValid);
+        Assertions.assertTrue(isValid);
     }
 
     @Test
@@ -31,7 +31,7 @@ public class DefaultInjectableSpecValidatorTest {
         Map<String, Object> inject = null;
         DefaultInjectableSpecValidator validator = new DefaultInjectableSpecValidator();
         boolean isValid = validator.isValid(openapi, inject);
-        Assert.assertTrue(isValid);
+        Assertions.assertTrue(isValid);
     }
 
     @Test
@@ -40,7 +40,7 @@ public class DefaultInjectableSpecValidatorTest {
         Map<String, Object> inject = Config.getInstance().getJsonMapConfig("openapi-inject-test-dup-path");
         DefaultInjectableSpecValidator validator = new DefaultInjectableSpecValidator();
         boolean isValid = validator.isValid(openapi, inject);
-        Assert.assertTrue(isValid);
+        Assertions.assertTrue(isValid);
     }
 
     @Test
@@ -49,6 +49,6 @@ public class DefaultInjectableSpecValidatorTest {
         Map<String, Object> inject = Config.getInstance().getJsonMapConfig("openapi-inject-test-dup-method");
         DefaultInjectableSpecValidator validator = new DefaultInjectableSpecValidator();
         boolean isValid = validator.isValid(openapi, inject);
-        Assert.assertFalse(isValid);
+        Assertions.assertFalse(isValid);
     }
 }

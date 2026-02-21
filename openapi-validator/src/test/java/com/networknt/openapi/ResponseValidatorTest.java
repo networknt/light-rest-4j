@@ -13,10 +13,10 @@ import io.undertow.client.ClientResponse;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Methods;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +33,7 @@ public class ResponseValidatorTest {
     static Map<String, Object> responses = Config.getInstance().getJsonMapConfig("responses");
     static Undertow server = null;
     static final Logger logger = LoggerFactory.getLogger(ResponseValidatorTest.class);
-    @Before
+    @BeforeEach
     public void setUp() {
         if(server == null) {
             logger.info("starting server");
@@ -61,7 +61,7 @@ public class ResponseValidatorTest {
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws Exception {
         if(server != null) {
             try {
@@ -78,14 +78,14 @@ public class ResponseValidatorTest {
     public void testValidateResponseContentWithExchange() throws InterruptedException, ClientException, URISyntaxException, TimeoutException, ExecutionException {
         ClientRequest clientRequest = new ClientRequest();
         CompletableFuture<ClientResponse> future = sendResponse(clientRequest, "response1");
-        Assert.assertTrue(future.get(3, TimeUnit.SECONDS).getResponseCode() == 200);
+        Assertions.assertTrue(future.get(3, TimeUnit.SECONDS).getResponseCode() == 200);
     }
 
     @Test
     public void testValidateResponseContentWithExchangeError() throws InterruptedException, ClientException, URISyntaxException, TimeoutException, ExecutionException {
         ClientRequest clientRequest = new ClientRequest();
         CompletableFuture<ClientResponse> future = sendResponse(clientRequest, "response2");
-        Assert.assertTrue(future.get(3, TimeUnit.SECONDS).getResponseCode() > 300);
+        Assertions.assertTrue(future.get(3, TimeUnit.SECONDS).getResponseCode() > 300);
     }
 
     public class TestValidateResponseHandler implements LightHttpHandler {

@@ -16,8 +16,8 @@
 
 package com.networknt.openapi;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -26,10 +26,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.IoUtils;
@@ -56,7 +56,7 @@ public class OpenApiHandlerMultipleSpecsTest {
 
     static Undertow server = null;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
         if(server == null) {
             logger.info("starting server");
@@ -72,7 +72,7 @@ public class OpenApiHandlerMultipleSpecsTest {
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws Exception {
         if(server != null) {
             try {
@@ -134,11 +134,11 @@ public class OpenApiHandlerMultipleSpecsTest {
         int statusCode = reference.get().getResponseCode();
         String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
         System.out.println("statusCode = " + statusCode + " responseBody = " + responseBody);
-        Assert.assertEquals(404, statusCode);
+        Assertions.assertEquals(404, statusCode);
         if(statusCode == 404) {
             Status status = Config.getInstance().getMapper().readValue(responseBody, Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR10007", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR10007", status.getCode());
         }
     }
 
@@ -177,11 +177,11 @@ public class OpenApiHandlerMultipleSpecsTest {
         int statusCode = reference.get().getResponseCode();
         String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
         System.out.println("statusCode = " + statusCode + " responseBody = " + responseBody);
-        Assert.assertEquals(404, statusCode);
+        Assertions.assertEquals(404, statusCode);
         if(statusCode == 404) {
             Status status = Config.getInstance().getMapper().readValue(responseBody, Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR10007", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR10007", status.getCode());
         }
     }
 
@@ -218,11 +218,11 @@ public class OpenApiHandlerMultipleSpecsTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(405, statusCode);
+        Assertions.assertEquals(405, statusCode);
         if(statusCode == 405) {
             Status status = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY), Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR10008", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR10008", status.getCode());
         }
     }
 
@@ -267,11 +267,11 @@ public class OpenApiHandlerMultipleSpecsTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if(statusCode == 200) {
             String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
-            Assert.assertNotNull(body);
-            Assert.assertEquals("withAuditInfo", body);
+            Assertions.assertNotNull(body);
+            Assertions.assertEquals("withAuditInfo", body);
         }
     }
 

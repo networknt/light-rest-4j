@@ -16,10 +16,10 @@ import io.undertow.server.RoutingHandler;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.IoUtils;
@@ -42,7 +42,7 @@ public class ValidatorHandlerEnumTest {
 
     File f = new File(logFile);
 
-    @Before
+    @BeforeEach
     public void setUp() {
         if(server == null) {
             logger.info("starting server");
@@ -69,7 +69,7 @@ public class ValidatorHandlerEnumTest {
         }
     }
 
-    @Before
+    @BeforeEach
     public void clearLogFile() {
         synchronized (f) {
             try {
@@ -82,7 +82,7 @@ public class ValidatorHandlerEnumTest {
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws Exception {
         if(server != null) {
             try {
@@ -157,10 +157,10 @@ public class ValidatorHandlerEnumTest {
         }
         int statusCode = reference.get().getResponseCode();
         String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if(statusCode == 200) {
-            Assert.assertNotNull(body);
-            Assert.assertEquals("addPet", body);
+            Assertions.assertNotNull(body);
+            Assertions.assertEquals("addPet", body);
         }
     }
 
@@ -210,11 +210,11 @@ public class ValidatorHandlerEnumTest {
         }
         int statusCode = reference.get().getResponseCode();
         String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
-        Assert.assertEquals(400, statusCode);
+        Assertions.assertEquals(400, statusCode);
         if(statusCode == 400) {
             Status status = Config.getInstance().getMapper().readValue(body, Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR11004", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR11004", status.getCode());
         }
     }
 
@@ -251,10 +251,10 @@ public class ValidatorHandlerEnumTest {
         }
         int statusCode = reference.get().getResponseCode();
         String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if(statusCode == 200) {
-            Assert.assertNotNull(body);
-            Assert.assertEquals("getPetById", body);
+            Assertions.assertNotNull(body);
+            Assertions.assertEquals("getPetById", body);
         }
     }
 
@@ -291,11 +291,11 @@ public class ValidatorHandlerEnumTest {
         }
         int statusCode = reference.get().getResponseCode();
         String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
-        Assert.assertEquals(400, statusCode);
+        Assertions.assertEquals(400, statusCode);
         if(statusCode == 400) {
             Status status = Config.getInstance().getMapper().readValue(body, Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR11004", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR11004", status.getCode());
         }
     }
 

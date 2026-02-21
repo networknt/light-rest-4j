@@ -17,7 +17,7 @@ import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
 import org.apache.commons.text.StringEscapeUtils;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.IoUtils;
@@ -40,7 +40,7 @@ public class JwtVerifierHandlerMultipleSpecsTest {
 
     static Undertow server1 = null;
     static Undertow server2 = null;
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
         if (server1 == null) {
             logger.info("starting server1");
@@ -68,7 +68,7 @@ public class JwtVerifierHandlerMultipleSpecsTest {
 
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws Exception {
         if (server1 != null) {
             try {
@@ -152,9 +152,9 @@ public class JwtVerifierHandlerMultipleSpecsTest {
         int statusCode = reference.get().getResponseCode();
         String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
         System.out.println("statusCode = " + statusCode + " responseBody = " + responseBody);
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if(statusCode == 200) {
-            Assert.assertNotNull(responseBody);
+            Assertions.assertNotNull(responseBody);
         }
     }
 
@@ -195,9 +195,9 @@ public class JwtVerifierHandlerMultipleSpecsTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if(statusCode == 200) {
-            Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
+            Assertions.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
         }
     }
 
@@ -238,9 +238,9 @@ public class JwtVerifierHandlerMultipleSpecsTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if(statusCode == 200) {
-            Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
+            Assertions.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
         }
     }
 
@@ -281,9 +281,9 @@ public class JwtVerifierHandlerMultipleSpecsTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if(statusCode == 200) {
-            Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
+            Assertions.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
         }
     }
 
@@ -321,11 +321,11 @@ public class JwtVerifierHandlerMultipleSpecsTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(403, statusCode);
+        Assertions.assertEquals(403, statusCode);
         if(statusCode == 403) {
             Status status = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY), Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR10005", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR10005", status.getCode());
         }
     }
 
@@ -364,9 +364,9 @@ public class JwtVerifierHandlerMultipleSpecsTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if(statusCode == 200) {
-            Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
+            Assertions.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
         }
     }
 
@@ -405,11 +405,11 @@ public class JwtVerifierHandlerMultipleSpecsTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(403, statusCode);
+        Assertions.assertEquals(403, statusCode);
         if(statusCode == 403) {
             Status status = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY), Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR10006", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR10006", status.getCode());
         }
     }
 

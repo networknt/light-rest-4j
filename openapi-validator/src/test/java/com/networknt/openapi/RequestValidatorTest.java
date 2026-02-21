@@ -12,10 +12,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.networknt.exception.ClientException;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.IoUtils;
@@ -46,7 +46,7 @@ public class RequestValidatorTest {
 
     private static Undertow server = null;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
         if(server == null) {
             logger.info("starting server");
@@ -80,7 +80,7 @@ public class RequestValidatorTest {
         PETS_HEADERS.put("requestId", "1");
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws Exception {
         if(server != null) {
             try {
@@ -433,12 +433,14 @@ public class RequestValidatorTest {
     	runTest("/pets_cookie_obj_no_ep", EXPECTED_MAP_RESULT, Collections.emptyMap(), cookies);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_boolean_value_null() {
-        Boolean required = null;
-        if(required) {
-            System.out.println("The required is null");
-        }
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            Boolean required = null;
+            if(required) {
+                System.out.println("The required is null");
+            }
+        });
     }
 
     @Test
@@ -448,13 +450,13 @@ public class RequestValidatorTest {
         if(required) {
             result = true;
         }
-        Assert.assertFalse(result);
+        Assertions.assertFalse(result);
 
         result = false;
         if(required == Boolean.TRUE) {
             result = true;
         }
-        Assert.assertFalse(result);
+        Assertions.assertFalse(result);
     }
 
     public void runTest(String requestPath, String expectedValue, Map<String, String> headers, Map<String, String> cookies) throws Exception {
@@ -508,11 +510,11 @@ public class RequestValidatorTest {
 
         ClientResponse resp = reference.get();
         int statusCode = resp.getResponseCode();
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if(statusCode == 200) {
             String body = resp.getAttachment(Http2Client.RESPONSE_BODY);
-            Assert.assertNotNull(body);
-            Assert.assertEquals(expectedValue, body);
+            Assertions.assertNotNull(body);
+            Assertions.assertEquals(expectedValue, body);
         }
     }
 
