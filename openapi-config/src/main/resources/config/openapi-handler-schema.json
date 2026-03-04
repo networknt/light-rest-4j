@@ -5,11 +5,13 @@
   "properties" : {
     "multipleSpec" : {
       "type" : "boolean",
-      "description" : "This configuration file is used to support multiple OpenAPI specifications in the same light-rest-4j instance.\nAn indicator to allow multiple openapi specifications. Default to false which only allow one spec named openapi.yml or openapi.yaml or openapi.json."
+      "description" : "This configuration file is used to support multiple OpenAPI specifications in the same light-rest-4j instance.\nAn indicator to allow multiple openapi specifications. Default to false which only allow one spec named openapi.yml or openapi.yaml or openapi.json.",
+      "default" : false
     },
     "ignoreInvalidPath" : {
       "type" : "boolean",
-      "description" : "When the OpenApiHandler is used in a shared gateway and some backend APIs have no specifications deployed on the gateway, the handler will return\nan invalid request path error to the client. To allow the call to pass through the OpenApiHandler and route to the backend APIs, you can set this\nflag to true. In this mode, the handler will only add the endpoint specification to the auditInfo if it can find it. Otherwise, it will pass through."
+      "description" : "When the OpenApiHandler is used in a shared gateway and some backend APIs have no specifications deployed on the gateway, the handler will return\nan invalid request path error to the client. To allow the call to pass through the OpenApiHandler and route to the backend APIs, you can set this\nflag to true. In this mode, the handler will only add the endpoint specification to the auditInfo if it can find it. Otherwise, it will pass through.",
+      "default" : false
     },
     "pathSpecMapping" : {
       "type" : "object",

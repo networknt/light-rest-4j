@@ -5,27 +5,33 @@
   "properties" : {
     "enabled" : {
       "type" : "boolean",
-      "description" : "Enable request validation. Response validation is not done on the server but client."
+      "description" : "Enable request validation. Response validation is not done on the server but client.",
+      "default" : true
     },
     "logError" : {
       "type" : "boolean",
-      "description" : "Log error message if validation error occurs"
+      "description" : "Log error message if validation error occurs",
+      "default" : true
     },
     "legacyPathType" : {
       "type" : "boolean",
-      "description" : "By default, the json-schema-validator will return the error message using JSON_POINTER path type. If you want\nto make sure that the error message is the same as the older version, you can set the legacyPathType to true."
+      "description" : "By default, the json-schema-validator will return the error message using JSON_POINTER path type. If you want\nto make sure that the error message is the same as the older version, you can set the legacyPathType to true.",
+      "default" : false
     },
     "skipBodyValidation" : {
       "type" : "boolean",
-      "description" : "Skip body validation set to true if used in light-router, light-proxy and light-spring-boot."
+      "description" : "Skip body validation set to true if used in light-router, light-proxy and light-spring-boot.",
+      "default" : false
     },
     "validateResponse" : {
       "type" : "boolean",
-      "description" : "Enable response validation."
+      "description" : "Enable response validation.",
+      "default" : false
     },
     "handleNullableField" : {
       "type" : "boolean",
-      "description" : "When a field is set as nullable in the OpenAPI specification, the schema validator validates that it is nullable\nhowever continues with validation against the nullable field\n\nIf handleNullableField is set to true && incoming field is nullable && value is field: null --> succeed\nIf handleNullableField is set to false && incoming field is nullable && value is field: null --> it is up to the type\nvalidator using the SchemaValidator to handle it."
+      "description" : "When a field is set as nullable in the OpenAPI specification, the schema validator validates that it is nullable\nhowever continues with validation against the nullable field\n\nIf handleNullableField is set to true && incoming field is nullable && value is field: null --> succeed\nIf handleNullableField is set to false && incoming field is nullable && value is field: null --> it is up to the type\nvalidator using the SchemaValidator to handle it.",
+      "default" : true
     },
     "skipPathPrefixes" : {
       "type" : "array",
