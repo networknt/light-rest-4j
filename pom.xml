@@ -63,16 +63,14 @@
         </snapshotRepository>
     </distributionManagement>
 
-    <repositories>
+        <repositories>
         <repository>
-            <id>snapshot</id>
-            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
+            <id>confluent</id>
+            <url>https://packages.confluent.io/maven/</url>
+        </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
         </repository>
         <repository>
             <id>central</id>
@@ -80,6 +78,13 @@
             <releases>
                 <enabled>true</enabled>
             </releases>
+        </repository>
+        <repository>
+            <id>snapshot</id>
+            <url>https://central.sonatype.org/content/repositories/snapshots</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
         </repository>
     </repositories>
     <pluginRepositories>
@@ -98,7 +103,7 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <version.light-4j>2.3.4-SNAPSHOT</version.light-4j>
-        <version.jackson>2.19.4</version.jackson>
+        <version.jackson>2.21.1</version.jackson>
         <version.slf4j>2.0.17</version.slf4j>
         <version.jose4j>0.9.6</version.jose4j>
         <version.commons-text>1.15.0</version.commons-text>
@@ -131,6 +136,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${version.jackson}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <!-- Modules in this project -->
             <dependency>
                 <groupId>com.networknt</groupId>
@@ -339,26 +351,6 @@
                 <groupId>com.networknt</groupId>
                 <artifactId>yaml-rule</artifactId>
                 <version>${version.yaml-rule}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${version.jackson}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
