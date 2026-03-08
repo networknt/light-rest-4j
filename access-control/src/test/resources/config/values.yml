@@ -20,6 +20,9 @@ rule.ruleBodies:
         propertyPath: "auditInfo.endpoint"
         index: 1
 
+access-control.skipPathPrefixes:
+  - /health
+
 rule.endpointRules:
   dummy@get:
     req-acc:
