@@ -42,7 +42,7 @@ public class AccessControlHandlerTest {
     @BeforeAll
     public static void setUp() {
         RuleExecutor ruleExecutor = SingletonServiceFactory.getBean(RuleExecutor.class);
-        assert ruleExecutor != null;
+        Assertions.assertNotNull(ruleExecutor);
     }
 
     @Test
