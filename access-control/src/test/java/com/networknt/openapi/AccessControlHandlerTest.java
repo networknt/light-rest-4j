@@ -91,14 +91,10 @@ public class AccessControlHandlerTest {
         auditInfo.put(Constants.ENDPOINT_STRING, "unknown@get");
         exchange.putAttachment(com.networknt.httpstring.AttachmentConstants.AUDIT_INFO, auditInfo);
 
-        try {
-            handler.handleRequest(exchange);
-        } catch (IllegalStateException e) {
-            // It tries to reject if /health is not skipped
-        }
+        handler.handleRequest(exchange);
 
-        // Assertions.assertTrue varies depending on whether access-control.yml skipped it.
-        Assertions.assertFalse(called[0]);
+        // /health is in skipPathPrefixes, so the next handler must be called directly
+        Assertions.assertTrue(called[0]);
     }
 
     @Test
