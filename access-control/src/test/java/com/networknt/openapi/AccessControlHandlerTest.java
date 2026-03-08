@@ -16,20 +16,17 @@
 
 package com.networknt.openapi;
 
-import com.networknt.config.Config;
-import com.networknt.rule.Rule;
-import com.networknt.rule.RuleLoaderStartupHook;
+import com.networknt.rule.RuleExecutor;
+import com.networknt.service.SingletonServiceFactory;
 import com.networknt.utility.Constants;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.ServerConnection;
-import io.undertow.util.HeaderMap;
 import io.undertow.util.HttpString;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import io.undertow.util.AttachmentKey;
@@ -44,17 +41,8 @@ public class AccessControlHandlerTest {
 
     @BeforeAll
     public static void setUp() {
-        RuleLoaderStartupHook.rules = new HashMap<>();
-        Rule rule = new Rule();
-        rule.setRuleId("test-access-rule");
-        // A simple rule that evaluates to true. We don't execute full yaml rules in this mock.
-        RuleLoaderStartupHook.rules.put("test-access-rule", rule);
-
-        RuleLoaderStartupHook.endpointRules = new HashMap<>();
-        Map<String, Object> reqRules = new HashMap<>();
-        reqRules.put("req-acc", Collections.singletonList("test-access-rule"));
-        reqRules.put("permission", new HashMap<>());
-        RuleLoaderStartupHook.endpointRules.put("dummy@get", reqRules);
+        RuleExecutor ruleExecutor = SingletonServiceFactory.getBean(RuleExecutor.class);
+        assert ruleExecutor != null;
     }
 
     @Test

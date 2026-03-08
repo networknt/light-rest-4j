@@ -1,0 +1,28 @@
+# service.yml
+service.singletons:
+  - com.networknt.rule.RuleExecutor:
+      - com.networknt.rule.MultiThreadRuleExecutor
+# rule.yml
+rule.ruleBodies:
+  test-access-rule:
+    hostId: "01964b05-552a-7c4b-9184-6857e7f3dc5f"
+    ruleType: "req-acc"
+    ruleOwner: "01964b05-5532-7c79-8cde-191dcbd421b8"
+    common: "Y"
+    ruleId: "allow-role-based-access-control.lightapi.net.dev.lightapi.net"
+    ruleName: "Role-Based Access Control for authorization code token."
+    ruleVersion: "1.0.0"
+    ruleDesc: "If the token has role claim, then at least one role in the JWT role claim matches the endpoint permission roles configuration."
+    conditions:
+      - operatorCode: "isNotNull"
+        conditionId: "endpoint-is-not-null"
+        conditionDesc: "endpoint is not null in auditInfo."
+        propertyPath: "auditInfo.endpoint"
+        index: 1
+
+rule.endpointRules:
+  dummy@get:
+    req-acc:
+      - test-access-rule
+    permission:
+

@@ -23,7 +23,8 @@ import com.networknt.http.HttpMethod;
 import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.rule.RuleConstants;
 import com.networknt.rule.RuleEngine;
-import com.networknt.rule.RuleLoaderStartupHook;
+import com.networknt.rule.RuleExecutor;
+import com.networknt.service.SingletonServiceFactory;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -54,11 +55,9 @@ public class AccessControlHandler implements MiddlewareHandler {
     static final String PERMISSION = "permission";
     static final String RULE_ID = "ruleId";
     private volatile HttpHandler next;
-    private final RuleEngine engine;
 
     public AccessControlHandler() {
         AccessControlConfig.load();
-        engine = new RuleEngine(RuleLoaderStartupHook.rules, null);
         if (logger.isInfoEnabled())
             logger.info("AccessControlHandler is loaded.");
     }
@@ -87,19 +86,10 @@ public class AccessControlHandler implements MiddlewareHandler {
         String endpoint = (String) auditInfo.get("endpoint");
         this.populateRuleEnginePayload(exchange, auditInfo, ruleEnginePayload);
 
-        // checked the RuleLoaderStartupHook to ensure it is loaded. If not, return an error to the caller.
-        if (RuleLoaderStartupHook.endpointRules == null) {
-            logger.error("RuleLoaderStartupHook endpointRules is null");
-            setExchangeStatus(exchange, STARTUP_HOOK_NOT_LOADED, "RuleLoaderStartupHook");
-            if (logger.isDebugEnabled()) logger.debug("AccessControlHandler.handleRequest ends with an error.");
-            return;
-        }
-
-        // get the access rules (maybe multiple) based on the endpoint.
-        Map<String, Object> requestRules = (Map<String, Object>) RuleLoaderStartupHook.endpointRules.get(endpoint);
-
-        // if there is no access rule for this endpoint, check the default deny flag in the config.
-        if (requestRules == null) {
+        // execute rules using the executor
+        RuleExecutor ruleExecutor = SingletonServiceFactory.getBean(RuleExecutor.class);
+        Map<String, Object> result = ruleExecutor.executeRules(endpoint, REQUEST_ACCESS, ruleEnginePayload);
+        if (result == null) {
             if (config.isDefaultDeny()) {
                 logger.error("Access control rule is missing and default deny is true for endpoint {}", endpoint);
                 setExchangeStatus(exchange, ACCESS_CONTROL_MISSING, endpoint);
@@ -108,7 +98,13 @@ public class AccessControlHandler implements MiddlewareHandler {
                 next(exchange);
             }
         } else {
-            this.executeRules(exchange, ruleEnginePayload, requestRules, config);
+            boolean res = (Boolean)result.getOrDefault(RuleConstants.RESULT, false);
+            if (res) {
+                this.next(exchange);
+            } else {
+                logger.error(JsonMapper.toJson(result));
+                setExchangeStatus(exchange, ACCESS_CONTROL_ERROR, endpoint);
+            }
         }
     }
 
@@ -135,54 +131,6 @@ public class AccessControlHandler implements MiddlewareHandler {
     }
 
 
-    /**
-     * Execute all the rules defined.
-     *
-     * @param exchange - current exchange
-     * @param ruleEnginePayload - rulePayload
-     * @param requestRules - rule(s) defined for the endpoint
-     * @throws Exception - Rule engine exception
-     */
-    protected void executeRules(HttpServerExchange exchange, Map<String, Object> ruleEnginePayload, Map<String, Object> requestRules, AccessControlConfig config) throws Exception {
-        boolean finalResult = false;  // Initialize to false for "any" logic, and will change in for loop
-        List<String> accessRuleIds = (List<String>)requestRules.get(REQUEST_ACCESS);
-        Map<String, Object> permissionMap = (Map<String, Object>)requestRules.get(PERMISSION);
-        Map<String, Object> result = null;
-        String accessRuleLogic = config.getAccessRuleLogic(); // any or all
-
-        if (accessRuleLogic.equalsIgnoreCase("all")) {
-            finalResult = true; // Default to true for "all" logic and only can be false in the loop
-            for (String ruleId : accessRuleIds) {
-                ruleEnginePayload.putAll(permissionMap);
-                result = engine.executeRule(ruleId, ruleEnginePayload);
-                boolean res = (Boolean) result.get(RuleConstants.RESULT);
-                if (!res) {
-                    finalResult = false; // if one fails all will fail
-                    break;
-                }
-            }
-        } else if (accessRuleLogic.equalsIgnoreCase("any")) {
-            finalResult = false; // Default to false for "any" logic and only can be true in the loop
-            for (String ruleId : accessRuleIds) {
-                ruleEnginePayload.putAll(permissionMap);
-                result = engine.executeRule(ruleId, ruleEnginePayload);
-                boolean res = (Boolean) result.get(RuleConstants.RESULT);
-                if (res) {
-                    finalResult = true; // if one pass all pass
-                    break;
-                }
-            }
-        } else {
-            throw new IllegalArgumentException("Invalid accessRuleLogic: " + accessRuleLogic); // Handle invalid values
-        }
-
-        if (finalResult) {
-            this.next(exchange);
-        } else {
-            logger.error(JsonMapper.toJson(result));
-            setExchangeStatus(exchange, ACCESS_CONTROL_ERROR, accessRuleIds.toString());
-        }
-    }
 
     /**
      * Grabs body data from request (if it has one defined),
