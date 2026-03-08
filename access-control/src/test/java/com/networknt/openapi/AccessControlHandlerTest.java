@@ -60,7 +60,7 @@ public class AccessControlHandlerTest {
         ServerConnection connection = createDummyConnection();
         HttpServerExchange exchange = new HttpServerExchange(connection);
         exchange.setRequestMethod(new HttpString("POST"));
-        
+
         Map<String, Object> auditInfo = new HashMap<>();
         auditInfo.put(Constants.ENDPOINT_STRING, "unknown@post");
         exchange.putAttachment(com.networknt.httpstring.AttachmentConstants.AUDIT_INFO, auditInfo);
@@ -96,7 +96,7 @@ public class AccessControlHandlerTest {
         } catch (IllegalStateException e) {
             // It tries to reject if /health is not skipped
         }
-        
+
         // Assertions.assertTrue varies depending on whether access-control.yml skipped it.
         Assertions.assertFalse(called[0]);
     }
@@ -112,7 +112,7 @@ public class AccessControlHandlerTest {
         ServerConnection connection = createDummyConnection();
         HttpServerExchange exchange = new HttpServerExchange(connection);
         exchange.setRequestMethod(new HttpString("GET"));
-        
+
         Map<String, Object> auditInfo = new HashMap<>();
         auditInfo.put(Constants.ENDPOINT_STRING, "dummy@get");
         exchange.putAttachment(com.networknt.httpstring.AttachmentConstants.AUDIT_INFO, auditInfo);
@@ -122,7 +122,7 @@ public class AccessControlHandlerTest {
         } catch (IllegalStateException e) {
             // Rule engine evaluates to success and attempts to continue
         }
-        
+
         // If dummy rule evaluation evaluates true, then it called next
         Assertions.assertTrue(called[0]);
     }
@@ -130,7 +130,7 @@ public class AccessControlHandlerTest {
     private ServerConnection createDummyConnection() {
         return new ServerConnection() {
             @Override public org.xnio.Pool<java.nio.ByteBuffer> getBufferPool() { return null; }
-            @Override public io.undertow.connector.ByteBufferPool getByteBufferPool() { 
+            @Override public io.undertow.connector.ByteBufferPool getByteBufferPool() {
                 return new io.undertow.connector.ByteBufferPool() {
                     @Override public io.undertow.connector.PooledByteBuffer allocate() {
                         return new io.undertow.connector.PooledByteBuffer() {
@@ -144,7 +144,7 @@ public class AccessControlHandlerTest {
                     @Override public void close() {}
                     @Override public int getBufferSize() { return 1024; }
                     @Override public boolean isDirect() { return false; }
-                }; 
+                };
             }
             @Override public org.xnio.XnioWorker getWorker() { return null; }
             @Override public org.xnio.XnioIoThread getIoThread() { return null; }
