@@ -54,9 +54,15 @@ public class AccessControlHandler implements MiddlewareHandler {
     static final String PERMISSION = "permission";
     static final String RULE_ID = "ruleId";
     private volatile HttpHandler next;
+    private final RuleExecutor ruleExecutor;
 
     public AccessControlHandler() {
         AccessControlConfig.load();
+        ruleExecutor = SingletonServiceFactory.getBean(RuleExecutor.class);
+        if (ruleExecutor == null) {
+            logger.error("RuleExecutor is not found in the service factory. Please check your configuration.");
+            throw new RuntimeException("RuleExecutor is not found in the service factory.");
+        }
         if (logger.isInfoEnabled())
             logger.info("AccessControlHandler is loaded.");
     }
@@ -86,12 +92,6 @@ public class AccessControlHandler implements MiddlewareHandler {
         this.populateRuleEnginePayload(exchange, auditInfo, ruleEnginePayload);
 
         // execute rules using the executor
-        RuleExecutor ruleExecutor = SingletonServiceFactory.getBean(RuleExecutor.class);
-        if (ruleExecutor == null) {
-            logger.error("RuleExecutor startup hook is not loaded. Cannot perform access control for endpoint {}", endpoint);
-            setExchangeStatus(exchange, STARTUP_HOOK_NOT_LOADED, RuleExecutor.class.getName());
-            return;
-        }
         Map<String, Object> result = ruleExecutor.executeRules(endpoint, REQUEST_ACCESS, ruleEnginePayload);
         if (result == null) {
             if (config.isDefaultDeny()) {
