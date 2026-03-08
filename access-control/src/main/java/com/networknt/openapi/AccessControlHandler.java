@@ -74,7 +74,7 @@ public class AccessControlHandler implements MiddlewareHandler {
         if (logger.isDebugEnabled()) logger.debug("AccessControlHandler.handleRequest starts.");
         String reqPath = exchange.getRequestPath();
         // if request path is in the skipPathPrefixes in the config, call the next handler directly to skip the security check.
-        if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(reqPath::startsWith)) {
+        if (reqPath != null && config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(reqPath::startsWith)) {
             if(logger.isTraceEnabled()) logger.trace("Skip request path base on skipPathPrefixes for {}", reqPath);
             if (logger.isDebugEnabled()) logger.debug("AccessControlHandler.handleRequest ends with path skipped.");
             Handler.next(exchange, next);
