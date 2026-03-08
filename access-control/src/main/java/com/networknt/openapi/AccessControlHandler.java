@@ -22,7 +22,6 @@ import com.networknt.handler.MiddlewareHandler;
 import com.networknt.http.HttpMethod;
 import com.networknt.httpstring.AttachmentConstants;
 import com.networknt.rule.RuleConstants;
-import com.networknt.rule.RuleEngine;
 import com.networknt.rule.RuleExecutor;
 import com.networknt.service.SingletonServiceFactory;
 import io.undertow.Handlers;
