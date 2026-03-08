@@ -16,20 +16,17 @@
 
 package com.networknt.openapi;
 
-import com.networknt.config.Config;
-import com.networknt.rule.Rule;
-import com.networknt.rule.RuleLoaderStartupHook;
+import com.networknt.rule.RuleExecutor;
+import com.networknt.service.SingletonServiceFactory;
 import com.networknt.utility.Constants;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.ServerConnection;
-import io.undertow.util.HeaderMap;
 import io.undertow.util.HttpString;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import io.undertow.util.AttachmentKey;
@@ -44,17 +41,8 @@ public class AccessControlHandlerTest {
 
     @BeforeAll
     public static void setUp() {
-        RuleLoaderStartupHook.rules = new HashMap<>();
-        Rule rule = new Rule();
-        rule.setRuleId("test-access-rule");
-        // A simple rule that evaluates to true. We don't execute full yaml rules in this mock.
-        RuleLoaderStartupHook.rules.put("test-access-rule", rule);
-
-        RuleLoaderStartupHook.endpointRules = new HashMap<>();
-        Map<String, Object> reqRules = new HashMap<>();
-        reqRules.put("req-acc", Collections.singletonList("test-access-rule"));
-        reqRules.put("permission", new HashMap<>());
-        RuleLoaderStartupHook.endpointRules.put("dummy@get", reqRules);
+        RuleExecutor ruleExecutor = SingletonServiceFactory.getBean(RuleExecutor.class);
+        Assertions.assertNotNull(ruleExecutor);
     }
 
     @Test
@@ -72,7 +60,7 @@ public class AccessControlHandlerTest {
         ServerConnection connection = createDummyConnection();
         HttpServerExchange exchange = new HttpServerExchange(connection);
         exchange.setRequestMethod(new HttpString("POST"));
-        
+
         Map<String, Object> auditInfo = new HashMap<>();
         auditInfo.put(Constants.ENDPOINT_STRING, "unknown@post");
         exchange.putAttachment(com.networknt.httpstring.AttachmentConstants.AUDIT_INFO, auditInfo);
@@ -103,14 +91,10 @@ public class AccessControlHandlerTest {
         auditInfo.put(Constants.ENDPOINT_STRING, "unknown@get");
         exchange.putAttachment(com.networknt.httpstring.AttachmentConstants.AUDIT_INFO, auditInfo);
 
-        try {
-            handler.handleRequest(exchange);
-        } catch (IllegalStateException e) {
-            // It tries to reject if /health is not skipped
-        }
-        
-        // Assertions.assertTrue varies depending on whether access-control.yml skipped it.
-        Assertions.assertFalse(called[0]);
+        handler.handleRequest(exchange);
+
+        // /health is in skipPathPrefixes, so the next handler must be called directly
+        Assertions.assertTrue(called[0]);
     }
 
     @Test
@@ -124,7 +108,7 @@ public class AccessControlHandlerTest {
         ServerConnection connection = createDummyConnection();
         HttpServerExchange exchange = new HttpServerExchange(connection);
         exchange.setRequestMethod(new HttpString("GET"));
-        
+
         Map<String, Object> auditInfo = new HashMap<>();
         auditInfo.put(Constants.ENDPOINT_STRING, "dummy@get");
         exchange.putAttachment(com.networknt.httpstring.AttachmentConstants.AUDIT_INFO, auditInfo);
@@ -134,7 +118,7 @@ public class AccessControlHandlerTest {
         } catch (IllegalStateException e) {
             // Rule engine evaluates to success and attempts to continue
         }
-        
+
         // If dummy rule evaluation evaluates true, then it called next
         Assertions.assertTrue(called[0]);
     }
@@ -142,7 +126,7 @@ public class AccessControlHandlerTest {
     private ServerConnection createDummyConnection() {
         return new ServerConnection() {
             @Override public org.xnio.Pool<java.nio.ByteBuffer> getBufferPool() { return null; }
-            @Override public io.undertow.connector.ByteBufferPool getByteBufferPool() { 
+            @Override public io.undertow.connector.ByteBufferPool getByteBufferPool() {
                 return new io.undertow.connector.ByteBufferPool() {
                     @Override public io.undertow.connector.PooledByteBuffer allocate() {
                         return new io.undertow.connector.PooledByteBuffer() {
@@ -156,7 +140,7 @@ public class AccessControlHandlerTest {
                     @Override public void close() {}
                     @Override public int getBufferSize() { return 1024; }
                     @Override public boolean isDirect() { return false; }
-                }; 
+                };
             }
             @Override public org.xnio.XnioWorker getWorker() { return null; }
             @Override public org.xnio.XnioIoThread getIoThread() { return null; }
