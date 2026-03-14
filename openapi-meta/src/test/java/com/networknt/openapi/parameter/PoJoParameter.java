@@ -2,6 +2,8 @@ package com.networknt.openapi.parameter;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.networknt.jsonoverlay.SerializationOptions;
 import com.networknt.oas.model.Example;
 import com.networknt.oas.model.MediaType;
 import com.networknt.oas.model.Parameter;
@@ -330,6 +332,16 @@ public class PoJoParameter implements Parameter {
 	@Override
 	public void setIn(String in) {
 		this.in = in;
+	}
+
+	@Override
+	public JsonNode toJson() {
+		return null;
+	}
+
+	@Override
+	public JsonNode toJson(SerializationOptions options) {
+		return null;
 	}
 
 }

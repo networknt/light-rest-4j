@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.networknt.jsonoverlay.SerializationOptions;
 import com.networknt.oas.model.Discriminator;
 import com.networknt.oas.model.ExternalDocs;
 import com.networknt.oas.model.Schema;
@@ -846,6 +848,16 @@ public class PojoSchema implements Schema {
 	public void removeExtension(String name) {
 		// TODO Auto-generated method stub
 
+	}
+
+	@Override
+	public JsonNode toJson() {
+		return null;
+	}
+
+	@Override
+	public JsonNode toJson(SerializationOptions options) {
+		return null;
 	}
 
 }
