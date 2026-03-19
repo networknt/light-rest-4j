@@ -2,7 +2,7 @@ package com.networknt.openapi;
 
 import com.networknt.body.BodyConverter;
 import com.networknt.client.Http2Client;
-import com.networknt.client.simplepool.SimpleConnectionHolder;
+import com.networknt.client.simplepool.SimpleConnectionState;
 import com.networknt.config.Config;
 import com.networknt.exception.ClientException;
 import com.networknt.httpstring.HttpStringConstants;
@@ -21,7 +21,7 @@ import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
 import org.apache.commons.text.StringEscapeUtils;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.IoUtils;
@@ -35,13 +35,13 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-@Ignore
+@Disabled
 public class SwtVerifyHandlerTest {
     static final Logger logger = LoggerFactory.getLogger(SwtVerifyHandlerTest.class);
 
     static Undertow server = null;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
         if (server == null) {
             logger.info("starting server");
@@ -58,7 +58,7 @@ public class SwtVerifyHandlerTest {
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws Exception {
         if (server != null) {
             try {
@@ -127,7 +127,7 @@ public class SwtVerifyHandlerTest {
         logger.trace("starting testWithCorrectScopeInIdToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -156,9 +156,9 @@ public class SwtVerifyHandlerTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if (statusCode == 200) {
-            Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
+            Assertions.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
         }
     }
 
@@ -167,7 +167,7 @@ public class SwtVerifyHandlerTest {
         logger.trace("starting testWithCorrectScopeInIdTokenAndClientIdSecretInHeader");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -198,9 +198,9 @@ public class SwtVerifyHandlerTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if (statusCode == 200) {
-            Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
+            Assertions.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
         }
     }
 
@@ -209,7 +209,7 @@ public class SwtVerifyHandlerTest {
         logger.trace("starting testUnmatchedScopeInIdToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -238,11 +238,11 @@ public class SwtVerifyHandlerTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(403, statusCode);
+        Assertions.assertEquals(403, statusCode);
         if (statusCode == 403) {
             Status status = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY), Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR10005", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR10005", status.getCode());
         }
     }
 
@@ -251,12 +251,12 @@ public class SwtVerifyHandlerTest {
      * @throws Exception
      */
     @Test
-    @Ignore
+    @Disabled
     public void testWithCorrectScopeInScopeToken() throws Exception {
         logger.trace("starting testWithCorrectScopeInScopeToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -286,9 +286,9 @@ public class SwtVerifyHandlerTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if (statusCode == 200) {
-            Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
+            Assertions.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
         }
     }
 
@@ -297,7 +297,7 @@ public class SwtVerifyHandlerTest {
         logger.trace("starting testUnmatchedScopeInScopeToken");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -327,11 +327,11 @@ public class SwtVerifyHandlerTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(403, statusCode);
+        Assertions.assertEquals(403, statusCode);
         if (statusCode == 403) {
             Status status = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY), Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR10006", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR10006", status.getCode());
         }
     }
 
@@ -340,7 +340,7 @@ public class SwtVerifyHandlerTest {
         logger.trace("starting testH2CDisabledRequest");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -372,11 +372,11 @@ public class SwtVerifyHandlerTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(405, statusCode);
+        Assertions.assertEquals(405, statusCode);
         if (statusCode == 405) {
             Status status = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY), Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR10008", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR10008", status.getCode());
         }
     }
 
@@ -385,7 +385,7 @@ public class SwtVerifyHandlerTest {
         logger.trace("starting testEmptyAuthorizationHeader");
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -417,11 +417,11 @@ public class SwtVerifyHandlerTest {
         logger.debug("statusCode = " + statusCode);
         String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
         logger.debug("responseBody = " + responseBody);
-        Assert.assertEquals(401, statusCode);
+        Assertions.assertEquals(401, statusCode);
         if (statusCode == 401) {
             Status status = Config.getInstance().getMapper().readValue(responseBody, Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR10000", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR10000", status.getCode());
         }
     }
 

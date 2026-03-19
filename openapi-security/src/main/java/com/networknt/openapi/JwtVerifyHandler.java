@@ -28,7 +28,6 @@ import io.undertow.server.HttpServerExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.crypto.dsig.spec.ExcC14NParameterSpec;
 import java.util.*;
 
 /**
@@ -73,7 +72,7 @@ public class JwtVerifyHandler extends AbstractJwtVerifyHandler {
         Operation operation = this.getOperation(exchange, openApiOperation, auditInfo);
         if(operation == null) {
             if(config.isSkipVerifyScopeWithoutSpec()) {
-                if (logger.isDebugEnabled()) logger.debug("SwtVerifyHandler.handleRequest ends without verifying scope due to spec.");
+                if (logger.isDebugEnabled()) logger.debug("JwtVerifyHandler.handleRequest ends without verifying scope due to spec.");
                 Handler.next(exchange, next);
             }
             return null;

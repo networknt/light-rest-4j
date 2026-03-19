@@ -15,7 +15,7 @@
  */
 package com.networknt.openapi;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -24,9 +24,9 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import com.networknt.config.Config;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.networknt.handler.config.EndpointSource;
 
@@ -48,7 +48,7 @@ public class OpenApiEndpointSourceTest {
     public void testFindBasePath() {
         OpenApiEndpointSource source = new OpenApiEndpointSource(helper);
         String basePath = source.findBasePath();
-        Assert.assertEquals("/v1", basePath);
+        Assertions.assertEquals("/v1", basePath);
     }
 
     @Test

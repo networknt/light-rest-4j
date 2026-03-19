@@ -42,4 +42,3 @@ public class SimpleJwtVerifyHandler extends AbstractJwtVerifyHandler {
 
     // Note: getSpecScopes() is NOT overridden, so it defaults to null (no scope verification)
 }
-

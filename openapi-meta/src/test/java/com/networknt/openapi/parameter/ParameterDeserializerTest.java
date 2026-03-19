@@ -1,13 +1,13 @@
 package com.networknt.openapi.parameter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
 
 import com.networknt.oas.model.Schema;
 
@@ -22,7 +22,7 @@ public abstract class ParameterDeserializerTest {
 	protected static final String LAST_NAME="lastName";
 	protected static final Map<String, Schema> PROPS=new HashMap<>();
 
-	@BeforeClass
+	@BeforeAll
 	public static void setup() {
 		PROPS.put("role", new PojoSchema());
 		PROPS.put("firstName", new PojoSchema());

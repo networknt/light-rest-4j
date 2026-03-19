@@ -19,7 +19,7 @@ package com.networknt.openapi;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.networknt.body.BodyHandler;
 import com.networknt.client.Http2Client;
-import com.networknt.client.simplepool.SimpleConnectionHolder;
+import com.networknt.client.simplepool.SimpleConnectionState;
 import com.networknt.config.Config;
 import com.networknt.status.Status;
 import com.networknt.exception.ClientException;
@@ -33,10 +33,10 @@ import io.undertow.server.RoutingHandler;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.IoUtils;
@@ -68,7 +68,7 @@ public class ValidatorHandlerTest {
 
     File f = new File(logFile);
 
-    @Before
+    @BeforeEach
     public void setUp() {
         if(server == null) {
             logger.info("starting server");
@@ -95,7 +95,7 @@ public class ValidatorHandlerTest {
         }
     }
 
-    @Before
+    @BeforeEach
     public void clearLogFile() {
         synchronized (f) {
             try {
@@ -108,7 +108,7 @@ public class ValidatorHandlerTest {
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws Exception {
         if(server != null) {
             try {
@@ -141,7 +141,7 @@ public class ValidatorHandlerTest {
     public void testInvalidRequestPath() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -169,11 +169,11 @@ public class ValidatorHandlerTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(404, statusCode);
+        Assertions.assertEquals(404, statusCode);
         if(statusCode == 404) {
             Status status = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY), Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR10007", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR10007", status.getCode());
         }
     }
 
@@ -181,7 +181,7 @@ public class ValidatorHandlerTest {
     public void testInvalidMethod() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -209,11 +209,11 @@ public class ValidatorHandlerTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(405, statusCode);
+        Assertions.assertEquals(405, statusCode);
         if(statusCode == 405) {
             Status status = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY), Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR10008", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR10008", status.getCode());
         }
     }
 
@@ -222,7 +222,7 @@ public class ValidatorHandlerTest {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -260,11 +260,11 @@ public class ValidatorHandlerTest {
         }
         int statusCode = reference.get().getResponseCode();
         String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
-        Assert.assertEquals(404, statusCode);
+        Assertions.assertEquals(404, statusCode);
         if(statusCode == 404) {
             Status status = Config.getInstance().getMapper().readValue(body, Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR10007", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR10007", status.getCode());
         }
     }
 
@@ -273,7 +273,7 @@ public class ValidatorHandlerTest {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -313,10 +313,10 @@ public class ValidatorHandlerTest {
         }
         int statusCode = reference.get().getResponseCode();
         String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if(statusCode == 200) {
-            Assert.assertNotNull(body);
-            Assert.assertEquals("addPet", body);
+            Assertions.assertNotNull(body);
+            Assertions.assertEquals("addPet", body);
         }
     }
 
@@ -325,7 +325,7 @@ public class ValidatorHandlerTest {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -365,11 +365,11 @@ public class ValidatorHandlerTest {
         }
         int statusCode = reference.get().getResponseCode();
         String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
-        Assert.assertEquals(400, statusCode);
+        Assertions.assertEquals(400, statusCode);
         if(statusCode == 400) {
             Status status = Config.getInstance().getMapper().readValue(body, Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR11004", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR11004", status.getCode());
         }
     }
 
@@ -378,7 +378,7 @@ public class ValidatorHandlerTest {
         final AtomicReference<ClientResponse> reference = new AtomicReference<>();
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -416,11 +416,11 @@ public class ValidatorHandlerTest {
         }
         int statusCode = reference.get().getResponseCode();
         String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
-        Assert.assertEquals(400, statusCode);
+        Assertions.assertEquals(400, statusCode);
         if(statusCode == 400) {
             Status status = Config.getInstance().getMapper().readValue(body, Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR11017", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR11017", status.getCode());
         }
     }
 
@@ -428,7 +428,7 @@ public class ValidatorHandlerTest {
     public void testGetParam() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -457,10 +457,10 @@ public class ValidatorHandlerTest {
         }
         int statusCode = reference.get().getResponseCode();
         String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if(statusCode == 200) {
-            Assert.assertNotNull(body);
-            Assert.assertEquals("getPetById", body);
+            Assertions.assertNotNull(body);
+            Assertions.assertEquals("getPetById", body);
         }
     }
 
@@ -468,7 +468,7 @@ public class ValidatorHandlerTest {
     public void testDeleteWithoutHeader() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -497,11 +497,11 @@ public class ValidatorHandlerTest {
         }
         int statusCode = reference.get().getResponseCode();
         String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
-        Assert.assertEquals(400, statusCode);
+        Assertions.assertEquals(400, statusCode);
         if(statusCode == 400) {
             Status status = Config.getInstance().getMapper().readValue(body, Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR11017", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR11017", status.getCode());
         }
     }
 
@@ -509,7 +509,7 @@ public class ValidatorHandlerTest {
     public void testDeleteWithHeader() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -539,10 +539,10 @@ public class ValidatorHandlerTest {
         }
         int statusCode = reference.get().getResponseCode();
         String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if(statusCode == 200) {
-            Assert.assertNotNull(body);
-            Assert.assertEquals("deletePetById", body);
+            Assertions.assertNotNull(body);
+            Assertions.assertEquals("deletePetById", body);
         }
     }
 
@@ -552,7 +552,7 @@ public class ValidatorHandlerTest {
         Map<String, Object> map = Config.getInstance().getMapper().readValue(json, new TypeReference<Map<String, Object>>() {
         });
         Map<String, Object> selectionMap = (Map<String, Object>)map.get("selection");
-        Assert.assertNull(selectionMap.get("id"));
+        Assertions.assertNull(selectionMap.get("id"));
 
     }
 
@@ -564,7 +564,7 @@ public class ValidatorHandlerTest {
     public void testIssue57() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -594,14 +594,14 @@ public class ValidatorHandlerTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
     }
 
     @Test
     public void testQueryParameterArray() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -632,8 +632,8 @@ public class ValidatorHandlerTest {
         }
         int statusCode = reference.get().getResponseCode();
         String body = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
-        Assert.assertEquals(200, statusCode);
-        Assert.assertEquals("getPets, the query parameter = {arr=[1, 2, 3]}, length = 3", body);
+        Assertions.assertEquals(200, statusCode);
+        Assertions.assertEquals("getPets, the query parameter = {arr=[1, 2, 3]}, length = 3", body);
     }
 
     @Test
@@ -642,9 +642,9 @@ public class ValidatorHandlerTest {
         clientRequest.getRequestHeaders().put(new HttpString("todo_Header1"), "header_1");
         CompletableFuture<ClientResponse> future = sendResponse(clientRequest, "response2");
         String statusCode = future.get().getStatus();
-        Assert.assertEquals("OK", statusCode);
+        Assertions.assertEquals("OK", statusCode);
         List<String> errorLines = getErrorLinesFromLogFile();
-        Assert.assertTrue(errorLines.size() > 0);
+        Assertions.assertTrue(errorLines.size() > 0);
     }
 
     @Test
@@ -653,7 +653,7 @@ public class ValidatorHandlerTest {
         clientRequest.getRequestHeaders().put(new HttpString("todo_Header1"), "header_1");
         CompletableFuture<ClientResponse> future = sendResponse(clientRequest, "");
         String statusCode = future.get().getStatus();
-        Assert.assertNotEquals("OK", statusCode);
+        Assertions.assertNotEquals("OK", statusCode);
     }
 
     @Test
@@ -662,9 +662,9 @@ public class ValidatorHandlerTest {
         clientRequest.getRequestHeaders().put(new HttpString("todo_Header1"), "header_1");
         CompletableFuture<ClientResponse> future = sendResponse(clientRequest, "response1");
         String statusCode = future.get().getStatus();
-        Assert.assertEquals("OK", statusCode);
+        Assertions.assertEquals("OK", statusCode);
         List<String> errorLines = getErrorLinesFromLogFile();
-        Assert.assertTrue(errorLines.size() == 0);
+        Assertions.assertTrue(errorLines.size() == 0);
     }
 
     @Test
@@ -674,9 +674,9 @@ public class ValidatorHandlerTest {
         clientRequest.getRequestHeaders().put(new HttpString("todo_Header2"), "123");
         CompletableFuture<ClientResponse> future = sendResponse(clientRequest, "response1");
         String statusCode = future.get().getStatus();
-        Assert.assertEquals("OK", statusCode);
+        Assertions.assertEquals("OK", statusCode);
         List<String> errorLines = getErrorLinesFromLogFile();
-        Assert.assertTrue(errorLines.size() == 0);
+        Assertions.assertTrue(errorLines.size() == 0);
     }
 
     @Test
@@ -686,9 +686,9 @@ public class ValidatorHandlerTest {
         clientRequest.getRequestHeaders().put(new HttpString("todo_Header2"), "header_2");
         CompletableFuture<ClientResponse> future = sendResponse(clientRequest, "response1");
         String statusCode = future.get().getStatus();
-        Assert.assertEquals("OK", statusCode);
+        Assertions.assertEquals("OK", statusCode);
         List<String> errorLines = getErrorLinesFromLogFile();
-        Assert.assertTrue(errorLines.size() > 0);
+        Assertions.assertTrue(errorLines.size() > 0);
     }
 
     @Test
@@ -696,16 +696,16 @@ public class ValidatorHandlerTest {
         ClientRequest clientRequest = new ClientRequest();
         CompletableFuture<ClientResponse> future = sendResponse(clientRequest, "response1");
         String statusCode = future.get().getStatus();
-        Assert.assertEquals("OK", statusCode);
+        Assertions.assertEquals("OK", statusCode);
         List<String> errorLines = getErrorLinesFromLogFile();
-        Assert.assertTrue(errorLines.size() > 0);
+        Assertions.assertTrue(errorLines.size() > 0);
     }
 
     public static CompletableFuture<ClientResponse> sendResponse(ClientRequest request, String response) throws ClientException, URISyntaxException, InterruptedException {
         final Http2Client client = Http2Client.getInstance();
         final ClientConnection connection;
         URI uri = new URI("http://localhost:7080");
-        SimpleConnectionHolder.ConnectionToken token = null;
+        SimpleConnectionState.ConnectionToken token = null;
         try {
             token = client.borrow(uri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
             connection = (ClientConnection) token.getRawConnection();

@@ -1,6 +1,6 @@
 package com.networknt.openapi.parameter;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.networknt.oas.model.Parameter;
 import com.networknt.oas.model.Schema;

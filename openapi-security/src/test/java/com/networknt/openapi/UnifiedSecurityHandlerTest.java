@@ -1,7 +1,7 @@
 package com.networknt.openapi;
 
 import com.networknt.client.Http2Client;
-import com.networknt.client.simplepool.SimpleConnectionHolder;
+import com.networknt.client.simplepool.SimpleConnectionState;
 import com.networknt.config.Config;
 import com.networknt.exception.ClientException;
 import com.networknt.httpstring.HttpStringConstants;
@@ -18,7 +18,7 @@ import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.text.StringEscapeUtils;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.IoUtils;
@@ -38,8 +38,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class UnifiedSecurityHandlerTest {
     static final Logger logger = LoggerFactory.getLogger(UnifiedSecurityHandlerTest.class);
 
-    @ClassRule
-    public static TestServer server = TestServer.getInstance();
+    static TestServer server = TestServer.getInstance();
 
     static final boolean enableHttp2 = server.getServerConfig().isEnableHttp2();
     static final boolean enableHttps = server.getServerConfig().isEnableHttps();
@@ -48,8 +47,9 @@ public class UnifiedSecurityHandlerTest {
     static final String url = enableHttp2 || enableHttps ? "https://localhost:" + httpsPort : "http://localhost:" + httpPort;
 
     static Undertow server2 = null;
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
+        server.start();
         if (server2 == null) {
             logger.info("starting server2");
             HttpHandler handler = getJwksHandler();
@@ -62,7 +62,7 @@ public class UnifiedSecurityHandlerTest {
 
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws Exception {
         if (server2 != null) {
             try {
@@ -73,7 +73,7 @@ public class UnifiedSecurityHandlerTest {
             server2.stop();
             logger.info("The server2 is stopped.");
         }
-
+        server.stop();
     }
 
     static RoutingHandler getJwksHandler() {
@@ -127,7 +127,7 @@ public class UnifiedSecurityHandlerTest {
     public void testAnonymousPrefix() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -155,9 +155,9 @@ public class UnifiedSecurityHandlerTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if (statusCode == 200) {
-            Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
+            Assertions.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
         }
     }
 
@@ -169,7 +169,7 @@ public class UnifiedSecurityHandlerTest {
     public void testWithBasicHeader() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -198,9 +198,9 @@ public class UnifiedSecurityHandlerTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if (statusCode == 200) {
-            Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
+            Assertions.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
         }
     }
 
@@ -212,7 +212,7 @@ public class UnifiedSecurityHandlerTest {
     public void testWithBasicHeaderWithWrongPassword() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -244,9 +244,9 @@ public class UnifiedSecurityHandlerTest {
         String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
         logger.debug("statusCode = " + statusCode);
         logger.debug("responseBody = " + responseBody);
-        Assert.assertEquals(401, statusCode);
+        Assertions.assertEquals(401, statusCode);
         if (statusCode == 401) {
-            Assert.assertTrue(responseBody.contains("INVALID_USERNAME_OR_PASSWORD"));
+            Assertions.assertTrue(responseBody.contains("INVALID_USERNAME_OR_PASSWORD"));
         }
     }
 
@@ -259,7 +259,7 @@ public class UnifiedSecurityHandlerTest {
     public void testBasicWithSpace() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -291,9 +291,9 @@ public class UnifiedSecurityHandlerTest {
         String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
         logger.debug("statusCode = " + statusCode);
         logger.debug("responseBody = " + responseBody);
-        Assert.assertEquals(401, statusCode);
+        Assertions.assertEquals(401, statusCode);
         if (statusCode == 401) {
-            Assert.assertTrue(responseBody.contains("INVALID_AUTHORIZATION_HEADER"));
+            Assertions.assertTrue(responseBody.contains("INVALID_AUTHORIZATION_HEADER"));
         }
     }
 
@@ -304,7 +304,7 @@ public class UnifiedSecurityHandlerTest {
     public void testWithApiKeyHeader() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -333,9 +333,9 @@ public class UnifiedSecurityHandlerTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if (statusCode == 200) {
-            Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
+            Assertions.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
         }
     }
 
@@ -346,7 +346,7 @@ public class UnifiedSecurityHandlerTest {
     public void testWithApiKeyHeaderWongKey() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -378,9 +378,9 @@ public class UnifiedSecurityHandlerTest {
         String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
         logger.debug("statusCode = " + statusCode);
         logger.debug("responseBody = " + responseBody);
-        Assert.assertEquals(401, statusCode);
+        Assertions.assertEquals(401, statusCode);
         if (statusCode == 401) {
-            Assert.assertTrue(responseBody.contains("API_KEY_MISMATCH"));
+            Assertions.assertTrue(responseBody.contains("API_KEY_MISMATCH"));
         }
     }
 
@@ -392,7 +392,7 @@ public class UnifiedSecurityHandlerTest {
     public void testWrongPathNotConfigured() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -423,9 +423,9 @@ public class UnifiedSecurityHandlerTest {
         String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
         logger.debug("statusCode = " + statusCode);
         logger.debug("responseBody = " + responseBody);
-        Assert.assertEquals(400, statusCode);
+        Assertions.assertEquals(400, statusCode);
         if (statusCode == 400) {
-            Assert.assertTrue(responseBody.contains("MISSING_PATH_PREFIX_AUTH"));
+            Assertions.assertTrue(responseBody.contains("MISSING_PATH_PREFIX_AUTH"));
         }
     }
 
@@ -437,7 +437,7 @@ public class UnifiedSecurityHandlerTest {
     public void testWithCorrectSpaceSeparatedScpClaimScopeInIdToken() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -466,9 +466,9 @@ public class UnifiedSecurityHandlerTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if (statusCode == 200) {
-            Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
+            Assertions.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
         }
     }
 
@@ -480,7 +480,7 @@ public class UnifiedSecurityHandlerTest {
     public void testWithCorrectSpaceSeparatedScopeClaimScopeInIdToken() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -509,9 +509,9 @@ public class UnifiedSecurityHandlerTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if (statusCode == 200) {
-            Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
+            Assertions.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
         }
     }
 
@@ -519,7 +519,7 @@ public class UnifiedSecurityHandlerTest {
     public void testUnmatchedScopeInIdToken() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -548,11 +548,11 @@ public class UnifiedSecurityHandlerTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(403, statusCode);
+        Assertions.assertEquals(403, statusCode);
         if (statusCode == 403) {
             Status status = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY), Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR10005", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR10005", status.getCode());
         }
     }
 
@@ -560,7 +560,7 @@ public class UnifiedSecurityHandlerTest {
     public void testWithCorrectScopeInScopeToken() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -590,9 +590,9 @@ public class UnifiedSecurityHandlerTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(200, statusCode);
+        Assertions.assertEquals(200, statusCode);
         if (statusCode == 200) {
-            Assert.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
+            Assertions.assertNotNull(reference.get().getAttachment(Http2Client.RESPONSE_BODY));
         }
     }
 
@@ -600,7 +600,7 @@ public class UnifiedSecurityHandlerTest {
     public void testUnmatchedScopeInScopeToken() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -630,11 +630,11 @@ public class UnifiedSecurityHandlerTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(403, statusCode);
+        Assertions.assertEquals(403, statusCode);
         if (statusCode == 403) {
             Status status = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY), Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR10006", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR10006", status.getCode());
         }
     }
 
@@ -642,7 +642,7 @@ public class UnifiedSecurityHandlerTest {
     public void testH2CDisabledRequest() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -674,11 +674,11 @@ public class UnifiedSecurityHandlerTest {
 
         }
         int statusCode = reference.get().getResponseCode();
-        Assert.assertEquals(405, statusCode);
+        Assertions.assertEquals(405, statusCode);
         if (statusCode == 405) {
             Status status = Config.getInstance().getMapper().readValue(reference.get().getAttachment(Http2Client.RESPONSE_BODY), Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR10008", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR10008", status.getCode());
         }
     }
 
@@ -686,7 +686,7 @@ public class UnifiedSecurityHandlerTest {
     public void testInvalidToken() throws Exception {
         final Http2Client client = Http2Client.getInstance();
         final CountDownLatch latch = new CountDownLatch(1);
-        final SimpleConnectionHolder.ConnectionToken token;
+        final SimpleConnectionState.ConnectionToken token;
 
         try {
 
@@ -716,11 +716,11 @@ public class UnifiedSecurityHandlerTest {
         }
         int statusCode = reference.get().getResponseCode();
         String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
-        Assert.assertEquals(401, statusCode);
+        Assertions.assertEquals(401, statusCode);
         if (statusCode == 401) {
             Status status = Config.getInstance().getMapper().readValue(responseBody, Status.class);
-            Assert.assertNotNull(status);
-            Assert.assertEquals("ERR12003", status.getCode());
+            Assertions.assertNotNull(status);
+            Assertions.assertEquals("ERR12003", status.getCode());
         }
     }
 
