@@ -3,6 +3,7 @@ package com.networknt.specification;
 import com.networknt.config.Config;
 import com.networknt.handler.LightHttpHandler;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,10 @@ import java.io.OutputStream;
  */
 public class FaviconHandler implements LightHttpHandler {
     private static final Logger logger = LoggerFactory.getLogger(FaviconHandler.class);
+    private static final String FAVICON_CONTENT_TYPE = "image/x-icon";
+    private static final HttpString X_CONTENT_TYPE_OPTIONS = new HttpString("X-Content-Type-Options");
+    private static final String NOSNIFF = "nosniff";
+
     public FaviconHandler(){
         if(logger.isInfoEnabled()) logger.info("FaviconHandler is initialized.");
     }
@@ -29,7 +34,8 @@ public class FaviconHandler implements LightHttpHandler {
             return;
         }
         exchange.startBlocking();
-        exchange.getResponseHeaders().add(new HttpString("Content-Type"), "image/x-icon");
+        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, FAVICON_CONTENT_TYPE);
+        exchange.getResponseHeaders().put(X_CONTENT_TYPE_OPTIONS, NOSNIFF);
         try (InputStream inputStream = Config.getInstance().getInputStreamFromFile("favicon.ico"); OutputStream outputStream = exchange.getOutputStream()) {
             byte[] buf = new byte[8192];
             int c;
