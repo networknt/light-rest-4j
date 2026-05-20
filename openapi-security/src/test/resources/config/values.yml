@@ -29,7 +29,7 @@ basic.users:
       - /v1/address
       - /v1/salesforce
   - username: user2
-    password: CRYPT:0754fbc37347c136be7725cbf62b6942:71756e13c2400985d0402ed6f49613d0
+    password: CRYPT:905a5006aa1f6384ff662b0fbe7e7c8b:e7526f7aa67dbfa4330418f9:b515fd6dbdc15f06d7bbf33595c5cd8a6ed7212e9e3653cc
     paths:
       - /v2/pet
       - /v2/address
@@ -42,7 +42,7 @@ apikey.pathPrefixAuths:
     apiKey: abcdefg
   - pathPrefix: /v1/test2
     headerName: x-apikey
-    apiKey: CRYPT:3ddd6c8b9bf2afc24d1c94af1dffd518:1bf0cafb19c53e61ddeae626f8906d43
+    apiKey: CRYPT:3e6f63a533803e412f1c6fbc94a21fa6:5407f40828b8e26747504e8b:2ed7f9fbf5dc904b8b439cc9b3effe6563292883d27b7232
 
 # client.yml
 client.tokenKeyServerUrl: http://localhost:7082
