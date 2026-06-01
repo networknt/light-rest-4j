@@ -320,7 +320,7 @@ public class IntegrationTest {
 
     @Test
     public void test_object_deepObject_explode_query_param_deserialization() throws Exception {
-    	runTest("/pets?id_do[id]=001&id_do[name]=Dog", EXPECTED_MAP_RESULT);
+    	runTest("/pets?id_do%5Bid%5D=001&id_do%5Bname%5D=Dog", EXPECTED_MAP_RESULT);
     }
 
     @Test
