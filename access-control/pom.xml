@@ -41,6 +41,11 @@
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
+            <artifactId>http-entity</artifactId>
+            <version>${version.light-4j}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
             <artifactId>status</artifactId>
         </dependency>
         <dependency>
