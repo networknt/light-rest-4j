@@ -206,6 +206,9 @@ public class SchemaValidator {
     }
 
     private String formatError(Error error, NodePath instanceLocation) {
+        if (error.isCustomMessage()) {
+            return error.getMessage();
+        }
         if (instanceLocation == null || error.getInstanceLocation() == null) {
             return error.toString();
         }

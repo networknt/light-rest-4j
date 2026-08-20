@@ -109,6 +109,8 @@ class SchemaValidatorTest {
         assertFalse(requestStatus.getDescription().contains("A custom validation message"), requestStatus.getDescription());
         assertNotNull(responseStatus);
         assertTrue(responseStatus.getDescription().contains("A custom validation message"), responseStatus.getDescription());
+        assertFalse(responseStatus.getDescription().contains("$: A custom validation message"),
+                responseStatus.getDescription());
     }
 
     @Test
