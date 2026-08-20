@@ -155,7 +155,7 @@ public class ResponseValidator {
             return new Status(CONTENT_TYPE_MISMATCH, "application/json");
         }
         return schemaValidator.validate(responseNode, schema, false,
-                config.isHandleNullableField(), PathType.LEGACY);
+                config.isHandleNullableField(), PathType.LEGACY, true);
     }
 
     /**
@@ -265,7 +265,7 @@ public class ResponseValidator {
                     .stream()
                     .map((v) -> schemaValidator.validate(new TextNode(v),
                             Overlay.toJson((SchemaImpl)operationHeader.getSchema()),
-                            true, config.isHandleNullableField(), PathType.LEGACY))
+                            true, config.isHandleNullableField(), PathType.LEGACY, true))
                     .filter(s -> s != null)
                     .findFirst();
             if(optional.isPresent()) {

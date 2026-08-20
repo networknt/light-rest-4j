@@ -115,7 +115,14 @@ public class SchemaValidator {
      */
     public Status validate(final JsonNode value, final JsonNode schema, boolean typeLoose,
                            boolean nullableKeywordEnabled, PathType validationPathType) {
-        return doValidate(value, schema, typeLoose, nullableKeywordEnabled, validationPathType, null);
+        return validate(value, schema, typeLoose, nullableKeywordEnabled, validationPathType, false);
+    }
+
+    Status validate(final JsonNode value, final JsonNode schema, boolean typeLoose,
+                    boolean nullableKeywordEnabled, PathType validationPathType,
+                    boolean customMessageKeywordEnabled) {
+        return doValidate(value, schema, typeLoose, nullableKeywordEnabled, validationPathType,
+                customMessageKeywordEnabled, null);
     }
 
     /**
@@ -131,7 +138,7 @@ public class SchemaValidator {
         if (at != null) {
             instanceLocation = instanceLocation.append(at);
         }
-        return doValidate(value, schema, true, false, pathType, instanceLocation);
+        return doValidate(value, schema, true, false, pathType, false, instanceLocation);
     }
 
     /**
@@ -144,12 +151,12 @@ public class SchemaValidator {
      */
     public Status validate(final JsonNode value, final JsonNode schema, NodePath instanceLocation) {
         PathType validationPathType = instanceLocation == null ? pathType : instanceLocation.getPathType();
-        return doValidate(value, schema, true, false, validationPathType, instanceLocation);
+        return doValidate(value, schema, true, false, validationPathType, false, instanceLocation);
     }
 
     private Status doValidate(final JsonNode value, final JsonNode schema, boolean typeLoose,
                               boolean nullableKeywordEnabled, PathType validationPathType,
-                              NodePath instanceLocation) {
+                              boolean customMessageKeywordEnabled, NodePath instanceLocation) {
         requireNonNull(schema, "A schema is required");
 
         List<Error> processingReport = null;
@@ -157,7 +164,8 @@ public class SchemaValidator {
             if(jsonNode != null) {
                 ((ObjectNode)schema).set(COMPONENTS_FIELD, jsonNode);
             }
-            Schema jsonSchema = getRegistry(typeLoose, nullableKeywordEnabled, validationPathType).getSchema(schema);
+            Schema jsonSchema = getRegistry(typeLoose, nullableKeywordEnabled, validationPathType,
+                    customMessageKeywordEnabled).getSchema(schema);
             processingReport = jsonSchema.validate(value);
         } catch (Exception e) {
             logger.error("Unable to validate the value against the OpenAPI schema", e);
@@ -172,16 +180,21 @@ public class SchemaValidator {
         return null;
     }
 
-    private SchemaRegistry getRegistry(boolean typeLoose, boolean nullableKeywordEnabled, PathType validationPathType) {
-        ValidationProfile profile = new ValidationProfile(typeLoose, nullableKeywordEnabled, validationPathType);
+    private SchemaRegistry getRegistry(boolean typeLoose, boolean nullableKeywordEnabled, PathType validationPathType,
+                                       boolean customMessageKeywordEnabled) {
+        ValidationProfile profile = new ValidationProfile(typeLoose, nullableKeywordEnabled, validationPathType,
+                customMessageKeywordEnabled);
         return registries.computeIfAbsent(profile, this::createRegistry);
     }
 
     private SchemaRegistry createRegistry(ValidationProfile profile) {
-        SchemaRegistryConfig registryConfig = SchemaRegistryConfig.builder()
+        SchemaRegistryConfig.Builder registryConfigBuilder = SchemaRegistryConfig.builder()
                 .typeLoose(profile.typeLoose)
-                .pathType(profile.pathType)
-                .build();
+                .pathType(profile.pathType);
+        if (profile.customMessageKeywordEnabled) {
+            registryConfigBuilder.errorMessageKeyword("message");
+        }
+        SchemaRegistryConfig registryConfig = registryConfigBuilder.build();
         Dialect dialect = Dialects.getDraft202012();
         if (profile.nullableKeywordEnabled) {
             dialect = Dialect.builder(dialect)
@@ -211,11 +224,14 @@ public class SchemaValidator {
         private final boolean typeLoose;
         private final boolean nullableKeywordEnabled;
         private final PathType pathType;
+        private final boolean customMessageKeywordEnabled;
 
-        private ValidationProfile(boolean typeLoose, boolean nullableKeywordEnabled, PathType pathType) {
+        private ValidationProfile(boolean typeLoose, boolean nullableKeywordEnabled, PathType pathType,
+                                  boolean customMessageKeywordEnabled) {
             this.typeLoose = typeLoose;
             this.nullableKeywordEnabled = nullableKeywordEnabled;
             this.pathType = requireNonNull(pathType, "A validation path type is required");
+            this.customMessageKeywordEnabled = customMessageKeywordEnabled;
         }
 
         @Override
@@ -225,12 +241,13 @@ public class SchemaValidator {
             ValidationProfile that = (ValidationProfile) object;
             return typeLoose == that.typeLoose
                     && nullableKeywordEnabled == that.nullableKeywordEnabled
+                    && customMessageKeywordEnabled == that.customMessageKeywordEnabled
                     && pathType == that.pathType;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(typeLoose, nullableKeywordEnabled, pathType);
+            return Objects.hash(typeLoose, nullableKeywordEnabled, pathType, customMessageKeywordEnabled);
         }
     }
 }

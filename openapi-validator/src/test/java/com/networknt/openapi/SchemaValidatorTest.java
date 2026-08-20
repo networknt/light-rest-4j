@@ -25,6 +25,7 @@ import com.networknt.status.Status;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -87,12 +88,27 @@ class SchemaValidatorTest {
     @Test
     void shouldFailClosedWhenSchemaCannotBeBuilt() throws Exception {
         SchemaValidator validator = new SchemaValidator();
-        JsonNode invalidSchema = MAPPER.readTree("{\"$schema\":\"https://example.com/unknown-dialect\",\"type\":\"string\"}");
+        JsonNode invalidSchema = MAPPER.readTree("{\"type\":\"string\",\"pattern\":\"[\"}");
 
         Status status = validator.validate(new TextNode("value"), invalidSchema, false, false);
 
         assertNotNull(status);
         assertEquals(SchemaValidator.VALIDATOR_SCHEMA_INVALID_JSON, status.getCode());
+    }
+
+    @Test
+    void shouldPreserveCustomValidationMessageBehaviorByDirection() throws Exception {
+        SchemaValidator validator = new SchemaValidator();
+        JsonNode schema = MAPPER.readTree("{\"type\":\"object\",\"required\":[\"name\"],\"message\":{\"required\":\"A custom validation message\"}}");
+
+        Status requestStatus = validator.validate(MAPPER.createObjectNode(), schema, false, false);
+        Status responseStatus = validator.validate(MAPPER.createObjectNode(), schema, false, false,
+                PathType.LEGACY, true);
+
+        assertNotNull(requestStatus);
+        assertFalse(requestStatus.getDescription().contains("A custom validation message"), requestStatus.getDescription());
+        assertNotNull(responseStatus);
+        assertTrue(responseStatus.getDescription().contains("A custom validation message"), responseStatus.getDescription());
     }
 
     @Test
