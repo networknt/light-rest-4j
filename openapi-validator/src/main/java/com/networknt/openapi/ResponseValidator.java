@@ -23,7 +23,7 @@ import com.networknt.dump.StoreResponseStreamSinkConduit;
 import com.networknt.jsonoverlay.Overlay;
 import com.networknt.oas.model.*;
 import com.networknt.oas.model.impl.SchemaImpl;
-import com.networknt.schema.SchemaValidatorsConfig;
+import com.networknt.schema.path.PathType;
 import com.networknt.status.Status;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderValues;
@@ -45,7 +45,6 @@ import static java.util.Objects.requireNonNull;
 public class ResponseValidator {
     private final SchemaValidator schemaValidator;
     private final ValidatorConfig config;
-    private final SchemaValidatorsConfig schemaValidatorsConfig;
     private static final String VALIDATOR_RESPONSE_CONTENT_UNEXPECTED = "ERR11018";
     private static final String REQUIRED_RESPONSE_HEADER_MISSING = "ERR11019";
     private static final String CONTENT_TYPE_MISMATCH = "ERR10015";
@@ -58,7 +57,6 @@ public class ResponseValidator {
     public ResponseValidator(SchemaValidator schemaValidator, ValidatorConfig config) {
         this.schemaValidator = requireNonNull(schemaValidator, "A schema validator is required");
         this.config = config;
-        this.schemaValidatorsConfig = new SchemaValidatorsConfig();
     }
 
     /**
@@ -145,9 +143,6 @@ public class ResponseValidator {
                 (responseContent == null && schema != null)) {
             return new Status(VALIDATOR_RESPONSE_CONTENT_UNEXPECTED, openApiOperation.getMethod(), openApiOperation.getPathString().original());
         }
-        schemaValidatorsConfig.setTypeLoose(false);
-        schemaValidatorsConfig.setHandleNullableField(config.isHandleNullableField());
-
         JsonNode responseNode;
         responseContent = responseContent.trim();
         if(responseContent.startsWith("{") || responseContent.startsWith("[")) {
@@ -159,7 +154,8 @@ public class ResponseValidator {
         } else {
             return new Status(CONTENT_TYPE_MISMATCH, "application/json");
         }
-        return schemaValidator.validate(responseNode, schema, schemaValidatorsConfig);
+        return schemaValidator.validate(responseNode, schema, false,
+                config.isHandleNullableField(), PathType.LEGACY);
     }
 
     /**
@@ -260,10 +256,6 @@ public class ResponseValidator {
 
     private Status validateHeader(HttpServerExchange exchange, String headerName, Header operationHeader) {
         final HeaderValues headerValues = exchange.getResponseHeaders().get(headerName);
-        SchemaValidatorsConfig schemaValidatorsConfig = new SchemaValidatorsConfig();
-        //header won't tell if it's a real string or not. needs trying to convert.
-        schemaValidatorsConfig.setTypeLoose(true);
-        schemaValidatorsConfig.setHandleNullableField(config.isHandleNullableField());
         if ((headerValues == null || headerValues.isEmpty())) {
             if(Boolean.TRUE.equals(operationHeader.getRequired())) {
                 return new Status(REQUIRED_RESPONSE_HEADER_MISSING, headerName);
@@ -271,7 +263,9 @@ public class ResponseValidator {
         } else {
             Optional<Status> optional = headerValues
                     .stream()
-                    .map((v) -> schemaValidator.validate(new TextNode(v), Overlay.toJson((SchemaImpl)operationHeader.getSchema()),  schemaValidatorsConfig))
+                    .map((v) -> schemaValidator.validate(new TextNode(v),
+                            Overlay.toJson((SchemaImpl)operationHeader.getSchema()),
+                            true, config.isHandleNullableField(), PathType.LEGACY))
                     .filter(s -> s != null)
                     .findFirst();
             if(optional.isPresent()) {

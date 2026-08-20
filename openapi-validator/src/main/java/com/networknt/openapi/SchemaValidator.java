@@ -21,10 +21,23 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.networknt.jsonoverlay.Overlay;
 import com.networknt.oas.model.OpenApi3;
 import com.networknt.oas.model.impl.OpenApi3Impl;
-import com.networknt.schema.*;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.SchemaRegistryConfig;
+import com.networknt.schema.dialect.Dialect;
+import com.networknt.schema.dialect.Dialects;
+import com.networknt.schema.keyword.NonValidationKeyword;
+import com.networknt.schema.path.NodePath;
+import com.networknt.schema.path.PathType;
 import com.networknt.status.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Set;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Objects.requireNonNull;
 
@@ -36,13 +49,14 @@ import static java.util.Objects.requireNonNull;
  * @author Steve Hu
  */
 public class SchemaValidator {
+    private static final Logger logger = LoggerFactory.getLogger(SchemaValidator.class);
     private static final String COMPONENTS_FIELD = "components";
     static final String VALIDATOR_SCHEMA_INVALID_JSON = "ERR11003";
     static final String VALIDATOR_SCHEMA = "ERR11004";
 
-    private final OpenApi3 api;
-    private JsonNode jsonNode;
-    private final SchemaValidatorsConfig defaultConfig;
+    private final JsonNode jsonNode;
+    private final PathType pathType;
+    private final Map<ValidationProfile, SchemaRegistry> registries = new ConcurrentHashMap<>();
 
     /**
      * Build a new validator with no API specification.
@@ -71,12 +85,8 @@ public class SchemaValidator {
      *            for use in references.
      */
     public SchemaValidator(final OpenApi3 api, final boolean legacyPathType) {
-        this.api = api;
-        this.jsonNode = Overlay.toJson((OpenApi3Impl)api).get("components");
-        this.defaultConfig = SchemaValidatorsConfig.builder()
-                .typeLoose(true)
-                .pathType(legacyPathType ? PathType.LEGACY : PathType.JSON_POINTER)
-                .build();
+        this.jsonNode = api == null ? null : Overlay.toJson((OpenApi3Impl)api).get(COMPONENTS_FIELD);
+        this.pathType = legacyPathType ? PathType.LEGACY : PathType.JSON_POINTER;
     }
 
     /**
@@ -84,12 +94,13 @@ public class SchemaValidator {
      *
      * @param value The value to validate
      * @param schema The property schema to validate the value against
-     * @param config The config model for some validator
+     * @param typeLoose Whether string values may be coerced while checking their type
+     * @param nullableKeywordEnabled Whether the OpenAPI nullable keyword is enabled
      *
      * @return A status containing error code and description
      */
-    public Status validate(final JsonNode value, final JsonNode schema, SchemaValidatorsConfig config) {
-        return doValidate(value, schema, config, null);
+    public Status validate(final JsonNode value, final JsonNode schema, boolean typeLoose, boolean nullableKeywordEnabled) {
+        return validate(value, schema, typeLoose, nullableKeywordEnabled, pathType);
     }
 
     /**
@@ -97,48 +108,129 @@ public class SchemaValidator {
      *
      * @param value The value to validate
      * @param schema The property schema to validate the value against
-     * @param config The config model for some validator
-     * @param instanceLocation The location being validated
-     * @return Status object
+     * @param typeLoose Whether string values may be coerced while checking their type
+     * @param nullableKeywordEnabled Whether the OpenAPI nullable keyword is enabled
+     * @param validationPathType The path format used in validation errors
+     * @return A status containing error code and description
      */
-    public Status validate(final JsonNode value, final JsonNode schema, SchemaValidatorsConfig config, JsonNodePath instanceLocation) {
-        return doValidate(value, schema, config, instanceLocation);
+    public Status validate(final JsonNode value, final JsonNode schema, boolean typeLoose,
+                           boolean nullableKeywordEnabled, PathType validationPathType) {
+        return doValidate(value, schema, typeLoose, nullableKeywordEnabled, validationPathType, null);
     }
 
+    /**
+     * Validate the given value against the given property schema.
+     *
+     * @param value The value to validate
+     * @param schema The property schema to validate the value against
+     * @param at The property name being validated
+     * @return Status object
+     */
     public Status validate(final JsonNode value, final JsonNode schema, String at) {
-        JsonNodePath instanceLocation = new JsonNodePath(defaultConfig.getPathType());
+        NodePath instanceLocation = new NodePath(pathType);
         if (at != null) {
             instanceLocation = instanceLocation.append(at);
         }
-        return validate(value, schema, defaultConfig, instanceLocation);
+        return doValidate(value, schema, true, false, pathType, instanceLocation);
     }
 
-    public Status validate(final JsonNode value, final JsonNode schema, JsonNodePath instanceLocation) {
-        return doValidate(value, schema, defaultConfig, instanceLocation);
+    /**
+     * Validate the given value against the given property schema.
+     *
+     * @param value The value to validate
+     * @param schema The property schema to validate the value against
+     * @param instanceLocation The location being validated
+     * @return Status object
+     */
+    public Status validate(final JsonNode value, final JsonNode schema, NodePath instanceLocation) {
+        PathType validationPathType = instanceLocation == null ? pathType : instanceLocation.getPathType();
+        return doValidate(value, schema, true, false, validationPathType, instanceLocation);
     }
 
-    private Status doValidate(final JsonNode value, final JsonNode schema, SchemaValidatorsConfig config, JsonNodePath instanceLocation) {
+    private Status doValidate(final JsonNode value, final JsonNode schema, boolean typeLoose,
+                              boolean nullableKeywordEnabled, PathType validationPathType,
+                              NodePath instanceLocation) {
         requireNonNull(schema, "A schema is required");
-        if (instanceLocation == null)
-            instanceLocation = new JsonNodePath(config.getPathType());
 
-        Status status = null;
-        Set<ValidationMessage> processingReport = null;
+        List<Error> processingReport = null;
         try {
             if(jsonNode != null) {
                 ((ObjectNode)schema).set(COMPONENTS_FIELD, jsonNode);
             }
-            JsonSchema jsonSchema = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012).getSchema(schema, config);
-            processingReport = jsonSchema.validate(jsonSchema.createExecutionContext(), value, value, instanceLocation);
+            Schema jsonSchema = getRegistry(typeLoose, nullableKeywordEnabled, validationPathType).getSchema(schema);
+            processingReport = jsonSchema.validate(value);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Unable to validate the value against the OpenAPI schema", e);
+            return new Status(VALIDATOR_SCHEMA_INVALID_JSON, e.getMessage());
         }
 
         if(processingReport != null && !processingReport.isEmpty()) {
-            ValidationMessage vm = processingReport.iterator().next();
-            status = new Status(VALIDATOR_SCHEMA, vm.getMessage());
+            Error error = processingReport.get(0);
+            return new Status(VALIDATOR_SCHEMA, formatError(error, instanceLocation));
         }
 
-        return status;
+        return null;
+    }
+
+    private SchemaRegistry getRegistry(boolean typeLoose, boolean nullableKeywordEnabled, PathType validationPathType) {
+        ValidationProfile profile = new ValidationProfile(typeLoose, nullableKeywordEnabled, validationPathType);
+        return registries.computeIfAbsent(profile, this::createRegistry);
+    }
+
+    private SchemaRegistry createRegistry(ValidationProfile profile) {
+        SchemaRegistryConfig registryConfig = SchemaRegistryConfig.builder()
+                .typeLoose(profile.typeLoose)
+                .pathType(profile.pathType)
+                .build();
+        Dialect dialect = Dialects.getDraft202012();
+        if (profile.nullableKeywordEnabled) {
+            dialect = Dialect.builder(dialect)
+                    .keyword(new NonValidationKeyword("nullable"))
+                    .build();
+        }
+        return SchemaRegistry.withDefaultDialect(dialect,
+                builder -> builder.schemaRegistryConfig(registryConfig));
+    }
+
+    private String formatError(Error error, NodePath instanceLocation) {
+        if (instanceLocation == null || error.getInstanceLocation() == null) {
+            return error.toString();
+        }
+        NodePath combinedLocation = instanceLocation;
+        NodePath errorLocation = error.getInstanceLocation();
+        for (int i = 0; i < errorLocation.getNameCount(); i++) {
+            Object element = errorLocation.getElement(i);
+            combinedLocation = element instanceof Number
+                    ? combinedLocation.append(((Number) element).intValue())
+                    : combinedLocation.append(String.valueOf(element));
+        }
+        return combinedLocation + ": " + error.getMessage();
+    }
+
+    private static final class ValidationProfile {
+        private final boolean typeLoose;
+        private final boolean nullableKeywordEnabled;
+        private final PathType pathType;
+
+        private ValidationProfile(boolean typeLoose, boolean nullableKeywordEnabled, PathType pathType) {
+            this.typeLoose = typeLoose;
+            this.nullableKeywordEnabled = nullableKeywordEnabled;
+            this.pathType = requireNonNull(pathType, "A validation path type is required");
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            if (this == object) return true;
+            if (!(object instanceof ValidationProfile)) return false;
+            ValidationProfile that = (ValidationProfile) object;
+            return typeLoose == that.typeLoose
+                    && nullableKeywordEnabled == that.nullableKeywordEnabled
+                    && pathType == that.pathType;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(typeLoose, nullableKeywordEnabled, pathType);
+        }
     }
 }

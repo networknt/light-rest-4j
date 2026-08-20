@@ -26,7 +26,6 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import com.networknt.body.BodyConfig;
 import com.networknt.config.Config;
 import com.networknt.httpstring.AttachmentConstants;
-import com.networknt.schema.PathType;
 import io.undertow.util.Headers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +37,6 @@ import com.networknt.oas.model.RequestBody;
 import com.networknt.oas.model.impl.RequestBodyImpl;
 import com.networknt.oas.model.impl.SchemaImpl;
 import com.networknt.openapi.parameter.ParameterType;
-import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.StringUtils;
 
@@ -122,12 +120,6 @@ public class RequestValidator {
             }
             return null;
         }
-        SchemaValidatorsConfig schemaValidatorsConfig = SchemaValidatorsConfig.builder()
-                .typeLoose(false)
-                .pathType(config.isLegacyPathType() ? PathType.LEGACY : PathType.JSON_POINTER)
-                .nullableKeywordEnabled(config.isHandleNullableField())
-                .build();
-
         // the body can be converted to JsonNode here. If not, an error is returned.
         JsonNode requestNode;
         // The body can be a string, map or list. Convert to JsonNode.
@@ -150,7 +142,9 @@ public class RequestValidator {
         } else {
             return new Status(CONTENT_TYPE_MISMATCH, "application/json");
         }
-        return schemaValidator.validate(requestNode, Overlay.toJson((SchemaImpl)specBody.getContentMediaType("application/json").getSchema()), schemaValidatorsConfig);
+        return schemaValidator.validate(requestNode,
+                Overlay.toJson((SchemaImpl)specBody.getContentMediaType("application/json").getSchema()),
+                false, config.isHandleNullableField());
     }
 
     private Status validateRequestParameters(final HttpServerExchange exchange, final NormalisedPath requestPath, final OpenApiOperation openApiOperation) {

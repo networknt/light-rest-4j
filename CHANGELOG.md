@@ -1,5 +1,13 @@
 # Change Log
 
+## [2.3.8](https://github.com/networknt/light-rest-4j/tree/2.3.8) (2026-08-20)
+
+
+**Behavior changes:**
+
+- Upgrade json-schema-validator to 2.0.5. When `handleNullableField` is `false`, a null value for a schema with `nullable: true` is rejected as documented by the validator configuration.
+
+
 ## [2.3.7](https://github.com/networknt/light-rest-4j/tree/2.3.7) (2026-08-12)
 
 
