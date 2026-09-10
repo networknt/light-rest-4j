@@ -56,7 +56,7 @@ public class SpecificationConfig {
     private String contentType;
 
     private final Map<String, Object> mappedConfig;
-    private static SpecificationConfig instance;
+    private static volatile SpecificationConfig instance;
 
     private SpecificationConfig(String configName) {
         mappedConfig = Config.getInstance().getJsonMapConfig(configName);

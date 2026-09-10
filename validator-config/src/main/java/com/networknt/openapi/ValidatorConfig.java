@@ -51,7 +51,7 @@ public class ValidatorConfig {
     private static final String SKIP_PATH_PREFIXES = "skipPathPrefixes";
 
     private volatile Map<String, Object> mappedConfig;
-    private static ValidatorConfig instance;
+    private static volatile ValidatorConfig instance;
 
     @BooleanField(
             configFieldName = ENABLED,
