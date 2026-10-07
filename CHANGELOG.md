@@ -1,5 +1,29 @@
 # Change Log
 
+## [2.4.0](https://github.com/networknt/light-rest-4j/tree/2.4.0) (2026-10-07)
+
+**Commits:**
+
+- upgrade to version 2.4.0 before release in master branch ([37d5cf5](https://github.com/networknt/light-rest-4j/commit/37d5cf5f9b6e9e47da499e8a707e943659f15ceb)) (by Steve Hu)
+- upgrade maven-javadoc to 3.12.0 from 3.4.1 ([e4909fd](https://github.com/networknt/light-rest-4j/commit/e4909fdf09d03cd7e7bcff3331481e363d25500c)) (by Steve Hu)
+- upgrade maven-version to 2.22.0 from 2.4 ([fc8b55f](https://github.com/networknt/light-rest-4j/commit/fc8b55f63bd2406ff8c72933774f90494636d553)) (by Steve Hu)
+- upgrade mockito to 5.24.0 ([dee2aae](https://github.com/networknt/light-rest-4j/commit/dee2aaeb71a28c63d2a5eef785b2c4336fa47680)) (by Steve Hu)
+- upgrade slf4j to 2.0.20 from 2.0.19 ([b05f6f5](https://github.com/networknt/light-rest-4j/commit/b05f6f51d67edcb310c051b21b504ed55aad7bdc)) (by Steve Hu)
+- upgrade jose4j to 0.9.7 from 0.9.6 ([8ff2bd3](https://github.com/networknt/light-rest-4j/commit/8ff2bd3b08a0d87ec9b3a95bd1b1212ac95b367f)) (by Steve Hu)
+- upgrade jackson to 2.22.3 from 2.22.1 ([a722bb9](https://github.com/networknt/light-rest-4j/commit/a722bb9c6c7196de0c5691bf53ea620de60ba568)) (by Steve Hu)
+- upgrade to version 2.3.8-SNAPSHOT after release in master branch ([bb32fe7](https://github.com/networknt/light-rest-4j/commit/bb32fe7f4fe2189164b98767e17c76178037d1df)) (by Steve Hu)
+- upgrade slf4j to 2.0.19 from 2.0.17 ([9983640](https://github.com/networknt/light-rest-4j/commit/99836405ad762a0aa75e2b3975ea023acbc7f35b)) (by Steve Hu)
+- upgrade maven-surefire to 3.6.0 ([9dbe318](https://github.com/networknt/light-rest-4j/commit/9dbe318c6e3a27c58d0b7a6d974f429240d9976e)) (by Steve Hu)
+- upgrade logback to 1.6.3 from 1.5.37 ([06b1976](https://github.com/networknt/light-rest-4j/commit/06b1976f9f641d1d0634985236fbbadecb27fa11)) (by Steve Hu)
+- upgrade central-publishing-maven to 0.11.0 from 0.7.0 ([6eaf4cd](https://github.com/networknt/light-rest-4j/commit/6eaf4cdb1382609c3d67af7fd8f5107320dd80d6)) (by Steve Hu)
+- fixes #443 Safely publish ValidatorConfig and SpecificationConfig cached singletons ([83a803f](https://github.com/networknt/light-rest-4j/commit/83a803fa06cd0829a535cfd5f3096ab59e8e5fe0)) (by Steve Hu)
+- upgrade json-schema-validator 2.0.7 ([f4bf910](https://github.com/networknt/light-rest-4j/commit/f4bf910e1facd4ea2d6eae38c58c6e2c2f64379e)) (by Steve Hu)
+- update json-schema-validator version to 2.0.7 ([502b30b](https://github.com/networknt/light-rest-4j/commit/502b30bfffa0196c4c1e6647fb07113be09fab52)) (by Steve Hu)
+- fixes #442 migration changes ([53f26c7](https://github.com/networknt/light-rest-4j/commit/53f26c76c48a99fd547d7f71d8be1e4ceb1358b6)) (by Steve Hu)
+- fixes #442 upgrade json-schema-validator to 2.0.5 from 1.5.1 ([d4e4a8f](https://github.com/networknt/light-rest-4j/commit/d4e4a8f3047ac1c4d91fee115d854725b75d197a)) (by Steve Hu)
+- update json-schema-validator version to 2.0.5 ([c81b248](https://github.com/networknt/light-rest-4j/commit/c81b2489d1cc2eeda43499510831bb78df4e5593)) (by Steve Hu)
+- upgrade to version 2.3.8-SNAPSHOT after release in master branch ([1253f1f](https://github.com/networknt/light-rest-4j/commit/1253f1f2a93344375f7ff945b030fa1f03da4e70)) (by Steve Hu)
+
 ## [2.3.8](https://github.com/networknt/light-rest-4j/tree/2.3.8) (2026-08-20)
 
 
