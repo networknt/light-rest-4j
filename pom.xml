@@ -118,7 +118,7 @@
         <version.maven-javadoc>3.12.0</version.maven-javadoc>
         <version.nexus-staging-maven>1.7.0</version.nexus-staging-maven>
         <version.maven-surefire>3.6.0</version.maven-surefire>
-        <version.maven-gpg>3.2.7</version.maven-gpg>
+        <version.maven-gpg>3.2.8</version.maven-gpg>
     </properties>
 
     <modules>
