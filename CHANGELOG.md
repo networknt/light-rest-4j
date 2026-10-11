@@ -1,5 +1,18 @@
 # Change Log
 
+## [2.4.1](https://github.com/networknt/light-rest-4j/tree/2.4.1) (2026-10-11)
+
+**Commits:**
+
+- upgrade to version 2.4.1 before release in master branch ([c54fbcb](https://github.com/networknt/light-rest-4j/commit/c54fbcb5067e0ce5e58ce6d5b1121a47eccdc315)) (by Steve Hu)
+- upgrade maven-gpg to 3.2.8 from 3.2.7 ([5db2ab7](https://github.com/networknt/light-rest-4j/commit/5db2ab792ad22b613ed7484834af89f7adc21485)) (by Steve Hu)
+- build: upgrade JUnit to 6.1.3 ([21835b4](https://github.com/networknt/light-rest-4j/commit/21835b43d28d6e76b7c9c9f5e11d239f609aeaa0)) (by Steve Hu)
+- upgrade udertow to 2.4.4.Final from 2.4.1.Final ([a2ccfbb](https://github.com/networknt/light-rest-4j/commit/a2ccfbbdf6a27a667a82ce0f343df3db0ebb414c)) (by Steve Hu)
+- upgrade logback to 1.6.5 from 1.6.3 ([4458006](https://github.com/networknt/light-rest-4j/commit/44580065378c634aa81ee6131be79d178a083d85)) (by Steve Hu)
+- upgrade json-schema-validator to 2.0.8 from 2.0.7 ([2011782](https://github.com/networknt/light-rest-4j/commit/20117827fec0363835b0c75deefea89b07bb35d0)) (by Steve Hu)
+- upgrade encoder to 1.5.0 from 1.3.1 ([b3a6811](https://github.com/networknt/light-rest-4j/commit/b3a6811dc69388108183de0231d68635d2a408b9)) (by Steve Hu)
+- upgrade to version 2.4.1-SNAPSHOT after release in master branch ([168d123](https://github.com/networknt/light-rest-4j/commit/168d12366c9d1b2483db6cbde8cabe7c0478283c)) (by Steve Hu)
+
 ## [2.4.0](https://github.com/networknt/light-rest-4j/tree/2.4.0) (2026-10-07)
 
 **Commits:**
