@@ -1,5 +1,9 @@
 # Change Log
 
+## Unreleased
+
+- Fix [#444](https://github.com/networknt/light-rest-4j/issues/444): remove the sample server from the injected admin specification and avoid double slashes in root-based endpoint names. Services without a server path now use their configured `handler.basePath` instead of an injected `/v1`. Update endpoint-based Lambda function mappings and dashboards if they relied on the unintended prefix or double slash. The companion openapi-parser fix limits base-path rewriting to leading complete segments.
+
 ## [2.4.1](https://github.com/networknt/light-rest-4j/tree/2.4.1) (2026-10-11)
 
 **Commits:**

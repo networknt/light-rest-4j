@@ -206,7 +206,7 @@ public class OpenApiHandler implements MiddlewareHandler {
                         logger.error(t.getMessage(), t);
                     }
                     String endpoint = null;
-                    if(h.basePath != null && !h.basePath.isEmpty()) {
+                    if(h.basePath != null && !h.basePath.isEmpty() && !"/".equals(h.basePath)) {
                         endpoint = h.basePath + openApiPathString.normalised() + "@" + httpMethod.toLowerCase();
                     } else {
                         endpoint = openApiPathString.normalised() + "@" + httpMethod.toLowerCase();
@@ -261,7 +261,7 @@ public class OpenApiHandler implements MiddlewareHandler {
             }
 
             String endpoint = null;
-            if(helper.basePath != null && !helper.basePath.isEmpty()) {
+            if(helper.basePath != null && !helper.basePath.isEmpty() && !"/".equals(helper.basePath)) {
                 endpoint = helper.basePath + openApiPathString.normalised() + "@" + httpMethod.toLowerCase();
             } else {
                 endpoint = openApiPathString.normalised() + "@" + httpMethod.toLowerCase();
