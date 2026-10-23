@@ -4,8 +4,6 @@ info:
   title: Light-4j OpenAPI Admin
   license:
     name: MIT
-servers:
-  - url: 'http://petstore.swagger.io/v1'
 paths:
   '/adm/messagereplaymetadata':
     post:
