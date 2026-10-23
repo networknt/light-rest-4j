@@ -57,6 +57,34 @@ class OpenApiRoutingTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
+    void directWritesToLegacyMirrorsDoNotChangeAuthoritativeRouting() {
+        OpenApiRouting previous = OpenApiHandler.routingSnapshot();
+        OpenApiHelper decoy = new OpenApiHelper("""
+                {"openapi":"3.0.0","info":{"title":"Decoy","version":"1"},"paths":{}}
+                """);
+        try {
+            for (boolean multiple : new boolean[]{false, true}) {
+                OpenApiRouting published = new OpenApiRouting(multiple ? null : helper,
+                        multiple ? Map.of("/api", helper) : null);
+                OpenApiHandler.publishRouting(published);
+                for (Runnable write : new Runnable[]{
+                        () -> OpenApiHandler.helper = decoy,
+                        () -> OpenApiHandler.helper = null,
+                        () -> OpenApiHandler.helperMap = Map.of("/api", decoy),
+                        () -> OpenApiHandler.helperMap = null}) {
+                    write.run();
+                    assertSame(published, OpenApiHandler.routingSnapshot());
+                    assertSame(helper, OpenApiHandler.routingSnapshot().helperFor("/api/items"));
+                    assertSame(helper, OpenApiHandler.getHelper("/api/items"));
+                }
+            }
+        } finally {
+            OpenApiHandler.publishRouting(previous);
+        }
+    }
+
+    @Test
     void adminRoutingPrefixIsNotTheInjectedSpecBasePath() {
         OpenApiRouting routing = new OpenApiRouting(null, Map.of("/adm", helper));
         assertSame(helper, routing.helperFor("/adm/server/info"));

@@ -238,6 +238,7 @@ public class OpenApiHandler implements MiddlewareHandler {
         try {
             // Global publication has a global writer lock. Re-read configuration
             // under it and adopt a generation another instance already loaded.
+            // If the reread throws, defer that failed read, not the earlier candidate.
             candidate = null;
             candidate = OpenApiHandlerConfig.load(configName);
             if (candidate.getMappedConfig() == state.config().getMappedConfig()
