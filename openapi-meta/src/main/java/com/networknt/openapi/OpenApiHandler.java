@@ -97,6 +97,7 @@ public class OpenApiHandler implements MiddlewareHandler {
 
     private void initialize(OpenApiHandlerConfig config) {
         if (config.isMultipleSpec()) {
+            helper = null;
             // multiple specifications in the same handler.
             Map<String, Object> pathSpecMapping = config.getPathSpecMapping();
             helperMap = new HashMap<>();
@@ -128,6 +129,7 @@ public class OpenApiHandler implements MiddlewareHandler {
             }
             if(logger.isTraceEnabled()) logger.trace("multiple specifications loaded.");
         } else {
+            helperMap = null;
             try {
                 Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache(CONFIG_NAME);
                 handlerConfig = HandlerConfig.load();
@@ -167,113 +169,48 @@ public class OpenApiHandler implements MiddlewareHandler {
         if (logger.isDebugEnabled())
             logger.debug("OpenApiHandler.handleRequest starts.");
 
-        if (config.isMultipleSpec()) {
-            String p = exchange.getRequestPath();
-            boolean found = false;
-            for (Map.Entry<String, OpenApiHelper> entry : helperMap.entrySet()) {
-
-                if (p.startsWith(entry.getKey())) {
-                    found = true;
-                    OpenApiHelper h = entry.getValue();
-
-                    // found the match base path here.
-                    final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), h.basePath);
-
-                    final Optional<NormalisedPath> maybeApiPath = h.findMatchingApiPath(requestPath);
-
-                    if (maybeApiPath.isEmpty()) {
-                        this.setExchangeFailed(exchange, STATUS_INVALID_REQUEST_PATH, requestPath.normalised());
-                        return;
-                    }
-
-                    final NormalisedPath openApiPathString = maybeApiPath.get();
-                    final Path path = h.openApi3.getPath(openApiPathString.original());
-
-                    final String httpMethod = exchange.getRequestMethod().toString().toLowerCase();
-                    final Operation operation = path.getOperation(httpMethod);
-
-                    if (operation == null) {
-                        this.setExchangeFailed(exchange, STATUS_METHOD_NOT_ALLOWED, httpMethod, openApiPathString.normalised());
-                        return;
-                    }
-
-                    // This handler can identify the openApiOperation and endpoint only. Other info will be added by JwtVerifyHandler.
-                    final OpenApiOperation openApiOperation = new OpenApiOperation(openApiPathString, path, httpMethod, operation);
-
-                    try {
-                        ParameterDeserializer.deserialize(exchange, openApiOperation);
-                    } catch (Throwable t) {// do not crash the handler
-                        logger.error(t.getMessage(), t);
-                    }
-                    String endpoint = null;
-                    if(h.basePath != null && !h.basePath.isEmpty() && !"/".equals(h.basePath)) {
-                        endpoint = h.basePath + openApiPathString.normalised() + "@" + httpMethod.toLowerCase();
-                    } else {
-                        endpoint = openApiPathString.normalised() + "@" + httpMethod.toLowerCase();
-                    }
-                    Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO) == null
-                            ? new HashMap<>()
-                            : exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
-                    auditInfo.put(Constants.ENDPOINT_STRING, endpoint);
-                    auditInfo.put(Constants.OPENAPI_OPERATION_STRING, openApiOperation);
-                    exchange.putAttachment(AttachmentConstants.AUDIT_INFO, auditInfo);
-                    break;
-                }
-            }
-            if (!found && !config.isIgnoreInvalidPath()) {
-                this.setExchangeFailed(exchange, STATUS_INVALID_REQUEST_PATH, p);
+        boolean multiple = config.isMultipleSpec();
+        OpenApiHelper selected = helper;
+        if (multiple) {
+            Map.Entry<String, OpenApiHelper> entry = findHelperEntry(exchange.getRequestPath());
+            selected = entry == null ? null : entry.getValue();
+        }
+        if (selected == null) {
+            if (!config.isIgnoreInvalidPath()) {
+                this.setExchangeFailed(exchange, STATUS_INVALID_REQUEST_PATH, exchange.getRequestPath());
                 return;
             }
         } else {
-            final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), helper.basePath);
-
-            final Optional<NormalisedPath> maybeApiPath = helper.findMatchingApiPath(requestPath);
-
+            final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), selected.basePath);
+            final Optional<NormalisedPath> maybeApiPath = selected.findMatchingApiPath(requestPath);
             if (maybeApiPath.isEmpty()) {
-                if (config.isIgnoreInvalidPath()) {
-                    if (logger.isDebugEnabled())
-                        logger.debug("OpenApiHandler.handleRequest ends with ignoreInvalidPath.");
+                if (!multiple && config.isIgnoreInvalidPath()) {
                     Handler.next(exchange, next);
                 } else {
                     this.setExchangeFailed(exchange, STATUS_INVALID_REQUEST_PATH, requestPath.normalised());
                 }
                 return;
             }
-
             final NormalisedPath openApiPathString = maybeApiPath.get();
-            final Path path = helper.openApi3.getPath(openApiPathString.original());
-
+            final Path path = selected.openApi3.getPath(openApiPathString.original());
             final String httpMethod = exchange.getRequestMethod().toString().toLowerCase();
             final Operation operation = path.getOperation(httpMethod);
-
             if (operation == null) {
                 this.setExchangeFailed(exchange, STATUS_METHOD_NOT_ALLOWED, httpMethod, openApiPathString.normalised());
                 return;
             }
-
-            // This handler can identify the openApiOperation and endpoint only. Other info will be added by JwtVerifyHandler.
             final OpenApiOperation openApiOperation = new OpenApiOperation(openApiPathString, path, httpMethod, operation);
-
             try {
                 ParameterDeserializer.deserialize(exchange, openApiOperation);
-            } catch (Throwable t) {// do not crash the handler
+            } catch (Throwable t) {
                 logger.error(t.getMessage(), t);
             }
-
-            String endpoint = null;
-            if(helper.basePath != null && !helper.basePath.isEmpty() && !"/".equals(helper.basePath)) {
-                endpoint = helper.basePath + openApiPathString.normalised() + "@" + httpMethod.toLowerCase();
-            } else {
-                endpoint = openApiPathString.normalised() + "@" + httpMethod.toLowerCase();
-            }
             Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO) == null
-                    ? new HashMap<>()
-                    : exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
-            auditInfo.put(Constants.ENDPOINT_STRING, endpoint);
+                    ? new HashMap<>() : exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
+            auditInfo.put(Constants.ENDPOINT_STRING, endpoint(selected, openApiPathString, httpMethod));
             auditInfo.put(Constants.OPENAPI_OPERATION_STRING, openApiOperation);
             exchange.putAttachment(AttachmentConstants.AUDIT_INFO, auditInfo);
         }
-
         if (logger.isDebugEnabled())
             logger.debug("OpenApiHandler.handleRequest ends.");
 
@@ -419,50 +356,38 @@ public class OpenApiHandler implements MiddlewareHandler {
                 : mergeMaps(deserializedCookieParamters, cookieMap);
     }
 
-    // this is used to get the basePath from the OpenApiHandler regardless single specification or multiple specifications.
+    /** Build the same canonical endpoint for metadata and security fallback paths. */
+    public static String endpoint(OpenApiHelper selected, NormalisedPath path, String method) {
+        String prefix = selected.basePath == null ? "" : selected.basePath;
+        while (prefix.endsWith("/")) prefix = prefix.substring(0, prefix.length() - 1);
+        return prefix + path.normalised() + "@" + method.toLowerCase(java.util.Locale.ROOT);
+    }
+
+    private static Map.Entry<String, OpenApiHelper> findHelperEntry(String requestPath) {
+        if (helperMap == null) return null;
+        Map.Entry<String, OpenApiHelper> best = null;
+        int longest = -1;
+        for (Map.Entry<String, OpenApiHelper> entry : helperMap.entrySet()) {
+            String prefix = entry.getKey();
+            while (prefix.endsWith("/")) prefix = prefix.substring(0, prefix.length() - 1);
+            if ((requestPath.equals(prefix) || requestPath.startsWith(prefix + "/"))
+                    && prefix.length() > longest) {
+                best = entry;
+                longest = prefix.length();
+            }
+        }
+        return best;
+    }
+
     public static String getBasePath(String requestPath) {
-        String basePath = "";
-
-        // check single first.
-        if (OpenApiHandler.helper != null) {
-            basePath = OpenApiHandler.helper.basePath;
-
-            if (logger.isTraceEnabled())
-                logger.trace("Found basePath for single spec from OpenApiHandler helper: {}", basePath);
-
-        } else {
-
-            // based on the requestPath to find the right helper in the helperMap.
-            for (Map.Entry<String, OpenApiHelper> entry : OpenApiHandler.helperMap.entrySet()) {
-                if (requestPath.startsWith(entry.getKey())) {
-                    basePath = entry.getKey();
-                    if (logger.isTraceEnabled())
-                        logger.trace("Found basePath for multiple specs from OpenApiHandler helper HashMap: {}", basePath);
-                    break;
-                }
-            }
-        }
-        return basePath;
+        if (helper != null) return helper.basePath;
+        Map.Entry<String, OpenApiHelper> entry = findHelperEntry(requestPath);
+        return entry == null ? "" : entry.getKey();
     }
 
-    // this is used to get the helper instance matches to the request path from the OpenApiHandler regardless single specification or multiple specifications.
     public static OpenApiHelper getHelper(String requestPath) {
-        OpenApiHelper helper = null;
-
-        // check single first.
-        if (OpenApiHandler.helper != null) {
-            helper = OpenApiHandler.helper;
-        } else {
-
-            // based on the requestPath to find the right helper in the helperMap.
-            for (Map.Entry<String, OpenApiHelper> entry : OpenApiHandler.helperMap.entrySet()) {
-                if (requestPath.startsWith(entry.getKey())) {
-                    helper = entry.getValue();
-                    break;
-                }
-            }
-        }
-        return helper;
+        if (helper != null) return helper;
+        Map.Entry<String, OpenApiHelper> entry = findHelperEntry(requestPath);
+        return entry == null ? null : entry.getValue();
     }
-
 }

@@ -36,6 +36,11 @@ class OpenApiBasePathTest {
     }
 
     private void start(String servers, String fallback, boolean multiple, boolean missingSpec) {
+        start(servers, fallback, multiple, missingSpec, "/pets", Map.of("/pets", "openapi"));
+    }
+
+    private void start(String servers, String fallback, boolean multiple, boolean missingSpec,
+                       String operationPrefix, Map<String, Object> mapping) {
         String spec = """
                 openapi: 3.0.0
                 info:
@@ -54,6 +59,8 @@ class OpenApiBasePathTest {
                         '200':
                           description: OK
                 """;
+        spec = spec.replace("  /pets", "  " + operationPrefix);
+        final String serviceSpec = spec;
         Config.getInstance().clear();
         Config.getInstance().setClassLoader(new ClassLoader(getClass().getClassLoader()) {
             @Override
@@ -61,7 +68,7 @@ class OpenApiBasePathTest {
                 String file = name.startsWith("config/") ? name.substring(7) : name;
                 if (file.matches("openapi\\.(yaml|yml|json)")) {
                     return !missingSpec && file.endsWith(".yaml")
-                            ? new ByteArrayInputStream(spec.getBytes(StandardCharsets.UTF_8)) : null;
+                            ? new ByteArrayInputStream(serviceSpec.getBytes(StandardCharsets.UTF_8)) : null;
                 }
                 return super.getResourceAsStream(name);
             }
@@ -69,7 +76,7 @@ class OpenApiBasePathTest {
         Config.getInstance().putInConfigCache("handler", Map.of("basePath", fallback));
         Config.getInstance().putInConfigCache("openapi-handler", Map.of(
                 "multipleSpec", multiple, "ignoreInvalidPath", false,
-                "pathSpecMapping", Map.of("/pets", "openapi")));
+                "pathSpecMapping", mapping));
         OpenApiHandler handler = new OpenApiHandler();
         handler.setNext(exchange -> exchange.getResponseSender().send(
                 (String) exchange.getAttachment(AttachmentConstants.AUDIT_INFO).get(Constants.ENDPOINT_STRING)));
@@ -81,7 +88,7 @@ class OpenApiBasePathTest {
 
     private HttpResponse<String> get(String path) throws Exception {
         try (HttpClient client = HttpClient.newHttpClient()) {
-            return client.send(HttpRequest.newBuilder(address.resolve(path)).timeout(Duration.ofSeconds(10))
+            return client.send(HttpRequest.newBuilder(URI.create(address.toString() + path)).timeout(Duration.ofSeconds(10))
                     .GET().build(), HttpResponse.BodyHandlers.ofString());
         }
     }
@@ -143,4 +150,64 @@ class OpenApiBasePathTest {
         assertEquals("/pets@get", get("/pets").body());
         assertEquals("/adm/server/info@get", get("/adm/server/info").body());
     }
+    @Test
+    void trailingSlashServerProducesCanonicalEndpoints() throws Exception {
+        start("servers:\n  - url: 'https://example.com/v1/'\n", "/", false, false);
+        assertEquals("/v1/pets@get", get("/v1/pets").body());
+    }
+
+    @Test
+    void absoluteRootServerProducesCanonicalEndpoints() throws Exception {
+        start("servers:\n  - url: 'https://example.com/'\n", "/", false, false);
+        assertEquals("/pets@get", get("/pets").body());
+    }
+
+    @Test
+    void nonRootBaseDoesNotConsumeAParameterValueOrMiddleSegment() throws Exception {
+        start("servers:\n  - url: '/v1'\n", "/", false, false);
+        assertEquals("/v1/pets/{petId}@get", get("/v1/pets/v1").body());
+        assertEquals("/v1/pets/{petId}@get", get("/pets/v1").body());
+        assertEquals(404, get("/v10/pets").statusCode());
+    }
+
+    @Test
+    void specificationPrefixEqualToServerPrefixIsRetained() throws Exception {
+        start("servers:\n  - url: '/pets'\n", "/", false, false);
+        assertEquals("/pets/pets/{petId}@get", get("/pets/pets/42").body());
+    }
+
+    @Test
+    void rootDoubleSlashRemainsSupported() throws Exception {
+        start("", "/", false, false);
+        assertEquals("/pets@get", get("//pets").body());
+    }
+
+    @Test
+    void multipleSpecsUseLongestCompletePrefixForDispatchAndLookups() throws Exception {
+        start("servers:\n  - url: '/api/'\n", "/", true, false, "/pets",
+                Map.of("/api", "openapi"));
+        OpenApiHelper shallow = OpenApiHandler.helperMap.get("/api");
+        OpenApiHelper deep = new OpenApiHelper("""
+                {"openapi":"3.0.0","info":{"title":"deep","version":"1"},
+                 "servers":[{"url":"/api/v1/"}],
+                 "paths":{"/pets":{"get":{"responses":{"200":{"description":"OK"}}}}}}
+                """);
+        for (boolean deepestFirst : new boolean[]{false, true}) {
+            Map<String, OpenApiHelper> ordered = new java.util.LinkedHashMap<>();
+            if (deepestFirst) ordered.put("/api/v1", deep);
+            ordered.put("/api", shallow);
+            ordered.put("/api/v1", deep);
+            OpenApiHandler.helperMap = ordered;
+            assertSame(deep, OpenApiHandler.getHelper("/api/v1/pets"));
+            assertEquals("/api/v1", OpenApiHandler.getBasePath("/api/v1/pets"));
+            assertEquals("/api/v1/pets@get", get("/api/v1/pets").body());
+            assertEquals("/api/pets@get", get("/api/pets").body());
+            assertNull(OpenApiHandler.getHelper("/apix/pets"));
+            assertEquals("", OpenApiHandler.getBasePath("/apix/pets"));
+            assertEquals(404, get("/apix/pets").statusCode());
+            assertSame(shallow, OpenApiHandler.getHelper("/api/v10/pets"));
+            assertEquals(404, get("/api/v10/pets").statusCode());
+        }
+    }
+
 }
