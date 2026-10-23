@@ -1,0 +1,24 @@
+openapi: 3.0.0
+info:
+  title: Integer response
+  version: '1'
+servers:
+  - url: /petstore
+paths:
+  /items:
+    get:
+      responses:
+        '200':
+          description: Integer payload
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [value]
+                properties:
+                  value:
+                    $ref: '#/components/schemas/Value'
+components:
+  schemas:
+    Value:
+      type: integer

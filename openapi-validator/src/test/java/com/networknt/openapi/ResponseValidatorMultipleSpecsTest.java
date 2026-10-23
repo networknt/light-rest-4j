@@ -47,6 +47,39 @@ class ResponseValidatorMultipleSpecsTest {
         assertNull(market.validateResponseContent("[]", "/market/store/products", "get"));
         assertNull(market.validateResponseContent("[]", "/market/store/products", "get", "200"));
         assertNull(market.validateResponseContent("[]", "/market/store/products", "get", "200", "application/json"));
+        assertEquals("ERR11004", petstore.validateResponseContent("{}", "/petstore/pets", "get").getCode());
+        assertEquals("ERR11004", market.validateResponseContent("{}", "/market/store/products", "get").getCode());
+    }
+
+    @Test
+    void undefinedMethodReturnsExistingUnexpectedContentStatus() {
+        assertEquals("ERR11018", petstore.validateResponseContent("[]", "/petstore/pets", "trace").getCode());
+    }
+
+    @Test
+    void methodNamesAreCaseInsensitive() {
+        assertNull(petstore.validateResponseContent("[]", "/petstore/pets", "GET"));
+        assertEquals("ERR11004", petstore.validateResponseContent("{}", "/petstore/pets", "GET").getCode());
+    }
+
+    @Test
+    void nonHierarchicalUrisReturnValidationStatus() {
+        for (String uri : new String[]{"mailto:x", "urn:test:operation", "", "relative", "http://example.com"}) {
+            assertEquals("ERR11018", petstore.validateResponseContent("[]", uri, "get").getCode());
+        }
+    }
+
+    @Test
+    void uriRoutingUsesRawSegments() {
+        assertNull(market.validateResponseContent("[]", "/market/store%2Fname/products", "get"));
+        assertEquals("ERR11004", market.validateResponseContent("{}", "/market/store%2Fname/products", "get").getCode());
+        assertEquals("ERR11018", market.validateResponseContent("[]", "/%6Darket/store/products", "get").getCode());
+    }
+
+    @Test
+    void aValidatorCannotResolveOperationsFromAnotherSpec() {
+        assertEquals("ERR11018", petstore.validateResponseContent("[]", "/market/store/products", "get").getCode());
+        assertEquals("ERR11018", petstore.validateResponseContent("[]", "/petstorefoo/pets", "get").getCode());
     }
 
     @Test

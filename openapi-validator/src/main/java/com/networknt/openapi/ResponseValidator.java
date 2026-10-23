@@ -36,6 +36,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -45,6 +46,8 @@ import static java.util.Objects.requireNonNull;
 public class ResponseValidator {
     private final SchemaValidator schemaValidator;
     private final ValidatorConfig config;
+    private final Map<String, OpenApiHelper> helpers;
+    private final OpenApiHelper helper;
     private static final String VALIDATOR_RESPONSE_CONTENT_UNEXPECTED = "ERR11018";
     private static final String REQUIRED_RESPONSE_HEADER_MISSING = "ERR11019";
     private static final String CONTENT_TYPE_MISMATCH = "ERR10015";
@@ -54,9 +57,31 @@ public class ResponseValidator {
     private static final String DEFAULT_STATUS_CODE = "default";
     private static final Logger logger = LoggerFactory.getLogger(ResponseValidator.class);
 
+    /**
+     * Capture the registered helper that owns the schema validator's API. URI
+     * lookups stay bound to that snapshot, including its local reference context.
+     * A schema validator without a registered API can still validate a supplied
+     * OpenApiOperation; URI-based lookup returns ERR11018 instead of guessing.
+     */
     public ResponseValidator(SchemaValidator schemaValidator, ValidatorConfig config) {
+        this(schemaValidator, config, registeredHelpers());
+    }
+
+    ResponseValidator(SchemaValidator schemaValidator, ValidatorConfig config, Map<String, OpenApiHelper> helpers) {
         this.schemaValidator = requireNonNull(schemaValidator, "A schema validator is required");
         this.config = config;
+        // Framework construction shares one immutable routing snapshot across
+        // all validators instead of copying the whole registry for each spec.
+        this.helpers = helpers;
+        this.helper = this.helpers.values().stream()
+                .filter(h -> h.openApi3 == schemaValidator.getOpenApi()).findFirst().orElse(null);
+    }
+
+    private static Map<String, OpenApiHelper> registeredHelpers() {
+        OpenApiHelper single = OpenApiHandler.helper;
+        if (single != null) return Map.of("", single);
+        Map<String, OpenApiHelper> multiple = OpenApiHandler.helperMap;
+        return multiple == null ? Map.of() : Map.copyOf(multiple);
     }
 
     /**
@@ -192,22 +217,19 @@ public class ResponseValidator {
      * @return OpenApiOperation the wrapper of an api operation
      */
     private OpenApiOperation getOpenApiOperation(String uri, String httpMethod) throws URISyntaxException {
-        String uriWithoutQuery = new URI(uri).getPath();
-        OpenApiHelper helper = OpenApiHandler.getHelper(uriWithoutQuery);
-        if (helper == null) {
-            return null;
-        }
+        if (uri == null || httpMethod == null || helper == null) return null;
+        String uriWithoutQuery = new URI(uri).getRawPath();
+        if (uriWithoutQuery == null || !uriWithoutQuery.startsWith("/")) return null;
+        String prefix = OpenApiHandler.findMatchingPrefix(uriWithoutQuery, helpers.keySet());
+        if (prefix == null || helpers.get(prefix) != helper) return null;
         NormalisedPath requestPath = new ApiNormalisedPath(uriWithoutQuery, helper.basePath);
         Optional<NormalisedPath> maybeApiPath = helper.findMatchingApiPath(requestPath);
-        if (!maybeApiPath.isPresent()) {
-            return null;
-        }
-
+        if (maybeApiPath.isEmpty()) return null;
         final NormalisedPath openApiPathString = maybeApiPath.get();
         final Path path = helper.openApi3.getPath(openApiPathString.original());
-
-        final Operation operation = path.getOperation(httpMethod);
-        return new OpenApiOperation(openApiPathString, path, httpMethod, operation);
+        String method = httpMethod.toLowerCase(Locale.ROOT);
+        final Operation operation = path.getOperation(method);
+        return operation == null ? null : new OpenApiOperation(openApiPathString, path, method, operation);
     }
 
     private JsonNode getContentSchema(OpenApiOperation operation, String statusCode, String mediaTypeStr) {

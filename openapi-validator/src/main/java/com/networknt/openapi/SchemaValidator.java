@@ -54,6 +54,7 @@ public class SchemaValidator {
     static final String VALIDATOR_SCHEMA_INVALID_JSON = "ERR11003";
     static final String VALIDATOR_SCHEMA = "ERR11004";
 
+    private final OpenApi3 api;
     private final JsonNode jsonNode;
     private final PathType pathType;
     private final Map<ValidationProfile, SchemaRegistry> registries = new ConcurrentHashMap<>();
@@ -85,8 +86,13 @@ public class SchemaValidator {
      *            for use in references.
      */
     public SchemaValidator(final OpenApi3 api, final boolean legacyPathType) {
+        this.api = api;
         this.jsonNode = api == null ? null : Overlay.toJson((OpenApi3Impl)api).get(COMPONENTS_FIELD);
         this.pathType = legacyPathType ? PathType.LEGACY : PathType.JSON_POINTER;
+    }
+
+    OpenApi3 getOpenApi() {
+        return api;
     }
 
     /**

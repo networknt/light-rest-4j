@@ -72,11 +72,12 @@ public class OpenApiHandler implements MiddlewareHandler {
 
 
     // for multiple specifications use case. The key is the basePath and the value is the instance of OpenApiHelper.
-    public static Map<String, OpenApiHelper> helperMap;
+    // Publish a read-only snapshot only after every specification has loaded.
+    public static volatile Map<String, OpenApiHelper> helperMap;
 
     // for single specification case which covers 99 percent use cases. This is why, we don't put it into the helperMap for
     // better performance. The subsequent handlers will only need to check the OpenApiHandler config instead of iterate a map.
-    public static OpenApiHelper helper;
+    public static volatile OpenApiHelper helper;
 
     private volatile HttpHandler next;
 
@@ -97,15 +98,14 @@ public class OpenApiHandler implements MiddlewareHandler {
 
     private void initialize(OpenApiHandlerConfig config) {
         if (config.isMultipleSpec()) {
-            helper = null;
             // multiple specifications in the same handler.
             Map<String, Object> pathSpecMapping = config.getPathSpecMapping();
-            helperMap = new HashMap<>();
+            Map<String, OpenApiHelper> loadedHelpers = new HashMap<>();
             // add adm helper to the helperMap
             if(inject != null) {
                 try {
                     OpenApiHelper h = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(inject));
-                    helperMap.put("/adm", h);
+                    loadedHelpers.put("/adm", h);
                 } catch (JsonProcessingException e) {
                     logger.error("parse inject failed for adm");
                     throw new RuntimeException("parse inject failed for adm");
@@ -121,15 +121,16 @@ public class OpenApiHandler implements MiddlewareHandler {
                     Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache((String) entry.getValue());
                     this.validateSpec(openapi, inject, entry.getKey());
                     OpenApiHelper h = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(openapi));
-                    helperMap.put(entry.getKey(), h);
+                    loadedHelpers.put(entry.getKey(), h);
                 } catch (Exception e) {
                     logger.error("merge specification failed for {}", entry.getValue(), e);
                     throw new RuntimeException("merge specification failed for " + entry.getValue());
                 }
             }
+            helperMap = Map.copyOf(loadedHelpers);
+            helper = null;
             if(logger.isTraceEnabled()) logger.trace("multiple specifications loaded.");
         } else {
-            helperMap = null;
             try {
                 Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache(CONFIG_NAME);
                 handlerConfig = HandlerConfig.load();
@@ -138,13 +139,15 @@ public class OpenApiHandler implements MiddlewareHandler {
 
                 openapi = OpenApiHelper.merge(openapi, inject);
 
-                helper = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(openapi));
+                OpenApiHelper loadedHelper = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(openapi));
 
                 // overwrite the helper.basePath if it cannot be derived from the openapi.yaml from the handler.yml
                 // if the basePath is not null. The default value if openapi.yml doesn't have basePath is "".
-                if (helper.basePath.isEmpty() && handlerConfig != null && handlerConfig.getBasePath() != null) {
-                    helper.setBasePath(handlerConfig.getBasePath());
+                if (loadedHelper.basePath.isEmpty() && handlerConfig != null && handlerConfig.getBasePath() != null) {
+                    loadedHelper.setBasePath(handlerConfig.getBasePath());
                 }
+                helper = loadedHelper;
+                helperMap = null;
             } catch (Exception e) {
                 logger.error("merge specification failed", e);
                 throw new RuntimeException("merge specification failed", e);
@@ -363,30 +366,41 @@ public class OpenApiHandler implements MiddlewareHandler {
         return prefix + path.normalised() + "@" + method.toLowerCase(java.util.Locale.ROOT);
     }
 
-    private static Map.Entry<String, OpenApiHelper> findHelperEntry(String requestPath) {
-        if (helperMap == null) return null;
-        Map.Entry<String, OpenApiHelper> best = null;
+    /** Select the longest complete prefix, consistently for metadata and validators. */
+    public static String findMatchingPrefix(String requestPath, Set<String> prefixes) {
+        if (requestPath == null) return null;
+        String best = null;
         int longest = -1;
-        for (Map.Entry<String, OpenApiHelper> entry : helperMap.entrySet()) {
-            String prefix = entry.getKey();
+        for (String key : prefixes) {
+            String prefix = key;
             while (prefix.endsWith("/")) prefix = prefix.substring(0, prefix.length() - 1);
             if ((requestPath.equals(prefix) || requestPath.startsWith(prefix + "/"))
-                    && prefix.length() > longest) {
-                best = entry;
+                    && (prefix.length() > longest || (prefix.length() == longest
+                    && (best == null || key.compareTo(best) < 0)))) {
+                best = key;
                 longest = prefix.length();
             }
         }
         return best;
     }
 
+    private static Map.Entry<String, OpenApiHelper> findHelperEntry(String requestPath) {
+        Map<String, OpenApiHelper> snapshot = helperMap;
+        if (snapshot == null) return null;
+        String prefix = findMatchingPrefix(requestPath, snapshot.keySet());
+        return prefix == null ? null : Map.entry(prefix, snapshot.get(prefix));
+    }
+
     public static String getBasePath(String requestPath) {
-        if (helper != null) return helper.basePath;
+        OpenApiHelper single = helper;
+        if (single != null) return single.basePath;
         Map.Entry<String, OpenApiHelper> entry = findHelperEntry(requestPath);
         return entry == null ? "" : entry.getKey();
     }
 
     public static OpenApiHelper getHelper(String requestPath) {
-        if (helper != null) return helper;
+        OpenApiHelper single = helper;
+        if (single != null) return single;
         Map.Entry<String, OpenApiHelper> entry = findHelperEntry(requestPath);
         return entry == null ? null : entry.getValue();
     }
