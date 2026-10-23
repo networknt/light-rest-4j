@@ -1,0 +1,6 @@
+multipleSpec: true
+ignoreInvalidPath: false
+pathSpecMapping:
+  /pet: response-validator-pet
+  /petstore: response-validator-petstore
+  /petstore/v2: response-validator-nested

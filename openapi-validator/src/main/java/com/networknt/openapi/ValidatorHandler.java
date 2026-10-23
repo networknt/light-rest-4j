@@ -52,12 +52,18 @@ public class ValidatorHandler implements MiddlewareHandler {
 
     private volatile HttpHandler next;
     private String configName = OPENAPI_CONFIG_NAME;
-    // keep the single requestValidator instance as it covers 99 percent of use cases for best performance.
-    private volatile RequestValidator requestValidator;
-    private volatile Map<String, RequestValidator> requestValidatorMap;
+    private record Validators(RequestValidator request, ResponseValidator response,
+                              Map<String, RequestValidator> requests, Map<String, ResponseValidator> responses) {
+        RequestValidator requestFor(String path) { return select(request, requests, path); }
+        ResponseValidator responseFor(String path) { return select(response, responses, path); }
 
-    private volatile ResponseValidator responseValidator;
-    private volatile Map<String, ResponseValidator> responseValidatorMap;
+        private static <T> T select(T single, Map<String, T> mappings, String path) {
+            if (single != null) return single;
+            String prefix = OpenApiHandler.findMatchingPrefix(path, mappings.keySet());
+            return prefix == null ? null : mappings.get(prefix);
+        }
+    }
+    private volatile Validators validators;
 
     public ValidatorHandler() {
         config = ValidatorConfig.load(configName);
@@ -70,20 +76,22 @@ public class ValidatorHandler implements MiddlewareHandler {
     }
 
     private void initialize() {
-        if(OpenApiHandler.helper != null) {
-            final SchemaValidator schemaValidator = new SchemaValidator(OpenApiHandler.helper.openApi3, config.isLegacyPathType());
-            this.requestValidator = new RequestValidator(schemaValidator, config);
-            this.responseValidator = new ResponseValidator(schemaValidator, config);
+        OpenApiHelper single = OpenApiHandler.helper;
+        if (single != null) {
+            SchemaValidator schema = new SchemaValidator(single.openApi3, config.isLegacyPathType());
+            validators = new Validators(new RequestValidator(schema, config),
+                    new ResponseValidator(schema, config, Map.of("", single)), Map.of(), Map.of());
         } else {
-            requestValidatorMap = new HashMap<>();
-            responseValidatorMap = new HashMap<>();
-            for(Map.Entry<String, OpenApiHelper> entry: OpenApiHandler.helperMap.entrySet()) {
-                final SchemaValidator schemaValidator = new SchemaValidator(entry.getValue().openApi3, config.isLegacyPathType());
-                RequestValidator reqV = new RequestValidator(schemaValidator, config);
-                requestValidatorMap.put(entry.getKey(), reqV);
-                ResponseValidator resV = new ResponseValidator(schemaValidator, config);
-                responseValidatorMap.put(entry.getKey(), resV);
+            Map<String, OpenApiHelper> snapshot = OpenApiHandler.helperMap;
+            snapshot = snapshot == null ? Map.of() : Map.copyOf(snapshot);
+            Map<String, RequestValidator> requests = new HashMap<>();
+            Map<String, ResponseValidator> responses = new HashMap<>();
+            for (Map.Entry<String, OpenApiHelper> entry : snapshot.entrySet()) {
+                SchemaValidator schema = new SchemaValidator(entry.getValue().openApi3, config.isLegacyPathType());
+                requests.put(entry.getKey(), new RequestValidator(schema, config));
+                responses.put(entry.getKey(), new ResponseValidator(schema, config, snapshot));
             }
+            validators = new Validators(null, null, Map.copyOf(requests), Map.copyOf(responses));
         }
     }
 
@@ -119,7 +127,12 @@ public class ValidatorHandler implements MiddlewareHandler {
             setExchangeStatus(exchange, STATUS_MISSING_OPENAPI_OPERATION);
             return;
         }
-        RequestValidator reqV = getRequestValidator(exchange.getRequestPath());
+        Validators selected = validators;
+        RequestValidator reqV = selected.requestFor(exchange.getRequestPath());
+        if (reqV == null) {
+            setExchangeStatus(exchange, STATUS_MISSING_OPENAPI_OPERATION);
+            return;
+        }
         Status status = reqV.validateRequest(requestPath, exchange, openApiOperation);
         if(status != null) {
             if (logger.isDebugEnabled()) logger.debug("ValidatorHandler.handleRequest ends with an error.");
@@ -131,17 +144,21 @@ public class ValidatorHandler implements MiddlewareHandler {
         }
 
         if(config.isValidateResponse()) {
-            validateResponse(exchange, openApiOperation);
+            ResponseValidator resV = selected.responseFor(exchange.getRequestPath());
+            if (resV == null) {
+                setExchangeStatus(exchange, STATUS_MISSING_OPENAPI_OPERATION);
+                return;
+            }
+            validateResponse(exchange, openApiOperation, resV);
         }
         if (logger.isDebugEnabled()) logger.debug("ValidatorHandler.handleRequest ends.");
         Handler.next(exchange, next);
     }
 
-    private void validateResponse(HttpServerExchange exchange, OpenApiOperation openApiOperation) {
+    private void validateResponse(HttpServerExchange exchange, OpenApiOperation openApiOperation, ResponseValidator resV) {
         exchange.addResponseWrapper((factory, exchange12) -> new StoreResponseStreamSinkConduit(factory.create(), exchange12));
 
         exchange.addExchangeCompleteListener((exchange1, nextListener) ->{
-            ResponseValidator resV = getResponseValidator(exchange.getRequestPath());
             Status status = resV.validateResponse(exchange, openApiOperation);
             if(status != null) {
                 logger.error("Response validation error: {} \n with response body: {}", status.getDescription(), new String(exchange.getAttachment(StoreResponseStreamSinkConduit.RESPONSE)));
@@ -150,34 +167,12 @@ public class ValidatorHandler implements MiddlewareHandler {
         });
     }
 
-    private RequestValidator getRequestValidator(String requestPath) {
-        RequestValidator validator = null;
-        if(this.requestValidator != null) {
-            validator = this.requestValidator;
-        } else {
-            for(Map.Entry<String, RequestValidator> entry: requestValidatorMap.entrySet()) {
-                if (requestPath.startsWith(entry.getKey())) {
-                    validator = entry.getValue();
-                    break;
-                }
-            }
-        }
-        return validator;
+    RequestValidator getRequestValidator(String requestPath) {
+        return validators.requestFor(requestPath);
     }
 
-    private ResponseValidator getResponseValidator(String requestPath) {
-        ResponseValidator validator = null;
-        if(this.responseValidator != null) {
-            validator = this.responseValidator;
-        } else {
-            for(Map.Entry<String, ResponseValidator> entry: responseValidatorMap.entrySet()) {
-                if (requestPath.startsWith(entry.getKey())) {
-                    validator = entry.getValue();
-                    break;
-                }
-            }
-        }
-        return validator;
+    ResponseValidator getResponseValidator(String requestPath) {
+        return validators.responseFor(requestPath);
     }
 
     @Override
