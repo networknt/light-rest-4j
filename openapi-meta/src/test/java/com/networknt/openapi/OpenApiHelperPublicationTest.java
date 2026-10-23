@@ -14,8 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class OpenApiHelperPublicationTest {
     @Test
     void readersKeepThePreviousCompleteMapUntilReloadFinishes() throws Exception {
-        OpenApiHelper previousHelper = OpenApiHandler.helper;
-        Map<String, OpenApiHelper> previousMap = OpenApiHandler.helperMap;
+        OpenApiRouting previousRouting = OpenApiHandler.routingSnapshot();
         CountDownLatch loading = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
         OpenApiHelper old = new OpenApiHelper("""
@@ -24,8 +23,8 @@ class OpenApiHelperPublicationTest {
                 """);
         Map<String, OpenApiHelper> published = Map.of("/old", old);
         try {
-            OpenApiHandler.helper = null;
-            OpenApiHandler.helperMap = published;
+            OpenApiHandler.publishRouting(new OpenApiRouting(null, published));
+            published = OpenApiHandler.routingSnapshot().helpers();
             Config.getInstance().setClassLoader(new ClassLoader(getClass().getClassLoader()) {
                 @Override
                 public InputStream getResourceAsStream(String name) {
@@ -45,7 +44,7 @@ class OpenApiHelperPublicationTest {
                 var reload = executor.submit(() -> new OpenApiHandler("openapi-handler-multiple"));
                 try {
                     assertTrue(loading.await(5, TimeUnit.SECONDS));
-                    assertSame(published, OpenApiHandler.helperMap);
+                    assertSame(published, OpenApiHandler.routingSnapshot().helpers());
                     assertSame(old, OpenApiHandler.getHelper("/old/items"));
                     assertNull(OpenApiHandler.getHelper("/market/store/products"));
                 } finally {
@@ -53,15 +52,14 @@ class OpenApiHelperPublicationTest {
                 }
                 reload.get(10, TimeUnit.SECONDS);
             }
-            assertEquals(3, OpenApiHandler.helperMap.size());
+            assertEquals(3, OpenApiHandler.routingSnapshot().helpers().size());
             assertNotNull(OpenApiHandler.getHelper("/market/store/products"));
             assertThrows(UnsupportedOperationException.class,
-                    () -> OpenApiHandler.helperMap.put("/extra", old));
+                    () -> OpenApiHandler.routingSnapshot().helpers().put("/extra", old));
         } finally {
             release.countDown();
             Config.getInstance().setClassLoader(getClass().getClassLoader());
-            OpenApiHandler.helper = previousHelper;
-            OpenApiHandler.helperMap = previousMap;
+            OpenApiHandler.publishRouting(previousRouting);
         }
     }
 }

@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 
 /**
@@ -48,65 +49,83 @@ public class ValidatorHandler implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(ValidatorHandler.class);
 
     static volatile ValidatorConfig config;
-    private static volatile OpenApiHandlerConfig openApiHandlerConfig;
 
     private volatile HttpHandler next;
     private String configName = OPENAPI_CONFIG_NAME;
-    private record Validators(RequestValidator request, ResponseValidator response,
+    private record Validators(ValidatorConfig config, OpenApiRouting routing,
                               Map<String, RequestValidator> requests, Map<String, ResponseValidator> responses) {
-        RequestValidator requestFor(String path) { return select(request, requests, path); }
-        ResponseValidator responseFor(String path) { return select(response, responses, path); }
-
-        private static <T> T select(T single, Map<String, T> mappings, String path) {
-            if (single != null) return single;
-            String prefix = OpenApiHandler.findMatchingPrefix(path, mappings.keySet());
-            return prefix == null ? null : mappings.get(prefix);
+        RequestValidator requestFor(String path) {
+            String key = keyFor(path);
+            return key == null ? null : requests.get(key);
+        }
+        ResponseValidator responseFor(String path) {
+            String key = keyFor(path);
+            return key == null ? null : responses.get(key);
+        }
+        private String keyFor(String path) {
+            return routing.single() == null ? routing.matchingPrefix(path) : "";
         }
     }
+    private record ValidatorMaps(ValidatorConfig config, Map<String, RequestValidator> requests,
+                                 Map<String, ResponseValidator> responses) {}
+    // Values do not retain their routing key. Old generations remain cached only
+    // while an exchange (or a retained routing reader) still owns that generation.
+    private final Map<OpenApiRouting, ValidatorMaps> generations = new WeakHashMap<>();
     private volatile Validators validators;
 
     public ValidatorHandler() {
-        config = ValidatorConfig.load(configName);
-        if(config.getMappedConfig() == null || config.getMappedConfig().isEmpty()) {
+        ValidatorConfig loaded = ValidatorConfig.load(configName);
+        if(loaded.getMappedConfig() == null || loaded.getMappedConfig().isEmpty()) {
             configName = CONFIG_NAME;
-            config = ValidatorConfig.load(configName);
+            loaded = ValidatorConfig.load(configName);
         }
-        openApiHandlerConfig = OpenApiHandlerConfig.load();
-        initialize();
+        config = loaded; // Legacy package-level read mirror; runtime state is per instance.
+        validators = initialize(loaded, OpenApiHandler.routingSnapshot());
+        generations.put(validators.routing(), new ValidatorMaps(loaded, validators.requests(), validators.responses()));
     }
 
-    private void initialize() {
-        OpenApiHelper single = OpenApiHandler.helper;
-        if (single != null) {
-            SchemaValidator schema = new SchemaValidator(single.openApi3, config.isLegacyPathType());
-            validators = new Validators(new RequestValidator(schema, config),
-                    new ResponseValidator(schema, config, Map.of("", single)), Map.of(), Map.of());
-        } else {
-            Map<String, OpenApiHelper> snapshot = OpenApiHandler.helperMap;
-            snapshot = snapshot == null ? Map.of() : Map.copyOf(snapshot);
-            Map<String, RequestValidator> requests = new HashMap<>();
-            Map<String, ResponseValidator> responses = new HashMap<>();
-            for (Map.Entry<String, OpenApiHelper> entry : snapshot.entrySet()) {
-                SchemaValidator schema = new SchemaValidator(entry.getValue().openApi3, config.isLegacyPathType());
-                requests.put(entry.getKey(), new RequestValidator(schema, config));
-                responses.put(entry.getKey(), new ResponseValidator(schema, config, snapshot));
-            }
-            validators = new Validators(null, null, Map.copyOf(requests), Map.copyOf(responses));
+    private Validators initialize(ValidatorConfig config, OpenApiRouting routing) {
+        Map<String, RequestValidator> requests = new HashMap<>();
+        Map<String, ResponseValidator> responses = new HashMap<>();
+        for (Map.Entry<String, OpenApiHelper> entry : routing.helpers().entrySet()) {
+            SchemaValidator schema = new SchemaValidator(entry.getValue().openApi3, config.isLegacyPathType());
+            requests.put(entry.getKey(), new RequestValidator(schema, config));
+            responses.put(entry.getKey(), new ResponseValidator(schema, config, routing));
         }
+        return new Validators(config, routing, Map.copyOf(requests), Map.copyOf(responses));
+    }
+
+    private Validators validatorsFor(OpenApiRouting routing) {
+        ValidatorConfig loaded = ValidatorConfig.load(configName);
+        Validators current = validators;
+        if (current.config() == loaded && current.routing() == routing) return current;
+        synchronized (this) {
+            current = validators;
+            if (current.config() == loaded && current.routing() == routing) return current;
+            ValidatorMaps cached = generations.get(routing);
+            if (cached == null || cached.config() != loaded) {
+                current = initialize(loaded, routing);
+                cached = new ValidatorMaps(loaded, current.requests(), current.responses());
+                generations.put(routing, cached);
+            } else {
+                current = new Validators(loaded, routing, cached.requests(), cached.responses());
+            }
+            // An old in-flight request uses its cached maps without regressing
+            // the current-generation fast path.
+            if (routing == OpenApiHandler.routingSnapshot()) {
+                validators = current;
+                config = loaded;
+            }
+        }
+        return current;
     }
 
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
-        ValidatorConfig validatorConfig = ValidatorConfig.load(configName);
-        if (validatorConfig != config || OpenApiHandlerConfig.load() != openApiHandlerConfig) {
-            synchronized (ValidatorHandler.class) {
-                if (validatorConfig != config || OpenApiHandlerConfig.load() != openApiHandlerConfig) {
-                    config = validatorConfig;
-                    openApiHandlerConfig = OpenApiHandlerConfig.load();
-                    initialize();
-                }
-            }
-        }
+        OpenApiRouting routing = exchange.getAttachment(OpenApiHandler.ROUTING);
+        if (routing == null) routing = OpenApiHandler.routingSnapshot();
+        Validators selected = validatorsFor(routing);
+        ValidatorConfig config = selected.config();
         if (logger.isDebugEnabled()) logger.debug("ValidatorHandler.handleRequest starts.");
         String reqPath = exchange.getRequestPath();
         // if request path is in the skipPathPrefixes in the config, call the next handler directly to skip the validation.
@@ -116,7 +135,7 @@ public class ValidatorHandler implements MiddlewareHandler {
             return;
         }
 
-        final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), OpenApiHandler.getBasePath(exchange.getRequestPath()));
+        final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), routing.basePathFor(exchange.getRequestPath()));
         OpenApiOperation openApiOperation = null;
         Map<String, Object> auditInfo = exchange.getAttachment(AttachmentConstants.AUDIT_INFO);
         if(auditInfo != null) {
@@ -127,7 +146,6 @@ public class ValidatorHandler implements MiddlewareHandler {
             setExchangeStatus(exchange, STATUS_MISSING_OPENAPI_OPERATION);
             return;
         }
-        Validators selected = validators;
         RequestValidator reqV = selected.requestFor(exchange.getRequestPath());
         if (reqV == null) {
             setExchangeStatus(exchange, STATUS_MISSING_OPENAPI_OPERATION);
@@ -168,11 +186,11 @@ public class ValidatorHandler implements MiddlewareHandler {
     }
 
     RequestValidator getRequestValidator(String requestPath) {
-        return validators.requestFor(requestPath);
+        return validatorsFor(OpenApiHandler.routingSnapshot()).requestFor(requestPath);
     }
 
     ResponseValidator getResponseValidator(String requestPath) {
-        return validators.responseFor(requestPath);
+        return validatorsFor(OpenApiHandler.routingSnapshot()).responseFor(requestPath);
     }
 
     @Override
@@ -189,7 +207,7 @@ public class ValidatorHandler implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        return config.isEnabled();
+        return ValidatorConfig.load(configName).isEnabled();
     }
 
 }
