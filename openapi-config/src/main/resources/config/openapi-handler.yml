@@ -11,3 +11,10 @@ ignoreInvalidPath: ${openapi-handler.ignoreInvalidPath:false}
 #   v1: openapi-v1
 #   v2: openapi-v2
 pathSpecMapping: ${openapi-handler.pathSpecMapping:}
+
+# Mapping prefixes are matched at segment boundaries, longest first. Trailing slashes
+# are removed once at load time; aliases such as /api and /api/ are rejected.
+# In multiple-spec mode the injected management specification has a reserved /adm
+# routing prefix. Its endpoints remain at /adm/... and are not copied beneath each
+# API's server base path. The routing prefix is not the injected spec's base path.
+# In single-spec mode injection is merged into the API and uses its effective base path.

@@ -12,22 +12,19 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ResponseValidatorBindingTest {
-    private OpenApiHelper previousHelper;
-    private Map<String, OpenApiHelper> previousHelpers;
+    private OpenApiRouting previousRouting = OpenApiHandler.routingSnapshot();
     private ValidatorHandler handler;
 
     @BeforeEach
     void loadSpecsWithConflictingLocalReferences() {
-        previousHelper = OpenApiHandler.helper;
-        previousHelpers = OpenApiHandler.helperMap;
+        previousRouting = OpenApiHandler.routingSnapshot();
         new OpenApiHandler("openapi-handler-response-binding");
         handler = new ValidatorHandler();
     }
 
     @AfterEach
     void restoreHelpers() {
-        OpenApiHandler.helper = previousHelper;
-        OpenApiHandler.helperMap = previousHelpers;
+        OpenApiHandler.publishRouting(previousRouting);
     }
 
     private static void assertSchema(ResponseValidator validator, String uri, String valid, String invalid) {
@@ -54,7 +51,7 @@ class ResponseValidatorBindingTest {
             ordered.put("/pet", original.get("/pet"));
             ordered.put("/petstore", original.get("/petstore"));
             ordered.put("/petstore/v2", original.get("/petstore/v2"));
-            OpenApiHandler.helperMap = Map.copyOf(ordered);
+            OpenApiHandler.publishRouting(new OpenApiRouting(null, ordered));
             ValidatorHandler selected = new ValidatorHandler();
             assertSame(original.get("/petstore/v2"), OpenApiHandler.getHelper("/petstore/v2/items"));
             assertSchema(selected.getResponseValidator("/petstore/v2/items"), "/petstore/v2/items",
@@ -88,7 +85,7 @@ class ResponseValidatorBindingTest {
         ResponseValidator retained = handler.getResponseValidator("/pet/items");
         String spec = Config.getInstance().getStringFromFile("response-validator-pet.yaml");
         OpenApiHelper replacement = new OpenApiHelper(spec.replace("type: string", "type: integer"));
-        OpenApiHandler.helperMap = Map.of("/pet", replacement);
+        OpenApiHandler.publishRouting(new OpenApiRouting(null, Map.of("/pet", replacement)));
         ValidatorHandler reloaded = new ValidatorHandler();
         assertSchema(retained, "/pet/items", "{\"value\":\"dog\"}", "{\"value\":42}");
         assertSchema(reloaded.getResponseValidator("/pet/items"), "/pet/items", "{\"value\":42}", "{\"value\":\"dog\"}");

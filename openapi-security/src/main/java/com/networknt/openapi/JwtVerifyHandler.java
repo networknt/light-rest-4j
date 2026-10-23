@@ -84,7 +84,7 @@ public class JwtVerifyHandler extends AbstractJwtVerifyHandler {
             for (SecurityRequirement requirement : securityRequirements) {
                 SecurityParameter securityParameter = null;
 
-                for (String oauth2Name : OpenApiHandler.getHelper(exchange.getRequestPath()).oauth2Names) {
+                for (String oauth2Name : OpenApiHandler.getHelper(exchange).oauth2Names) {
                     securityParameter = requirement.getRequirement(oauth2Name);
                     if (securityParameter != null) break;
                 }
@@ -111,7 +111,7 @@ public class JwtVerifyHandler extends AbstractJwtVerifyHandler {
     protected Operation getOperation(HttpServerExchange exchange, OpenApiOperation openApiOperation, Map<String, Object> auditInfo) {
         Operation operation;
         if (openApiOperation == null) {
-            OpenApiHelper helper = OpenApiHandler.getHelper(exchange.getRequestPath());
+            OpenApiHelper helper = OpenApiHandler.getHelper(exchange);
             final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(),
                     helper == null ? basePath : helper.basePath);
             final Optional<NormalisedPath> maybeApiPath = helper == null ? Optional.empty() : helper.findMatchingApiPath(requestPath);
@@ -124,8 +124,8 @@ public class JwtVerifyHandler extends AbstractJwtVerifyHandler {
             }
 
             final NormalisedPath swaggerPathString = maybeApiPath.get();
-            final Path swaggerPath = OpenApiHandler.getHelper(exchange.getRequestPath()).openApi3.getPath(swaggerPathString.original());
-            final String httpMethod = exchange.getRequestMethod().toString().toLowerCase();
+            final Path swaggerPath = helper.openApi3.getPath(swaggerPathString.original());
+            final String httpMethod = exchange.getRequestMethod().toString().toLowerCase(java.util.Locale.ROOT);
 
             operation = swaggerPath.getOperation(httpMethod);
 

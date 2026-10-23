@@ -1,5 +1,12 @@
 # Change Log
 
+## Unreleased
+
+- Follow up on PR #447: publish OpenAPI routing generations atomically, retry failed reloads, and bind metadata, security, and request/response validation to each request's routing generation. Validators recover when constructed before metadata and refresh when the published spec changes.
+- Canonicalize multi-spec routing prefixes once, reject duplicate trailing-slash aliases (including collisions with the reserved `/adm` mapping), and use locale-independent HTTP methods.
+- Preserve root-level `/adm` endpoints in multi-spec mode; use the selected helper's actual base path for normalization.
+- Retain `OpenApiHandler.helper` and `helperMap` as deprecated read mirrors; direct writes no longer update routing. Use `routingSnapshot()` for a consistent read. The standalone response-validator constructor warns when no registered schema owner is available; URI validation still fails closed with `ERR11018`.
+
 ## [2.4.1](https://github.com/networknt/light-rest-4j/tree/2.4.1) (2026-10-11)
 
 **Commits:**

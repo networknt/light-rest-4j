@@ -27,7 +27,6 @@ import com.networknt.oas.model.Path;
 import com.networknt.openapi.parameter.ParameterDeserializer;
 import com.networknt.service.SingletonServiceFactory;
 import com.networknt.utility.Constants;
-import com.networknt.server.ModuleRegistry;
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -47,8 +46,9 @@ import java.util.*;
  * and validator can use it without parsing it.
  * <p>
  * For subsequent handlers like the JwtVerifierHandler and ValidatorHandler,
- * they need to get the basePath and the OpenApiHelper for scope verification
- * and schema validation. Put the helperMap to the exchange for easy sharing.
+ * they need the same basePath and OpenApiHelper for scope verification and
+ * schema validation. Attach the routing generation to the exchange so a reload
+ * cannot change the specification used by an in-flight request.
  *
  * @author Steve Hu
  */
@@ -67,16 +67,18 @@ public class OpenApiHandler implements MiddlewareHandler {
     HandlerConfig handlerConfig;
 
     private volatile String configName = OpenApiHandlerConfig.CONFIG_NAME;
-    private volatile OpenApiHandlerConfig config;
-    private volatile Map<String, Object> inject;
+    private record State(OpenApiHandlerConfig config, OpenApiRouting routing) {}
+    private volatile State state;
+    private static volatile OpenApiRouting routing = new OpenApiRouting(null, Map.of());
+    public static final AttachmentKey<OpenApiRouting> ROUTING = AttachmentKey.create(OpenApiRouting.class);
 
 
-    // for multiple specifications use case. The key is the basePath and the value is the instance of OpenApiHelper.
-    // Publish a read-only snapshot only after every specification has loaded.
+    /** @deprecated Read mirror only. Use routingSnapshot(); direct writes do not update routing. */
+    @Deprecated
     public static volatile Map<String, OpenApiHelper> helperMap;
 
-    // for single specification case which covers 99 percent use cases. This is why, we don't put it into the helperMap for
-    // better performance. The subsequent handlers will only need to check the OpenApiHandler config instead of iterate a map.
+    /** @deprecated Read mirror only. Use routingSnapshot(); direct writes do not update routing. */
+    @Deprecated
     public static volatile OpenApiHelper helper;
 
     private volatile HttpHandler next;
@@ -84,19 +86,17 @@ public class OpenApiHandler implements MiddlewareHandler {
     public OpenApiHandler(String configName) {
         if(logger.isInfoEnabled()) logger.info("OpenApiHandler is constructed with configName {}.", configName);
         this.configName = configName;
-        config = OpenApiHandlerConfig.load(configName);
-        inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
-        initialize(config);
+        initialize(OpenApiHandlerConfig.load(configName));
     }
 
     public OpenApiHandler() {
         if(logger.isInfoEnabled()) logger.info("OpenApiHandler is constructed.");
-        config = OpenApiHandlerConfig.load(configName);
-        inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
-        initialize(config);
+        initialize(OpenApiHandlerConfig.load(configName));
     }
 
     private void initialize(OpenApiHandlerConfig config) {
+        Map<String, Object> inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
+        OpenApiRouting loaded;
         if (config.isMultipleSpec()) {
             // multiple specifications in the same handler.
             Map<String, Object> pathSpecMapping = config.getPathSpecMapping();
@@ -121,14 +121,16 @@ public class OpenApiHandler implements MiddlewareHandler {
                     Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache((String) entry.getValue());
                     this.validateSpec(openapi, inject, entry.getKey());
                     OpenApiHelper h = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(openapi));
-                    loadedHelpers.put(entry.getKey(), h);
+                    String prefix = OpenApiRouting.normalizePrefix(entry.getKey());
+                    if (loadedHelpers.putIfAbsent(prefix, h) != null) {
+                        throw new IllegalArgumentException("Duplicate OpenAPI routing prefix: " + prefix);
+                    }
                 } catch (Exception e) {
                     logger.error("merge specification failed for {}", entry.getValue(), e);
-                    throw new RuntimeException("merge specification failed for " + entry.getValue());
+                    throw new RuntimeException("merge specification failed for " + entry.getValue(), e);
                 }
             }
-            helperMap = Map.copyOf(loadedHelpers);
-            helper = null;
+            loaded = new OpenApiRouting(null, loadedHelpers);
             if(logger.isTraceEnabled()) logger.trace("multiple specifications loaded.");
         } else {
             try {
@@ -146,38 +148,49 @@ public class OpenApiHandler implements MiddlewareHandler {
                 if (loadedHelper.basePath.isEmpty() && handlerConfig != null && handlerConfig.getBasePath() != null) {
                     loadedHelper.setBasePath(handlerConfig.getBasePath());
                 }
-                helper = loadedHelper;
-                helperMap = null;
+                loaded = new OpenApiRouting(loadedHelper, null);
             } catch (Exception e) {
                 logger.error("merge specification failed", e);
                 throw new RuntimeException("merge specification failed", e);
             }
             if(logger.isTraceEnabled()) logger.trace("single specification loaded.");
         }
+        // Commit only after every load/validation succeeds. Failure leaves the old
+        // config identity in place, so the next request retries the reload.
+        publishRouting(loaded);
+        state = new State(config, loaded);
+    }
+
+    public static OpenApiRouting routingSnapshot() { return routing; }
+
+    static void publishRouting(OpenApiRouting snapshot) {
+        helper = snapshot.single();
+        helperMap = snapshot.single() == null ? snapshot.helpers() : null;
+        routing = snapshot;
     }
 
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
         OpenApiHandlerConfig newConfig = OpenApiHandlerConfig.load(configName);
-        if (newConfig != config) {
-            synchronized (OpenApiHandler.class) {
-                if (newConfig != config) {
-                    config = newConfig;
-                    inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
-                    initialize(config);
+        if (newConfig.getMappedConfig() != state.config().getMappedConfig()) {
+            synchronized (this) {
+                // Re-read after taking the lock; do not publish an older observed config.
+                newConfig = OpenApiHandlerConfig.load(configName);
+                if (newConfig.getMappedConfig() != state.config().getMappedConfig()) {
+                    initialize(newConfig);
                     if(logger.isInfoEnabled()) logger.info("OpenApiHandler is reloaded.");
                 }
             }
         }
+        State current = state;
+        OpenApiHandlerConfig config = current.config();
+        OpenApiRouting snapshot = current.routing();
+        exchange.putAttachment(ROUTING, snapshot);
         if (logger.isDebugEnabled())
             logger.debug("OpenApiHandler.handleRequest starts.");
 
         boolean multiple = config.isMultipleSpec();
-        OpenApiHelper selected = helper;
-        if (multiple) {
-            Map.Entry<String, OpenApiHelper> entry = findHelperEntry(exchange.getRequestPath());
-            selected = entry == null ? null : entry.getValue();
-        }
+        OpenApiHelper selected = snapshot.helperFor(exchange.getRequestPath());
         if (selected == null) {
             if (!config.isIgnoreInvalidPath()) {
                 this.setExchangeFailed(exchange, STATUS_INVALID_REQUEST_PATH, exchange.getRequestPath());
@@ -196,7 +209,7 @@ public class OpenApiHandler implements MiddlewareHandler {
             }
             final NormalisedPath openApiPathString = maybeApiPath.get();
             final Path path = selected.openApi3.getPath(openApiPathString.original());
-            final String httpMethod = exchange.getRequestMethod().toString().toLowerCase();
+            final String httpMethod = exchange.getRequestMethod().toString().toLowerCase(Locale.ROOT);
             final Operation operation = path.getOperation(httpMethod);
             if (operation == null) {
                 this.setExchangeFailed(exchange, STATUS_METHOD_NOT_ALLOWED, httpMethod, openApiPathString.normalised());
@@ -266,13 +279,8 @@ public class OpenApiHandler implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        boolean enabled = false;
-        if (config.multipleSpec) {
-            enabled = !config.getMappedConfig().isEmpty();
-        } else {
-            enabled = helper.openApi3 != null;
-        }
-        return enabled;
+        State current = state;
+        return !current.routing().helpers().isEmpty();
     }
 
     /**
@@ -366,42 +374,30 @@ public class OpenApiHandler implements MiddlewareHandler {
         return prefix + path.normalised() + "@" + method.toLowerCase(java.util.Locale.ROOT);
     }
 
-    /** Select the longest complete prefix, consistently for metadata and validators. */
+    /** Compatibility utility. Runtime snapshots precompute canonical prefixes once. */
     public static String findMatchingPrefix(String requestPath, Set<String> prefixes) {
-        if (requestPath == null) return null;
-        String best = null;
-        int longest = -1;
+        Map<String, String> original = new HashMap<>();
         for (String key : prefixes) {
-            String prefix = key;
-            while (prefix.endsWith("/")) prefix = prefix.substring(0, prefix.length() - 1);
-            if ((requestPath.equals(prefix) || requestPath.startsWith(prefix + "/"))
-                    && (prefix.length() > longest || (prefix.length() == longest
-                    && (best == null || key.compareTo(best) < 0)))) {
-                best = key;
-                longest = prefix.length();
+            String prefix = OpenApiRouting.normalizePrefix(key);
+            if (original.putIfAbsent(prefix, key) != null) {
+                throw new IllegalArgumentException("Duplicate OpenAPI routing prefix: " + prefix);
             }
         }
-        return best;
-    }
-
-    private static Map.Entry<String, OpenApiHelper> findHelperEntry(String requestPath) {
-        Map<String, OpenApiHelper> snapshot = helperMap;
-        if (snapshot == null) return null;
-        String prefix = findMatchingPrefix(requestPath, snapshot.keySet());
-        return prefix == null ? null : Map.entry(prefix, snapshot.get(prefix));
+        String match = OpenApiRouting.matchingPrefix(requestPath, OpenApiRouting.sortedPrefixes(original.keySet()));
+        return match == null ? null : original.get(match);
     }
 
     public static String getBasePath(String requestPath) {
-        OpenApiHelper single = helper;
-        if (single != null) return single.basePath;
-        Map.Entry<String, OpenApiHelper> entry = findHelperEntry(requestPath);
-        return entry == null ? "" : entry.getKey();
+        return routing.basePathFor(requestPath);
+    }
+
+    /** Use the generation that resolved this request, including during reload. */
+    public static OpenApiHelper getHelper(HttpServerExchange exchange) {
+        OpenApiRouting snapshot = exchange.getAttachment(ROUTING);
+        return (snapshot == null ? routing : snapshot).helperFor(exchange.getRequestPath());
     }
 
     public static OpenApiHelper getHelper(String requestPath) {
-        OpenApiHelper single = helper;
-        if (single != null) return single;
-        Map.Entry<String, OpenApiHelper> entry = findHelperEntry(requestPath);
-        return entry == null ? null : entry.getValue();
+        return routing.helperFor(requestPath);
     }
 }
