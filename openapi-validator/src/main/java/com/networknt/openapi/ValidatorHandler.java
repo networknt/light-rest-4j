@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 
 /**
@@ -65,6 +66,11 @@ public class ValidatorHandler implements MiddlewareHandler {
             return routing.single() == null ? routing.matchingPrefix(path) : "";
         }
     }
+    private record ValidatorMaps(ValidatorConfig config, Map<String, RequestValidator> requests,
+                                 Map<String, ResponseValidator> responses) {}
+    // Values do not retain their routing key. Old generations remain cached only
+    // while an exchange (or a retained routing reader) still owns that generation.
+    private final Map<OpenApiRouting, ValidatorMaps> generations = new WeakHashMap<>();
     private volatile Validators validators;
 
     public ValidatorHandler() {
@@ -75,6 +81,7 @@ public class ValidatorHandler implements MiddlewareHandler {
         }
         config = loaded; // Legacy package-level read mirror; runtime state is per instance.
         validators = initialize(loaded, OpenApiHandler.routingSnapshot());
+        generations.put(validators.routing(), new ValidatorMaps(loaded, validators.requests(), validators.responses()));
     }
 
     private Validators initialize(ValidatorConfig config, OpenApiRouting routing) {
@@ -94,8 +101,18 @@ public class ValidatorHandler implements MiddlewareHandler {
         if (current.config() == loaded && current.routing() == routing) return current;
         synchronized (this) {
             current = validators;
-            if (current.config() != loaded || current.routing() != routing) {
+            if (current.config() == loaded && current.routing() == routing) return current;
+            ValidatorMaps cached = generations.get(routing);
+            if (cached == null || cached.config() != loaded) {
                 current = initialize(loaded, routing);
+                cached = new ValidatorMaps(loaded, current.requests(), current.responses());
+                generations.put(routing, cached);
+            } else {
+                current = new Validators(loaded, routing, cached.requests(), cached.responses());
+            }
+            // An old in-flight request uses its cached maps without regressing
+            // the current-generation fast path.
+            if (routing == OpenApiHandler.routingSnapshot()) {
                 validators = current;
                 config = loaded;
             }

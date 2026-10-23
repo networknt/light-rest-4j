@@ -97,7 +97,7 @@ class OpenApiBasePathTest {
     @Test
     void absentServersDoNotInheritPetstorePrefix() throws Exception {
         start("", "/", false, false);
-        assertEquals("/", OpenApiHandler.helper.basePath);
+        assertEquals("/", OpenApiHandler.routingSnapshot().single().basePath);
         assertEquals("/pets@get", get("/pets").body());
         assertEquals(404, get("/v1/pets").statusCode());
         assertEquals("/pets/{petId}@get", get("/pets/v1").body());
@@ -125,21 +125,21 @@ class OpenApiBasePathTest {
     @Test
     void explicitBasePathRemainsAuthoritative() throws Exception {
         start("servers:\n  - url: '/api'\n", "/fallback", false, false);
-        assertEquals("/api", OpenApiHandler.helper.basePath);
+        assertEquals("/api", OpenApiHandler.routingSnapshot().single().basePath);
         assertEquals("/api/pets@get", get("/api/pets").body());
     }
 
     @Test
     void configuredFallbackIsNoLongerMaskedByInjection() throws Exception {
         start("", "/configured", false, false);
-        assertEquals("/configured", OpenApiHandler.helper.basePath);
+        assertEquals("/configured", OpenApiHandler.routingSnapshot().single().basePath);
         assertEquals("/configured/pets@get", get("/configured/pets").body());
     }
 
     @Test
     void missingServiceSpecStillServesAdminEndpointsAtRoot() throws Exception {
         start("", "/", false, true);
-        assertEquals("/", OpenApiHandler.helper.basePath);
+        assertEquals("/", OpenApiHandler.routingSnapshot().single().basePath);
         assertEquals("/adm/server/info@get", get("/adm/server/info").body());
         assertEquals(404, get("/pets").statusCode());
         assertEquals(404, get("/v1/adm/server/info").statusCode());

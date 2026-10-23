@@ -27,9 +27,9 @@ public final class OpenApiRouting {
 
     static String normalizePrefix(String prefix) {
         Objects.requireNonNull(prefix, "OpenAPI routing prefix");
-        if (!prefix.isEmpty() && !prefix.startsWith("/")) {
-            throw new IllegalArgumentException("OpenAPI routing prefix must start with /: " + prefix);
-        }
+        // Historical configuration examples use keys such as v1. Accept those
+        // spellings as /v1 while detecting aliases during snapshot construction.
+        if (!prefix.isEmpty() && !prefix.startsWith("/")) prefix = "/" + prefix;
         int end = prefix.length();
         while (end > 0 && prefix.charAt(end - 1) == '/') end--;
         return prefix.substring(0, end);

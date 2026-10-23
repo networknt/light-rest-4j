@@ -8,12 +8,15 @@ multipleSpec: ${openapi-handler.multipleSpec:false}
 ignoreInvalidPath: ${openapi-handler.ignoreInvalidPath:false}
 # Path to spec mapping. One or more base paths can map to the same specifications. The key is the base path and the value is the specification name.
 # If users want to use multiple specification files in the same instance, each specification must have a unique base path and it must be set as key.
-#   v1: openapi-v1
-#   v2: openapi-v2
+#   /v1: openapi-v1
+#   /v2: openapi-v2
 pathSpecMapping: ${openapi-handler.pathSpecMapping:}
 
 # Mapping prefixes are matched at segment boundaries, longest first. Trailing slashes
 # are removed once at load time; aliases such as /api and /api/ are rejected.
+# Legacy keys without a leading slash (v1) are accepted as /v1; v1 and /v1
+# cannot both be registered. Failed runtime reloads keep serving the last good
+# generation and retry the failed config at most once per second per global registry.
 # In multiple-spec mode the injected management specification has a reserved /adm
 # routing prefix. Its endpoints remain at /adm/... and are not copied beneath each
 # API's server base path. The routing prefix is not the injected spec's base path.

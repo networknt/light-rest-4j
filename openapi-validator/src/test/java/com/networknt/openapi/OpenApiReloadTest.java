@@ -23,6 +23,7 @@ class OpenApiReloadTest {
     private final OpenApiRouting previous = OpenApiHandler.routingSnapshot();
     private volatile String valueType = "string";
     private volatile boolean failLoad;
+    private final AtomicInteger loadAttempts = new AtomicInteger();
     private volatile CountDownLatch loading;
     private final CountDownLatch release = new CountDownLatch(1);
 
@@ -33,6 +34,7 @@ class OpenApiReloadTest {
             @Override
             public InputStream getResourceAsStream(String name) {
                 if (name.endsWith("reload-spec.yaml") || name.endsWith("openapi.yaml")) {
+                    loadAttempts.incrementAndGet();
                     CountDownLatch blocked = loading;
                     if (blocked != null) {
                         blocked.countDown();
@@ -123,20 +125,24 @@ class OpenApiReloadTest {
     }
 
     @Test
-    void failedReloadKeepsPreviousGenerationAndRetriesTheSameConfiguration() throws Exception {
+    void failedReloadServesLastGoodGenerationAndThrottlesSameConfigurationRetries() throws Exception {
         OpenApiHandler metadata = new OpenApiHandler();
         AtomicInteger reached = new AtomicInteger();
         metadata.setNext(e -> reached.incrementAndGet());
         OpenApiRouting old = OpenApiHandler.routingSnapshot();
         configureMode(true);
         failLoad = true;
-        assertThrows(RuntimeException.class, () -> metadata.handleRequest(exchange()));
-        assertSame(old, OpenApiHandler.routingSnapshot());
-        assertThrows(RuntimeException.class, () -> metadata.handleRequest(exchange()));
-        assertSame(old, OpenApiHandler.routingSnapshot());
-        failLoad = false;
+        int before = loadAttempts.get();
         metadata.handleRequest(exchange());
-        assertEquals(1, reached.get());
+        assertSame(old, OpenApiHandler.routingSnapshot());
+        for (int i = 0; i < 20; i++) metadata.handleRequest(exchange());
+        assertEquals(21, reached.get(), "failed reload must not interrupt valid traffic");
+        assertEquals(before + 1, loadAttempts.get(), "the failed configuration is not parsed per request");
+        failLoad = false;
+        TimeUnit.MILLISECONDS.sleep(1100);
+        metadata.handleRequest(exchange());
+        assertEquals(22, reached.get());
+        assertEquals(before + 2, loadAttempts.get());
         assertNotSame(old, OpenApiHandler.routingSnapshot());
         assertNull(OpenApiHandler.routingSnapshot().single());
         assertNotNull(OpenApiHandler.getHelper("/api/items"));
@@ -162,6 +168,10 @@ class OpenApiReloadTest {
                 assertSame(old, OpenApiHandler.routingSnapshot());
                 assertSame(old.single(), OpenApiHandler.getHelper("/api/items"));
                 assertSame(retained, validator.getResponseValidator("/api/items"));
+                HttpServerExchange concurrent = exchange();
+                metadata.handleRequest(concurrent);
+                assertSame(old, concurrent.getAttachment(OpenApiHandler.ROUTING),
+                        "requests must serve the last good generation while reload is blocked");
             } finally {
                 release.countDown();
             }
@@ -191,11 +201,72 @@ class OpenApiReloadTest {
         metadata.handleRequest(exchange());
         assertNotSame(old, OpenApiHandler.routingSnapshot());
         ValidatorHandler validator = new ValidatorHandler();
+        ResponseValidator current = validator.getResponseValidator("/api/items");
         AtomicBoolean reached = new AtomicBoolean();
         validator.setNext(e -> reached.set(true));
-        validator.handleRequest(inFlight);
+        for (int i = 0; i < 5; i++) {
+            validator.handleRequest(inFlight);
+            assertSame(current, validator.getResponseValidator("/api/items"),
+                    "old requests must not evict or rebuild the current generation");
+        }
         assertTrue(reached.get(), "the string request must use its original local reference context");
         assertSame(old.helperFor("/api/items"), OpenApiHandler.getHelper(inFlight));
+    }
+
+    @Test
+    void changedConfigurationBypassesFailedReloadCooldown() throws Exception {
+        OpenApiHandler metadata = new OpenApiHandler();
+        metadata.setNext(e -> {});
+        configureMode(true);
+        failLoad = true;
+        OpenApiRouting old = OpenApiHandler.routingSnapshot();
+        metadata.handleRequest(exchange());
+        assertSame(old, OpenApiHandler.routingSnapshot());
+        failLoad = false;
+        configureMode(true); // New config identity can recover immediately.
+        metadata.handleRequest(exchange());
+        assertNotSame(old, OpenApiHandler.routingSnapshot());
+    }
+
+    @Test
+    void invalidStartupStillFailsFast() {
+        failLoad = true;
+        OpenApiRouting old = OpenApiHandler.routingSnapshot();
+        assertThrows(RuntimeException.class, OpenApiHandler::new);
+        assertSame(old, OpenApiHandler.routingSnapshot());
+    }
+
+    @Test
+    void twoInstancesSerializeReloadAndAdoptTheSamePublishedGeneration() throws Exception {
+        OpenApiHandler first = new OpenApiHandler();
+        OpenApiHandler second = new OpenApiHandler();
+        first.setNext(e -> {});
+        second.setNext(e -> {});
+        configureMode(true);
+        loading = new CountDownLatch(1);
+        int before = loadAttempts.get();
+        try (var executor = Executors.newSingleThreadExecutor()) {
+            var reload = executor.submit(() -> {
+                first.handleRequest(exchange());
+                return null;
+            });
+            try {
+                assertTrue(loading.await(5, TimeUnit.SECONDS));
+                HttpServerExchange concurrent = exchange();
+                second.handleRequest(concurrent);
+                assertNotNull(concurrent.getAttachment(OpenApiHandler.ROUTING).single());
+                assertEquals(before + 1, loadAttempts.get(), "second instance must not start another load");
+            } finally {
+                release.countDown();
+            }
+            reload.get(10, TimeUnit.SECONDS);
+        }
+        OpenApiRouting published = OpenApiHandler.routingSnapshot();
+        HttpServerExchange adopted = exchange();
+        second.handleRequest(adopted);
+        assertSame(published, adopted.getAttachment(OpenApiHandler.ROUTING));
+        assertSame(published, OpenApiHandler.routingSnapshot());
+        assertEquals(before + 1, loadAttempts.get(), "second instance should adopt rather than reparse");
     }
 
     @Test

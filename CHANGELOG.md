@@ -2,10 +2,12 @@
 
 ## Unreleased
 
-- Follow up on PR #447: publish OpenAPI routing generations atomically, retry failed reloads, and bind metadata, security, and request/response validation to each request's routing generation. Validators recover when constructed before metadata and refresh when the published spec changes.
-- Canonicalize multi-spec routing prefixes once, reject duplicate trailing-slash aliases (including collisions with the reserved `/adm` mapping), and use locale-independent HTTP methods.
+- Follow up on PR #447: publish authoritative OpenAPI routing generations atomically, serve the last good generation after failed reloads with a one-second retry cooldown, and bind metadata, security, and request/response validation to each request's routing generation. Validators recover when constructed before metadata and refresh when the published spec changes.
+- Canonicalize multi-spec routing prefixes once, accept legacy keys such as `v1` as `/v1`, reject duplicate routing aliases (including collisions with the reserved `/adm` mapping), and use locale-independent HTTP methods.
 - Preserve root-level `/adm` endpoints in multi-spec mode; use the selected helper's actual base path for normalization.
-- Retain `OpenApiHandler.helper` and `helperMap` as deprecated read mirrors; direct writes no longer update routing. Use `routingSnapshot()` for a consistent read. The standalone response-validator constructor warns when no registered schema owner is available; URI validation still fails closed with `ERR11018`.
+- Retain `OpenApiHandler.helper` and `helperMap` as deprecated best-effort read mirrors; direct writes no longer update routing, and combined reads of these separate fields are not atomic. Use one `routingSnapshot()` read for a consistent generation. The standalone response-validator constructor warns when no registered schema owner is available; URI validation still fails closed with `ERR11018`.
+
+- Serialize global metadata publication across handler instances, let concurrent traffic use the last good generation during reload, and reuse validator maps for live routing generations without letting old requests evict the current generation. Preserve the mapped-config `isEnabled()` contract and the public `findMatchingPrefix` utility's alias behavior. SWT fallback uses the selected spec's base path and canonical endpoint.
 
 ## [2.4.1](https://github.com/networknt/light-rest-4j/tree/2.4.1) (2026-10-11)
 

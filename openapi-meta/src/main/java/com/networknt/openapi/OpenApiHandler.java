@@ -39,6 +39,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * This is the handler that parses the OpenApi object based on uri and method
@@ -69,15 +71,29 @@ public class OpenApiHandler implements MiddlewareHandler {
     private volatile String configName = OpenApiHandlerConfig.CONFIG_NAME;
     private record State(OpenApiHandlerConfig config, OpenApiRouting routing) {}
     private volatile State state;
+    private record Published(String configName, State state) {}
+    private record FailedReload(String configName, Object configMap, long retryAt) {}
+    private static final ReentrantLock RELOAD_LOCK = new ReentrantLock();
+    private static final long RELOAD_RETRY_NANOS = TimeUnit.SECONDS.toNanos(1);
+    private static volatile Published published;
+    private static volatile FailedReload failedReload;
     private static volatile OpenApiRouting routing = new OpenApiRouting(null, Map.of());
     public static final AttachmentKey<OpenApiRouting> ROUTING = AttachmentKey.create(OpenApiRouting.class);
 
 
-    /** @deprecated Read mirror only. Use routingSnapshot(); direct writes do not update routing. */
+    /**
+     * @deprecated Best-effort legacy read mirror, not atomic with helper/helperMap or
+     * routingSnapshot(). Use one routingSnapshot() read for a consistent generation.
+     * Direct writes do not update routing.
+     */
     @Deprecated
     public static volatile Map<String, OpenApiHelper> helperMap;
 
-    /** @deprecated Read mirror only. Use routingSnapshot(); direct writes do not update routing. */
+    /**
+     * @deprecated Best-effort legacy read mirror, not atomic with helper/helperMap or
+     * routingSnapshot(). Use one routingSnapshot() read for a consistent generation.
+     * Direct writes do not update routing.
+     */
     @Deprecated
     public static volatile OpenApiHelper helper;
 
@@ -86,15 +102,37 @@ public class OpenApiHandler implements MiddlewareHandler {
     public OpenApiHandler(String configName) {
         if(logger.isInfoEnabled()) logger.info("OpenApiHandler is constructed with configName {}.", configName);
         this.configName = configName;
-        initialize(OpenApiHandlerConfig.load(configName));
+        initialize();
     }
 
     public OpenApiHandler() {
         if(logger.isInfoEnabled()) logger.info("OpenApiHandler is constructed.");
-        initialize(OpenApiHandlerConfig.load(configName));
+        initialize();
+    }
+
+    private void initialize() {
+        RELOAD_LOCK.lock();
+        try {
+            initialize(OpenApiHandlerConfig.load(configName));
+        } finally {
+            RELOAD_LOCK.unlock();
+        }
     }
 
     private void initialize(OpenApiHandlerConfig config) {
+        RELOAD_LOCK.lock();
+        try {
+            State loaded = loadState(config);
+            publishRouting(loaded.routing());
+            state = loaded;
+            published = new Published(configName, loaded);
+            failedReload = null;
+        } finally {
+            RELOAD_LOCK.unlock();
+        }
+    }
+
+    private State loadState(OpenApiHandlerConfig config) {
         Map<String, Object> inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
         OpenApiRouting loaded;
         if (config.isMultipleSpec()) {
@@ -155,33 +193,75 @@ public class OpenApiHandler implements MiddlewareHandler {
             }
             if(logger.isTraceEnabled()) logger.trace("single specification loaded.");
         }
-        // Commit only after every load/validation succeeds. Failure leaves the old
-        // config identity in place, so the next request retries the reload.
-        publishRouting(loaded);
-        state = new State(config, loaded);
+        return new State(config, loaded);
     }
 
     public static OpenApiRouting routingSnapshot() { return routing; }
 
     static void publishRouting(OpenApiRouting snapshot) {
-        helper = snapshot.single();
-        helperMap = snapshot.single() == null ? snapshot.helpers() : null;
-        routing = snapshot;
+        RELOAD_LOCK.lock();
+        try {
+            // Legacy fields are intentionally best-effort; only routing is authoritative.
+            helper = snapshot.single();
+            helperMap = snapshot.single() == null ? snapshot.helpers() : null;
+            routing = snapshot;
+            published = null;
+            failedReload = null;
+        } finally {
+            RELOAD_LOCK.unlock();
+        }
+    }
+
+    private boolean retryDeferred(Object configMap) {
+        FailedReload failure = failedReload;
+        return failure != null && failure.configName().equals(configName)
+                && failure.configMap() == configMap && System.nanoTime() - failure.retryAt() < 0;
+    }
+
+    private void deferReload(OpenApiHandlerConfig candidate, RuntimeException failure) {
+        failedReload = new FailedReload(configName, candidate == null ? null : candidate.getMappedConfig(),
+                System.nanoTime() + RELOAD_RETRY_NANOS);
+        logger.error("OpenAPI reload failed; serving the last good routing generation. Retry deferred for 1 second.", failure);
+    }
+
+    private void reloadIfNeeded() {
+        OpenApiHandlerConfig candidate;
+        try {
+            if (retryDeferred(null)) return;
+            candidate = OpenApiHandlerConfig.load(configName);
+        } catch (RuntimeException e) {
+            deferReload(null, e);
+            return;
+        }
+        if (candidate.getMappedConfig() == state.config().getMappedConfig()
+                || retryDeferred(candidate.getMappedConfig()) || !RELOAD_LOCK.tryLock()) return;
+        try {
+            // Global publication has a global writer lock. Re-read configuration
+            // under it and adopt a generation another instance already loaded.
+            candidate = null;
+            candidate = OpenApiHandlerConfig.load(configName);
+            if (candidate.getMappedConfig() == state.config().getMappedConfig()
+                    || retryDeferred(candidate.getMappedConfig())) return;
+            Published latest = published;
+            if (latest != null && latest.configName().equals(configName)
+                    && latest.state().config().getMappedConfig() == candidate.getMappedConfig()) {
+                state = latest.state();
+            } else {
+                initialize(candidate);
+                logger.info("OpenApiHandler is reloaded.");
+            }
+        } catch (RuntimeException e) {
+            // Record failure before releasing the writer lock, so another waiting
+            // instance cannot immediately retry the same failed specification.
+            deferReload(candidate, e);
+        } finally {
+            RELOAD_LOCK.unlock();
+        }
     }
 
     @Override
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
-        OpenApiHandlerConfig newConfig = OpenApiHandlerConfig.load(configName);
-        if (newConfig.getMappedConfig() != state.config().getMappedConfig()) {
-            synchronized (this) {
-                // Re-read after taking the lock; do not publish an older observed config.
-                newConfig = OpenApiHandlerConfig.load(configName);
-                if (newConfig.getMappedConfig() != state.config().getMappedConfig()) {
-                    initialize(newConfig);
-                    if(logger.isInfoEnabled()) logger.info("OpenApiHandler is reloaded.");
-                }
-            }
-        }
+        reloadIfNeeded();
         State current = state;
         OpenApiHandlerConfig config = current.config();
         OpenApiRouting snapshot = current.routing();
@@ -280,7 +360,8 @@ public class OpenApiHandler implements MiddlewareHandler {
     @Override
     public boolean isEnabled() {
         State current = state;
-        return !current.routing().helpers().isEmpty();
+        return current.config().isMultipleSpec() ? !current.config().getMappedConfig().isEmpty()
+                : current.routing().single() != null && current.routing().single().openApi3 != null;
     }
 
     /**
@@ -374,17 +455,25 @@ public class OpenApiHandler implements MiddlewareHandler {
         return prefix + path.normalised() + "@" + method.toLowerCase(java.util.Locale.ROOT);
     }
 
-    /** Compatibility utility. Runtime snapshots precompute canonical prefixes once. */
+    /**
+     * Legacy longest-prefix utility, retaining original keys and trailing-slash
+     * alias tie-breaking. Runtime routing validates and sorts its own prefixes once.
+     */
     public static String findMatchingPrefix(String requestPath, Set<String> prefixes) {
-        Map<String, String> original = new HashMap<>();
+        if (requestPath == null) return null;
+        String best = null;
+        int longest = -1;
         for (String key : prefixes) {
-            String prefix = OpenApiRouting.normalizePrefix(key);
-            if (original.putIfAbsent(prefix, key) != null) {
-                throw new IllegalArgumentException("Duplicate OpenAPI routing prefix: " + prefix);
+            int end = key.length();
+            while (end > 0 && key.charAt(end - 1) == '/') end--;
+            if ((requestPath.length() == end || (requestPath.length() > end
+                    && requestPath.charAt(end) == '/')) && requestPath.regionMatches(0, key, 0, end)
+                    && (end > longest || (end == longest && (best == null || key.compareTo(best) < 0)))) {
+                best = key;
+                longest = end;
             }
         }
-        String match = OpenApiRouting.matchingPrefix(requestPath, OpenApiRouting.sortedPrefixes(original.keySet()));
-        return match == null ? null : original.get(match);
+        return best;
     }
 
     public static String getBasePath(String requestPath) {

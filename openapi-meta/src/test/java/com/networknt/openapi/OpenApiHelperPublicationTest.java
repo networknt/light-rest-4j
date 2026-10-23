@@ -44,7 +44,7 @@ class OpenApiHelperPublicationTest {
                 var reload = executor.submit(() -> new OpenApiHandler("openapi-handler-multiple"));
                 try {
                     assertTrue(loading.await(5, TimeUnit.SECONDS));
-                    assertSame(published, OpenApiHandler.helperMap);
+                    assertSame(published, OpenApiHandler.routingSnapshot().helpers());
                     assertSame(old, OpenApiHandler.getHelper("/old/items"));
                     assertNull(OpenApiHandler.getHelper("/market/store/products"));
                 } finally {
@@ -52,10 +52,10 @@ class OpenApiHelperPublicationTest {
                 }
                 reload.get(10, TimeUnit.SECONDS);
             }
-            assertEquals(3, OpenApiHandler.helperMap.size());
+            assertEquals(3, OpenApiHandler.routingSnapshot().helpers().size());
             assertNotNull(OpenApiHandler.getHelper("/market/store/products"));
             assertThrows(UnsupportedOperationException.class,
-                    () -> OpenApiHandler.helperMap.put("/extra", old));
+                    () -> OpenApiHandler.routingSnapshot().helpers().put("/extra", old));
         } finally {
             release.countDown();
             Config.getInstance().setClassLoader(getClass().getClassLoader());

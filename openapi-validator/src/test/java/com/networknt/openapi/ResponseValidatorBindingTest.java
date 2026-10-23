@@ -44,7 +44,7 @@ class ResponseValidatorBindingTest {
 
     @Test
     void prefixSelectionAgreesWithMetadataInBothInsertionOrders() {
-        Map<String, OpenApiHelper> original = OpenApiHandler.helperMap;
+        Map<String, OpenApiHelper> original = OpenApiHandler.routingSnapshot().helpers();
         for (boolean reversed : new boolean[]{false, true}) {
             Map<String, OpenApiHelper> ordered = new LinkedHashMap<>();
             if (reversed) ordered.put("/petstore/v2", original.get("/petstore/v2"));
@@ -93,7 +93,7 @@ class ResponseValidatorBindingTest {
 
     @Test
     void legacyConstructorBindsTheSchemaOwnerAndRejectsMissingInputs() {
-        OpenApiHelper pet = OpenApiHandler.helperMap.get("/pet");
+        OpenApiHelper pet = OpenApiHandler.routingSnapshot().helpers().get("/pet");
         ResponseValidator validator = new ResponseValidator(new SchemaValidator(pet.openApi3), ValidatorConfig.load());
         assertSchema(validator, "/pet/items", "{\"value\":\"dog\"}", "{\"value\":42}");
         assertEquals("ERR11018", validator.validateResponseContent("{}", "/petstore/items", "get").getCode());

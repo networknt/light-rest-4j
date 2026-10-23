@@ -21,9 +21,9 @@ class ResponseValidatorMultipleSpecsTest {
         previousRouting = OpenApiHandler.routingSnapshot();
         // Model a fresh multi-spec process, independent of other tests' static state.
         new OpenApiHandler("openapi-handler-multiple");
-        assertNull(OpenApiHandler.helper);
-        petstore = validator(OpenApiHandler.helperMap.get("/petstore"));
-        market = validator(OpenApiHandler.helperMap.get("/market"));
+        assertNull(OpenApiHandler.routingSnapshot().single());
+        petstore = validator(OpenApiHandler.routingSnapshot().helpers().get("/petstore"));
+        market = validator(OpenApiHandler.routingSnapshot().helpers().get("/market"));
     }
 
     private ResponseValidator validator(OpenApiHelper helper) {
@@ -116,7 +116,7 @@ class ResponseValidatorMultipleSpecsTest {
 
     @Test
     void singleSpecModeRemainsSupported() {
-        OpenApiHandler.publishRouting(new OpenApiRouting(OpenApiHandler.helperMap.get("/petstore"), null));
+        OpenApiHandler.publishRouting(new OpenApiRouting(OpenApiHandler.routingSnapshot().helpers().get("/petstore"), null));
         assertNull(petstore.validateResponseContent("[]", "/petstore/pets", "get"));
     }
 }

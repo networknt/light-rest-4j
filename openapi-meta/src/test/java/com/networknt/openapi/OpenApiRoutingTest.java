@@ -37,7 +37,23 @@ class OpenApiRoutingTest {
         assertThrows(IllegalArgumentException.class,
                 () -> new OpenApiRouting(null, Map.of("", helper, "/", helper)));
         assertThrows(IllegalArgumentException.class,
-                () -> OpenApiHandler.findMatchingPrefix("/api/items", Set.of("/api", "/api/")));
+                () -> new OpenApiRouting(null, Map.of("api", helper, "/api/", helper)));
+    }
+
+    @Test
+    void legacyPrefixUtilityRetainsAliasAndRelativeKeyBehaviorWithoutSorting() {
+        assertEquals("/api", OpenApiHandler.findMatchingPrefix("/api/items", Set.of("/api", "/api/")));
+        assertEquals("v1", OpenApiHandler.findMatchingPrefix("v1/items", Set.of("v1", "v1/")));
+        assertEquals("/api/", OpenApiHandler.findMatchingPrefix("/api/items", Set.of("/api/")));
+        assertNull(OpenApiHandler.findMatchingPrefix("/apix/items", Set.of("/api")));
+        assertNull(OpenApiHandler.findMatchingPrefix(null, Set.of("/api")));
+    }
+
+    @Test
+    void documentedMappingKeysWithoutLeadingSlashesAreAccepted() {
+        OpenApiRouting routing = new OpenApiRouting(null, Map.of("v1", helper));
+        assertSame(helper, routing.helperFor("/v1/items"));
+        assertEquals(Set.of("/v1"), routing.helpers().keySet());
     }
 
     @Test

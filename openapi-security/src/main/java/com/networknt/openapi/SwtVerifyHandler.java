@@ -74,8 +74,9 @@ public class SwtVerifyHandler extends AbstractSwtVerifyHandler {
     protected Operation getOperation(HttpServerExchange exchange, OpenApiOperation openApiOperation, Map<String, Object> auditInfo) {
         Operation operation;
         if (openApiOperation == null) {
-            final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(), basePath);
             OpenApiHelper helper = OpenApiHandler.getHelper(exchange);
+            final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequestURI(),
+                    helper == null ? basePath : helper.basePath);
             final Optional<NormalisedPath> maybeApiPath = helper == null ? Optional.empty() : helper.findMatchingApiPath(requestPath);
             if (maybeApiPath.isEmpty()) {
                 if(!config.isSkipVerifyScopeWithoutSpec()) {
@@ -98,7 +99,7 @@ public class SwtVerifyHandler extends AbstractSwtVerifyHandler {
 
             openApiOperation = new OpenApiOperation(swaggerPathString, swaggerPath, httpMethod, operation);
             auditInfo.put(Constants.OPENAPI_OPERATION_STRING, openApiOperation);
-            auditInfo.put(Constants.ENDPOINT_STRING, swaggerPathString.normalised() + "@" + httpMethod);
+            auditInfo.put(Constants.ENDPOINT_STRING, OpenApiHandler.endpoint(helper, swaggerPathString, httpMethod));
 
         } else {
             operation = openApiOperation.getOperation();
