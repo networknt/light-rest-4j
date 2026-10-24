@@ -21,8 +21,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpenApiBasePathTest {
-    private final OpenApiHelper previousHelper = OpenApiHandler.helper;
-    private final Map<String, OpenApiHelper> previousHelpers = OpenApiHandler.helperMap;
+    private OpenApiRouting previousRouting = OpenApiHandler.routingSnapshot();
     private Undertow server;
     private URI address;
 
@@ -31,8 +30,7 @@ class OpenApiBasePathTest {
         if (server != null) server.stop();
         Config.getInstance().clear();
         Config.getInstance().setClassLoader(OpenApiBasePathTest.class.getClassLoader());
-        OpenApiHandler.helper = previousHelper;
-        OpenApiHandler.helperMap = previousHelpers;
+        OpenApiHandler.publishRouting(previousRouting);
     }
 
     private void start(String servers, String fallback, boolean multiple, boolean missingSpec) {
@@ -66,6 +64,9 @@ class OpenApiBasePathTest {
             @Override
             public InputStream getResourceAsStream(String name) {
                 String file = name.startsWith("config/") ? name.substring(7) : name;
+                if (file.equals("openapi-deep.yaml")) {
+                    return new ByteArrayInputStream(serviceSpec.replace("/api/", "/api/v1/").getBytes(StandardCharsets.UTF_8));
+                }
                 if (file.matches("openapi\\.(yaml|yml|json)")) {
                     return !missingSpec && file.endsWith(".yaml")
                             ? new ByteArrayInputStream(serviceSpec.getBytes(StandardCharsets.UTF_8)) : null;
@@ -96,7 +97,7 @@ class OpenApiBasePathTest {
     @Test
     void absentServersDoNotInheritPetstorePrefix() throws Exception {
         start("", "/", false, false);
-        assertEquals("/", OpenApiHandler.helper.basePath);
+        assertEquals("/", OpenApiHandler.routingSnapshot().single().basePath);
         assertEquals("/pets@get", get("/pets").body());
         assertEquals(404, get("/v1/pets").statusCode());
         assertEquals("/pets/{petId}@get", get("/pets/v1").body());
@@ -124,21 +125,21 @@ class OpenApiBasePathTest {
     @Test
     void explicitBasePathRemainsAuthoritative() throws Exception {
         start("servers:\n  - url: '/api'\n", "/fallback", false, false);
-        assertEquals("/api", OpenApiHandler.helper.basePath);
+        assertEquals("/api", OpenApiHandler.routingSnapshot().single().basePath);
         assertEquals("/api/pets@get", get("/api/pets").body());
     }
 
     @Test
     void configuredFallbackIsNoLongerMaskedByInjection() throws Exception {
         start("", "/configured", false, false);
-        assertEquals("/configured", OpenApiHandler.helper.basePath);
+        assertEquals("/configured", OpenApiHandler.routingSnapshot().single().basePath);
         assertEquals("/configured/pets@get", get("/configured/pets").body());
     }
 
     @Test
     void missingServiceSpecStillServesAdminEndpointsAtRoot() throws Exception {
         start("", "/", false, true);
-        assertEquals("/", OpenApiHandler.helper.basePath);
+        assertEquals("/", OpenApiHandler.routingSnapshot().single().basePath);
         assertEquals("/adm/server/info@get", get("/adm/server/info").body());
         assertEquals(404, get("/pets").statusCode());
         assertEquals(404, get("/v1/adm/server/info").statusCode());
@@ -184,22 +185,18 @@ class OpenApiBasePathTest {
 
     @Test
     void multipleSpecsUseLongestCompletePrefixForDispatchAndLookups() throws Exception {
-        start("servers:\n  - url: '/api/'\n", "/", true, false, "/pets",
-                Map.of("/api", "openapi"));
-        OpenApiHelper shallow = OpenApiHandler.helperMap.get("/api");
-        OpenApiHelper deep = new OpenApiHelper("""
-                {"openapi":"3.0.0","info":{"title":"deep","version":"1"},
-                 "servers":[{"url":"/api/v1/"}],
-                 "paths":{"/pets":{"get":{"responses":{"200":{"description":"OK"}}}}}}
-                """);
         for (boolean deepestFirst : new boolean[]{false, true}) {
-            Map<String, OpenApiHelper> ordered = new java.util.LinkedHashMap<>();
-            if (deepestFirst) ordered.put("/api/v1", deep);
-            ordered.put("/api", shallow);
-            ordered.put("/api/v1", deep);
-            OpenApiHandler.helperMap = ordered;
+            if (server != null) server.stop();
+            Map<String, Object> ordered = new java.util.LinkedHashMap<>();
+            if (deepestFirst) ordered.put("/api/v1", "openapi-deep");
+            ordered.put("/api", "openapi");
+            ordered.put("/api/v1", "openapi-deep");
+            start("servers:\n  - url: '/api/'\n", "/", true, false, "/pets", ordered);
+            OpenApiHelper shallow = OpenApiHandler.getHelper("/api/pets");
+            OpenApiHelper deep = OpenApiHandler.getHelper("/api/v1/pets");
+            assertNotSame(shallow, deep);
             assertSame(deep, OpenApiHandler.getHelper("/api/v1/pets"));
-            assertEquals("/api/v1", OpenApiHandler.getBasePath("/api/v1/pets"));
+            assertEquals(deep.basePath, OpenApiHandler.getBasePath("/api/v1/pets"));
             assertEquals("/api/v1/pets@get", get("/api/v1/pets").body());
             assertEquals("/api/pets@get", get("/api/pets").body());
             assertNull(OpenApiHandler.getHelper("/apix/pets"));

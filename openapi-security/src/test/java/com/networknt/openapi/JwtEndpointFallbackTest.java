@@ -12,9 +12,60 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class JwtEndpointFallbackTest {
     @Test
+    void scopeLookupUsesTheRequestsGenerationAfterReload() throws Exception {
+        OpenApiRouting previous = OpenApiHandler.routingSnapshot();
+        try {
+            String spec = """
+                    {"openapi":"3.0.0","info":{"title":"test","version":"1"},
+                     "paths":{"/pets":{"get":{"security":[{"oldAuth":["read"]}],
+                       "responses":{"200":{"description":"OK"}}}}},
+                     "components":{"securitySchemes":{"oldAuth":{"type":"oauth2",
+                       "flows":{"clientCredentials":{"tokenUrl":"https://example.com/token",
+                         "scopes":{"read":"read"}}}}}}}
+                    """;
+            OpenApiHelper old = new OpenApiHelper(spec);
+            OpenApiRouting generation = new OpenApiRouting(old, null);
+            OpenApiHandler.publishRouting(generation);
+            HttpServerExchange exchange = new HttpServerExchange(null);
+            exchange.setRequestURI("/pets");
+            exchange.setRequestPath("/pets");
+            exchange.setRequestMethod(Methods.GET);
+            exchange.putAttachment(OpenApiHandler.ROUTING, generation);
+            Map<String, Object> audit = new HashMap<>();
+            JwtVerifyHandler handler = new JwtVerifyHandler();
+            assertNotNull(handler.getOperation(exchange, null, audit));
+            OpenApiHandler.publishRouting(new OpenApiRouting(new OpenApiHelper(spec.replace("oldAuth", "newAuth")), null));
+            assertEquals(java.util.List.of("read"), handler.getSpecScopes(exchange, audit));
+        } finally {
+            OpenApiHandler.publishRouting(previous);
+        }
+    }
+
+    @Test
+    void fallbackOptionsLookupUsesRootLocale() {
+        OpenApiRouting previous = OpenApiHandler.routingSnapshot();
+        java.util.Locale locale = java.util.Locale.getDefault();
+        try {
+            java.util.Locale.setDefault(java.util.Locale.forLanguageTag("tr-TR"));
+            OpenApiHelper helper = new OpenApiHelper("""
+                    {"openapi":"3.0.0","info":{"title":"test","version":"1"},
+                     "paths":{"/pets":{"options":{"responses":{"200":{"description":"OK"}}}}}}
+                    """);
+            OpenApiHandler.publishRouting(new OpenApiRouting(helper, null));
+            HttpServerExchange exchange = new HttpServerExchange(null);
+            exchange.setRequestURI("/pets");
+            exchange.setRequestPath("/pets");
+            exchange.setRequestMethod(Methods.OPTIONS);
+            assertNotNull(new JwtVerifyHandler().getOperation(exchange, null, new HashMap<>()));
+        } finally {
+            java.util.Locale.setDefault(locale);
+            OpenApiHandler.publishRouting(previous);
+        }
+    }
+
+    @Test
     void fallbackUsesTheSelectedServerBaseAndCanonicalEndpoint() {
-        OpenApiHelper previous = OpenApiHandler.helper;
-        Map<String, OpenApiHelper> previousMap = OpenApiHandler.helperMap;
+        OpenApiRouting previousRouting = OpenApiHandler.routingSnapshot();
         try {
             for (String base : new String[]{"/", "/api/"}) {
                 OpenApiHelper helper = new OpenApiHelper("""
@@ -23,8 +74,7 @@ class JwtEndpointFallbackTest {
                         """);
                 helper.setBasePath(base);
                 for (boolean multiple : new boolean[]{false, true}) {
-                    OpenApiHandler.helper = multiple ? null : helper;
-                    OpenApiHandler.helperMap = multiple ? Map.of(base, helper) : null;
+                    OpenApiHandler.publishRouting(new OpenApiRouting(multiple ? null : helper, multiple ? Map.of(base, helper) : null));
                     String request = (base.equals("/") ? "" : "/api") + "/pets";
                     HttpServerExchange exchange = new HttpServerExchange(null);
                     exchange.setRequestMethod(Methods.GET);
@@ -38,8 +88,7 @@ class JwtEndpointFallbackTest {
                 }
             }
         } finally {
-            OpenApiHandler.helper = previous;
-            OpenApiHandler.helperMap = previousMap;
+            OpenApiHandler.publishRouting(previousRouting);
         }
     }
 }

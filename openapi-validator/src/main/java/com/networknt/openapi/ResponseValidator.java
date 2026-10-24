@@ -46,7 +46,8 @@ import static java.util.Objects.requireNonNull;
 public class ResponseValidator {
     private final SchemaValidator schemaValidator;
     private final ValidatorConfig config;
-    private final Map<String, OpenApiHelper> helpers;
+    private final List<String> prefixes;
+    private final java.util.Set<String> ownerPrefixes;
     private final OpenApiHelper helper;
     private static final String VALIDATOR_RESPONSE_CONTENT_UNEXPECTED = "ERR11018";
     private static final String REQUIRED_RESPONSE_HEADER_MISSING = "ERR11019";
@@ -64,24 +65,22 @@ public class ResponseValidator {
      * OpenApiOperation; URI-based lookup returns ERR11018 instead of guessing.
      */
     public ResponseValidator(SchemaValidator schemaValidator, ValidatorConfig config) {
-        this(schemaValidator, config, registeredHelpers());
+        this(schemaValidator, config, OpenApiHandler.routingSnapshot());
+        if (helper == null) {
+            logger.warn("No registered OpenAPI owner for ResponseValidator; URI-based validation returns ERR11018. "
+                    + "Register the specification before construction or supply a resolved OpenApiOperation.");
+        }
     }
 
-    ResponseValidator(SchemaValidator schemaValidator, ValidatorConfig config, Map<String, OpenApiHelper> helpers) {
+    ResponseValidator(SchemaValidator schemaValidator, ValidatorConfig config, OpenApiRouting routing) {
         this.schemaValidator = requireNonNull(schemaValidator, "A schema validator is required");
         this.config = config;
-        // Framework construction shares one immutable routing snapshot across
-        // all validators instead of copying the whole registry for each spec.
-        this.helpers = helpers;
-        this.helper = this.helpers.values().stream()
+        this.prefixes = routing.prefixes();
+        this.helper = routing.helpers().values().stream()
                 .filter(h -> h.openApi3 == schemaValidator.getOpenApi()).findFirst().orElse(null);
-    }
-
-    private static Map<String, OpenApiHelper> registeredHelpers() {
-        OpenApiHelper single = OpenApiHandler.helper;
-        if (single != null) return Map.of("", single);
-        Map<String, OpenApiHelper> multiple = OpenApiHandler.helperMap;
-        return multiple == null ? Map.of() : Map.copyOf(multiple);
+        this.ownerPrefixes = routing.helpers().entrySet().stream()
+                .filter(entry -> entry.getValue() == helper).map(Map.Entry::getKey)
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
     }
 
     /**
@@ -92,7 +91,7 @@ public class ResponseValidator {
      * @return Status return null if no validation errors
      */
     public Status validateResponseContent(String responseContent, HttpServerExchange exchange) {
-        return validateResponseContent(responseContent, exchange.getRequestURI(), exchange.getRequestMethod().toString().toLowerCase(), String.valueOf(exchange.getStatusCode()));
+        return validateResponseContent(responseContent, exchange.getRequestURI(), exchange.getRequestMethod().toString(), String.valueOf(exchange.getStatusCode()));
     }
 
     /**
@@ -220,8 +219,8 @@ public class ResponseValidator {
         if (uri == null || httpMethod == null || helper == null) return null;
         String uriWithoutQuery = new URI(uri).getRawPath();
         if (uriWithoutQuery == null || !uriWithoutQuery.startsWith("/")) return null;
-        String prefix = OpenApiHandler.findMatchingPrefix(uriWithoutQuery, helpers.keySet());
-        if (prefix == null || helpers.get(prefix) != helper) return null;
+        String prefix = OpenApiRouting.matchingPrefix(uriWithoutQuery, prefixes);
+        if (prefix == null || !ownerPrefixes.contains(prefix)) return null;
         NormalisedPath requestPath = new ApiNormalisedPath(uriWithoutQuery, helper.basePath);
         Optional<NormalisedPath> maybeApiPath = helper.findMatchingApiPath(requestPath);
         if (maybeApiPath.isEmpty()) return null;

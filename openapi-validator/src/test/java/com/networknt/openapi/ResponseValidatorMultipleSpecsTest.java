@@ -12,21 +12,18 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ResponseValidatorMultipleSpecsTest {
-    private OpenApiHelper previousHelper;
-    private Map<String, OpenApiHelper> previousHelpers;
+    private OpenApiRouting previousRouting = OpenApiHandler.routingSnapshot();
     private ResponseValidator petstore;
     private ResponseValidator market;
 
     @BeforeEach
     void loadMultipleSpecs() {
-        previousHelper = OpenApiHandler.helper;
-        previousHelpers = OpenApiHandler.helperMap;
+        previousRouting = OpenApiHandler.routingSnapshot();
         // Model a fresh multi-spec process, independent of other tests' static state.
-        OpenApiHandler.helper = null;
         new OpenApiHandler("openapi-handler-multiple");
-        assertNull(OpenApiHandler.helper);
-        petstore = validator(OpenApiHandler.helperMap.get("/petstore"));
-        market = validator(OpenApiHandler.helperMap.get("/market"));
+        assertNull(OpenApiHandler.routingSnapshot().single());
+        petstore = validator(OpenApiHandler.routingSnapshot().helpers().get("/petstore"));
+        market = validator(OpenApiHandler.routingSnapshot().helpers().get("/market"));
     }
 
     private ResponseValidator validator(OpenApiHelper helper) {
@@ -35,8 +32,7 @@ class ResponseValidatorMultipleSpecsTest {
 
     @AfterEach
     void restoreHelpers() {
-        OpenApiHandler.helper = previousHelper;
-        OpenApiHandler.helperMap = previousHelpers;
+        OpenApiHandler.publishRouting(previousRouting);
     }
 
     @Test
@@ -120,8 +116,7 @@ class ResponseValidatorMultipleSpecsTest {
 
     @Test
     void singleSpecModeRemainsSupported() {
-        OpenApiHandler.helper = OpenApiHandler.helperMap.get("/petstore");
-        OpenApiHandler.helperMap = null;
+        OpenApiHandler.publishRouting(new OpenApiRouting(OpenApiHandler.routingSnapshot().helpers().get("/petstore"), null));
         assertNull(petstore.validateResponseContent("[]", "/petstore/pets", "get"));
     }
 }
