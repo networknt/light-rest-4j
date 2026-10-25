@@ -50,3 +50,12 @@ a fresh Maven repository. Rerun this check after prerequisite changes and before
 merging: an earlier green run qualifies only its recorded commits. Manual
 workflow dispatch is available. Source-build success does not qualify published
 artifact resolution.
+
+Prerequisites are resolved to full commit SHAs before checkout. To replay a
+failed dependency combination, manually dispatch the source-build workflow with
+its uploaded `source-refs.json` contents as the `source_refs` input. Omitted
+repositories resolve their current source head; supplied values must be full
+commit SHAs. Each green result qualifies only the recorded combination.
+
+GitHub manual dispatch requires this workflow to exist on the default branch.
+Before merge, use the recorded commits to reproduce with local source checkouts.
