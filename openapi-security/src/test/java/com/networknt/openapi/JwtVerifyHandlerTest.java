@@ -16,6 +16,8 @@
 
 package com.networknt.openapi;
 
+import com.networknt.test.HttpClientFixture;
+
 import com.networknt.client.Http2Client;
 import com.networknt.client.simplepool.SimpleConnectionState;
 import com.networknt.config.Config;
@@ -54,6 +56,7 @@ public class JwtVerifyHandlerTest {
 
     static Undertow server1 = null;
     static Undertow server2 = null;
+    private static AutoCloseable tokenKeyServer;
     @BeforeAll
     public static void setUp() {
         if (server1 == null) {
@@ -64,7 +67,7 @@ public class JwtVerifyHandlerTest {
             OpenApiHandler openApiHandler = new OpenApiHandler();
             openApiHandler.setNext(jwtVerifyHandler);
             server1 = Undertow.builder()
-                    .addHttpListener(7081, "localhost")
+                    .addHttpListener(0, "localhost")
                     .setHandler(openApiHandler)
                     .build();
             server1.start();
@@ -74,10 +77,11 @@ public class JwtVerifyHandlerTest {
             logger.info("starting server2");
             HttpHandler handler = getJwksHandler();
             server2 = Undertow.builder()
-                    .addHttpListener(7082, "localhost")
+                    .addHttpListener(0, "localhost")
                     .setHandler(handler)
                     .build();
             server2.start();
+            tokenKeyServer = HttpClientFixture.tokenKeyServer(server2);
         }
 
     }
@@ -90,6 +94,7 @@ public class JwtVerifyHandlerTest {
             } catch (InterruptedException ignored) {
 
             }
+            HttpClientFixture.closeConnections(HttpClientFixture.address(server1));
             server1.stop();
             logger.info("The server1 is stopped.");
         }
@@ -99,7 +104,9 @@ public class JwtVerifyHandlerTest {
             } catch (InterruptedException ignored) {
 
             }
+            HttpClientFixture.closeConnections(HttpClientFixture.address(server2));
             server2.stop();
+            tokenKeyServer.close();
             logger.info("The server2 is stopped.");
         }
 
@@ -139,7 +146,7 @@ public class JwtVerifyHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server1), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -153,14 +160,14 @@ public class JwtVerifyHandlerTest {
             ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer eyJraWQiOiJUal9sX3RJQlRnaW5PdFFiTDBQdjV3IiwiYWxnIjoiUlMyNTYifQ.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MjAxOTc4MDgxMywianRpIjoiWXkyN3VMa2FhaXlBRzZoazR5a2JtZyIsImlhdCI6MTcwNDQyMDgxMywibmJmIjoxNzA0NDIwNjkzLCJ2ZXJzaW9uIjoiJzEuMCciLCJ1c2VyX2lkIjoic3RldmUiLCJ1c2VyX3R5cGUiOiJFTVBMT1lFRSIsImNsaWVudF9pZCI6ImY3ZDQyMzQ4LWM2NDctNGVmYi1hNTJkLTRjNTc4NzQyMWU3MiIsInJvbGVzIjoidXNlciIsInNjb3BlIjpbIndyaXRlOnBldHMiLCJyZWFkOnBldHMiXX0.o4WIuyAZ1SBsWSDfMnOjPtB9fuf53boMLlxAAfoZBYD33BlN5FZI4tA59KDxIH39dnwCpsr4Bsx3jT2FMZ_zvXdH1PLZGYnVQN9u5nKXjvfEEJgHHN8KY8lWMdLjLYIZgPLXpeOIiU0SXoF2-mEB_Pb4FqfaF4vPySGjLygMX6AHqTRlVXVWgrITDWxJfaBF8iCQ3K4FZyHNvMqyn2QpUwj9QI7_yccCTi2sWPxp2J4HcBj2CHmiM1RfWmwCyeOkw5rhQBrJThAjal6eqSUtJoiZ5XKiD3VQBzsL0Vhemk5xUenyCzmCCAC-T4geQ-rpTSRAKB5b2918yK5sxBrQ0A");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -182,7 +189,7 @@ public class JwtVerifyHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server1), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -196,14 +203,14 @@ public class JwtVerifyHandlerTest {
             ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer eyJraWQiOiJUal9sX3RJQlRnaW5PdFFiTDBQdjV3IiwiYWxnIjoiUlMyNTYifQ.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MjAxOTc4MTE4NywianRpIjoiNWxIOXE4SThKMUtpRTNOSFNsaWxGQSIsImlhdCI6MTcwNDQyMTE4NywibmJmIjoxNzA0NDIxMDY3LCJ2ZXJzaW9uIjoiJzEuMCciLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzMiLCJzY3AiOlsid3JpdGU6cGV0cyIsInJlYWQ6cGV0cyJdfQ.Xii98zA5XwxBUTDvGSjimjCOcaCTy_4QbJc1kReIxKDVoO_knRbJ_3AzOsm1KSTINrCG3Yh8DuvMFQHKPbDntQtu-yqsY_kFHyFn8m71LsId5Giatf7WWRZQXcLdxFZH9VZWyhQutHXC0bsVJIhlQMDEHVgZ9LDUXvq4Et6zCCa8BkWLEy1joS-Cd748M9Atq2n-ZKdLxC4gRpAch5aUXwDz_oTyA2y4ZVEJQkekU4yjcB08s4jkECSoZfzekhXpbunXj36qtkdAIPqpXzD-p5qWiUgRRj_eZYvuIyh82emvxLIb28pe9Zru3laVSma7HpqDdNHEvEeVyFh8ALIkaQ");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -225,7 +232,7 @@ public class JwtVerifyHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server1), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -239,14 +246,14 @@ public class JwtVerifyHandlerTest {
             ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer eyJraWQiOiJUal9sX3RJQlRnaW5PdFFiTDBQdjV3IiwiYWxnIjoiUlMyNTYifQ.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MjAxOTgyMTI3NCwianRpIjoiM0FXbDQzTDBkVUZrdW5HQkpZXzBvUSIsImlhdCI6MTcwNDQ2MTI3NCwibmJmIjoxNzA0NDYxMTU0LCJ2ZXJzaW9uIjoiJzEuMCciLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzMiLCJzY3AiOiJ3cml0ZTpwZXRzIHJlYWQ6cGV0cyJ9.ptFGE2t1zpayz8vnBrrOuYiB3TxvzFDRf9P5DtGE8uml4QPoiG2Fvr_0-ngVr3ibgrGGxCTVMr55YEVxALjJk77VwiQt3fcG5ptfJkWWfSwBfcGZ3Ee5qdCVoVv4Ww7ir-8eLFIKiqNdAgPoUjj6cizLjGDg-6mCEzaK3xp3XOSdb96esMx85VDYf711kwY1XC_wthCKB9P8eN_vk_Qfy2wWbEWthiJYMxLAD-WSyOIHK7C2K_CYQ5naLlX3z5pzYoDUiIZEly8J775AcbmvG2gmlD9Ixc_xyv5jD0dnWrm4YUp4_P6k4t840gy1-9Hc1XGuMiRS2WacOjPZ-8nYKA");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -268,7 +275,7 @@ public class JwtVerifyHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server1), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -282,14 +289,14 @@ public class JwtVerifyHandlerTest {
             ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer eyJraWQiOiJUal9sX3RJQlRnaW5PdFFiTDBQdjV3IiwiYWxnIjoiUlMyNTYifQ.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MjAxOTgyMTY0OSwianRpIjoiS3hubEZGc1BmS3BkcFpDTTBRTWpVdyIsImlhdCI6MTcwNDQ2MTY0OSwibmJmIjoxNzA0NDYxNTI5LCJ2ZXJzaW9uIjoiJzEuMCciLCJjbGllbnRfaWQiOiJmN2Q0MjM0OC1jNjQ3LTRlZmItYTUyZC00YzU3ODc0MjFlNzMiLCJzY29wZSI6IndyaXRlOnBldHMgcmVhZDpwZXRzIn0.f-fazxnL4lO3epAFsu7nUyNzP6J66o4gIuLWQI4Unfb-B4d1RZfkHrmINsE_AMonspf8FLFExGlDCdoLzHBH60kauzye51HIFNsLA8LIWrpCJ-4PNdQ7moHd8d_7xkyY3L4mhXv6zbd81W5JxHiDhsdixjM0ioDGEQhwuCdJNNuYloSJtITu1IOl9JLc_h1t_vEbVGr9midrp2bpu7vOltYx_waHSjCKuwus7PeERk9MAyHWnnV576imxRef2QY6i6Vl5Uni_MbC2dSFSq3nAWyWKBhUlVasmh9xLw5JhaWHxoPqyDxe5E9Q_w2t1XqpCqv5s0y5pnCBSO4AhNw9Pg");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -308,7 +315,7 @@ public class JwtVerifyHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server1), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -322,14 +329,14 @@ public class JwtVerifyHandlerTest {
             ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer eyJraWQiOiJUal9sX3RJQlRnaW5PdFFiTDBQdjV3IiwiYWxnIjoiUlMyNTYifQ.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MjAxOTgyMjA1MCwianRpIjoiN2Jmd2pONjl3djRoSmlPbHJ2TEpSQSIsImlhdCI6MTcwNDQ2MjA1MCwibmJmIjoxNzA0NDYxOTMwLCJ2ZXJzaW9uIjoiJzEuMCciLCJ1c2VyX2lkIjoiZXJpYyIsInVzZXJfdHlwZSI6IkVNUExPWUVFIiwiY2xpZW50X2lkIjoiZjdkNDIzNDgtYzY0Ny00ZWZiLWE1MmQtNGM1Nzg3NDIxZTcyIiwicm9sZXMiOiJ1c2VyIiwic2NvcGUiOlsiQVRNUDEwMDAudyIsIkFUTVAxMDAwLnIiXX0.b0Tm8kUpbc0fuL60EVpr5WSXLbikqAl4AR1DGMrORGEFw7FXYR0mLhs7aCmvoyZLdTrNFVsq_nWGxjdK3Fh3SY04hdBTf_rhoDMqgx1isIT7-oLWLLzX1hWOiDNZA2FtHwXMfytJeK19nmgaHVsQyd4rq7gdYaWFGL4Wz4XQnk11MSDoYeZAVl1a4QfN3yZ1qrzFegR50cK7_JOsa1R4TETRBwdCJWXCBXCcxC6f6UDGCENbEhbCC_VLKWo3DCKp8KJ7HnLGDovl3XkZP1spNu9oZMhf--fakw8H9c0Hg8DUxCHyT0tc1o-jPM4KDNwOKzSCGar8xrRL-6cyFOmjGw");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -350,7 +357,7 @@ public class JwtVerifyHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server1), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -365,14 +372,14 @@ public class JwtVerifyHandlerTest {
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer eyJraWQiOiJUal9sX3RJQlRnaW5PdFFiTDBQdjV3IiwiYWxnIjoiUlMyNTYifQ.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MjAxOTc4MDgxMywianRpIjoiWXkyN3VMa2FhaXlBRzZoazR5a2JtZyIsImlhdCI6MTcwNDQyMDgxMywibmJmIjoxNzA0NDIwNjkzLCJ2ZXJzaW9uIjoiJzEuMCciLCJ1c2VyX2lkIjoic3RldmUiLCJ1c2VyX3R5cGUiOiJFTVBMT1lFRSIsImNsaWVudF9pZCI6ImY3ZDQyMzQ4LWM2NDctNGVmYi1hNTJkLTRjNTc4NzQyMWU3MiIsInJvbGVzIjoidXNlciIsInNjb3BlIjpbIndyaXRlOnBldHMiLCJyZWFkOnBldHMiXX0.o4WIuyAZ1SBsWSDfMnOjPtB9fuf53boMLlxAAfoZBYD33BlN5FZI4tA59KDxIH39dnwCpsr4Bsx3jT2FMZ_zvXdH1PLZGYnVQN9u5nKXjvfEEJgHHN8KY8lWMdLjLYIZgPLXpeOIiU0SXoF2-mEB_Pb4FqfaF4vPySGjLygMX6AHqTRlVXVWgrITDWxJfaBF8iCQ3K4FZyHNvMqyn2QpUwj9QI7_yccCTi2sWPxp2J4HcBj2CHmiM1RfWmwCyeOkw5rhQBrJThAjal6eqSUtJoiZ5XKiD3VQBzsL0Vhemk5xUenyCzmCCAC-T4geQ-rpTSRAKB5b2918yK5sxBrQ0A");
             request.getRequestHeaders().put(HttpStringConstants.SCOPE_TOKEN, "Bearer eyJraWQiOiJUal9sX3RJQlRnaW5PdFFiTDBQdjV3IiwiYWxnIjoiUlMyNTYifQ.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MjAxOTgyMjM1OSwianRpIjoiZDVYTnREWk9YeENxNVZDRU5mLW5CZyIsImlhdCI6MTcwNDQ2MjM1OSwibmJmIjoxNzA0NDYyMjM5LCJ2ZXJzaW9uIjoiJzEuMCciLCJ1c2VyX2lkIjoic3RldmUiLCJ1c2VyX3R5cGUiOiJFTVBMT1lFRSIsImNsaWVudF9pZCI6ImY3ZDQyMzQ4LWM2NDctNGVmYi1hNTJkLTRjNTc4NzQyMWU3MiIsInJvbGVzIjoidXNlciIsInNjb3BlIjpbIndyaXRlOnBldHMiLCJyZWFkOnBldHMiXX0.WmTPRlbezRj1HkxTlaP20h4lDvTpsGJJZkoynKCSlEfAYwuIiKXanv6jhy_u5xyWIri-TKZKkDBiDMWUCUss4BwvTDJwwJyeDnx5nreypmL-sc_ijfFoBP8mz6ZrkT8QCaC5jpnMRo4AelfNHdVqMHonco08_uSNxvNNOgGXNleRb5NsdYqdJ5Rhfyytg70bJzw7Up4uh-wEuJk-_gg-OUyppmhddZ83UEmmk5hGssjDNlHZ1UzIUl2AZGvCwkXSNv_vgkDKGSOG_XLvJ10Zcv28Fg6CPpWJFIru5RsaZtJHCK_kQ4oGkyKMIB9zyvheG93LJUOBxKg8qVVxry_E4g");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -391,7 +398,7 @@ public class JwtVerifyHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server1), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -406,14 +413,14 @@ public class JwtVerifyHandlerTest {
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer eyJraWQiOiJUal9sX3RJQlRnaW5PdFFiTDBQdjV3IiwiYWxnIjoiUlMyNTYifQ.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MjAxOTgyMjE5MiwianRpIjoiLU42Um4zdng5LUxiLUJkaXZUZ0I3QSIsImlhdCI6MTcwNDQ2MjE5MiwibmJmIjoxNzA0NDYyMDcyLCJ2ZXJzaW9uIjoiJzEuMCciLCJ1c2VyX2lkIjoic3RldmUiLCJ1c2VyX3R5cGUiOiJFTVBMT1lFRSIsImNsaWVudF9pZCI6ImY3ZDQyMzQ4LWM2NDctNGVmYi1hNTJkLTRjNTc4NzQyMWU3MiIsInJvbGVzIjoidXNlciIsInNjb3BlIjpbIndyaXRlOnBldHMiLCJyZWFkOnBldHMiXX0.QvOeXHZIJuEMKqABtgvkDA0EpktvrCuOIlMbO4sVJq9epLDPCki3d0ZRJrJt3dFMq9kTcG6909iWVHAdAsBa2GBgyMugkd9JGJICf1Tk40YCMDJaXLtw9pSOBx1WcaYpwVBAZvvtUEY6j6P8jdZnx8j5iWLUOlsh2L35bGJIC6GJpOgr0kd4MeC4ePh5-6M8s5DI2TxQltILqoCk-uUOusLSiAei3L7NMzNjtcS9khhnZ52BSAOUMnkC4F_gTWRi5tXcV8sB0StorHdIPCCjZwNsvdIlPsZJqRMgQqn4cUzx3Y-la9tCHtRIoTSMYsQeA4QtDRSfGSzPdTpisV6nDg");
             request.getRequestHeaders().put(HttpStringConstants.SCOPE_TOKEN, "Bearer eyJraWQiOiJUal9sX3RJQlRnaW5PdFFiTDBQdjV3IiwiYWxnIjoiUlMyNTYifQ.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MjAxOTgyMjA1MCwianRpIjoiN2Jmd2pONjl3djRoSmlPbHJ2TEpSQSIsImlhdCI6MTcwNDQ2MjA1MCwibmJmIjoxNzA0NDYxOTMwLCJ2ZXJzaW9uIjoiJzEuMCciLCJ1c2VyX2lkIjoiZXJpYyIsInVzZXJfdHlwZSI6IkVNUExPWUVFIiwiY2xpZW50X2lkIjoiZjdkNDIzNDgtYzY0Ny00ZWZiLWE1MmQtNGM1Nzg3NDIxZTcyIiwicm9sZXMiOiJ1c2VyIiwic2NvcGUiOlsiQVRNUDEwMDAudyIsIkFUTVAxMDAwLnIiXX0.b0Tm8kUpbc0fuL60EVpr5WSXLbikqAl4AR1DGMrORGEFw7FXYR0mLhs7aCmvoyZLdTrNFVsq_nWGxjdK3Fh3SY04hdBTf_rhoDMqgx1isIT7-oLWLLzX1hWOiDNZA2FtHwXMfytJeK19nmgaHVsQyd4rq7gdYaWFGL4Wz4XQnk11MSDoYeZAVl1a4QfN3yZ1qrzFegR50cK7_JOsa1R4TETRBwdCJWXCBXCcxC6f6UDGCENbEhbCC_VLKWo3DCKp8KJ7HnLGDovl3XkZP1spNu9oZMhf--fakw8H9c0Hg8DUxCHyT0tc1o-jPM4KDNwOKzSCGar8xrRL-6cyFOmjGw");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -434,7 +441,7 @@ public class JwtVerifyHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server1), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -451,14 +458,14 @@ public class JwtVerifyHandlerTest {
             request.getRequestHeaders().put(HttpStringConstants.SCOPE_TOKEN, "Bearer eyJraWQiOiJUal9sX3RJQlRnaW5PdFFiTDBQdjV3IiwiYWxnIjoiUlMyNTYifQ.eyJpc3MiOiJ1cm46Y29tOm5ldHdvcmtudDpvYXV0aDI6djEiLCJhdWQiOiJ1cm46Y29tLm5ldHdvcmtudCIsImV4cCI6MjAxOTgyMjA1MCwianRpIjoiN2Jmd2pONjl3djRoSmlPbHJ2TEpSQSIsImlhdCI6MTcwNDQ2MjA1MCwibmJmIjoxNzA0NDYxOTMwLCJ2ZXJzaW9uIjoiJzEuMCciLCJ1c2VyX2lkIjoiZXJpYyIsInVzZXJfdHlwZSI6IkVNUExPWUVFIiwiY2xpZW50X2lkIjoiZjdkNDIzNDgtYzY0Ny00ZWZiLWE1MmQtNGM1Nzg3NDIxZTcyIiwicm9sZXMiOiJ1c2VyIiwic2NvcGUiOlsiQVRNUDEwMDAudyIsIkFUTVAxMDAwLnIiXX0.b0Tm8kUpbc0fuL60EVpr5WSXLbikqAl4AR1DGMrORGEFw7FXYR0mLhs7aCmvoyZLdTrNFVsq_nWGxjdK3Fh3SY04hdBTf_rhoDMqgx1isIT7-oLWLLzX1hWOiDNZA2FtHwXMfytJeK19nmgaHVsQyd4rq7gdYaWFGL4Wz4XQnk11MSDoYeZAVl1a4QfN3yZ1qrzFegR50cK7_JOsa1R4TETRBwdCJWXCBXCcxC6f6UDGCENbEhbCC_VLKWo3DCKp8KJ7HnLGDovl3XkZP1spNu9oZMhf--fakw8H9c0Hg8DUxCHyT0tc1o-jPM4KDNwOKzSCGar8xrRL-6cyFOmjGw");
             request.getRequestHeaders().put(Headers.CONNECTION, "upgrade");
             request.getRequestHeaders().put(Headers.UPGRADE, "foo/2");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -479,7 +486,7 @@ public class JwtVerifyHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server1), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -493,14 +500,14 @@ public class JwtVerifyHandlerTest {
             ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(Headers.AUTHORIZATION, "");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -524,7 +531,7 @@ public class JwtVerifyHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7081"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server1), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -538,14 +545,14 @@ public class JwtVerifyHandlerTest {
             ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();

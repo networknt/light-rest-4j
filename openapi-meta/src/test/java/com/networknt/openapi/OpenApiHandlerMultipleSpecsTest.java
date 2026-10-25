@@ -16,6 +16,8 @@
 
 package com.networknt.openapi;
 
+import com.networknt.test.HttpClientFixture;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -86,6 +88,7 @@ public class OpenApiHandlerMultipleSpecsTest {
             } catch (InterruptedException ignored) {
 
             }
+            HttpClientFixture.closeConnections(HttpClientFixture.address(server));
             server.stop();
             logger.info("The server is stopped.");
         }
@@ -128,14 +131,14 @@ public class OpenApiHandlerMultipleSpecsTest {
             ClientRequest request = new ClientRequest().setPath("/get").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             connection.getIoThread().execute(() ->
-                    connection.sendRequest(request, client.createClientCallback(reference, latch)));
-            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
+                    HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch)));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         Assertions.assertNotNull(reference.get(), "HTTP fixture completed without a response");
@@ -173,14 +176,14 @@ public class OpenApiHandlerMultipleSpecsTest {
             ClientRequest request = new ClientRequest().setPath("/market/get").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             connection.getIoThread().execute(() ->
-                    connection.sendRequest(request, client.createClientCallback(reference, latch)));
-            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
+                    HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch)));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         Assertions.assertNotNull(reference.get(), "HTTP fixture completed without a response");
@@ -218,14 +221,14 @@ public class OpenApiHandlerMultipleSpecsTest {
             ClientRequest request = new ClientRequest().setPath("/petstore/pets").setMethod(Methods.DELETE);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             connection.getIoThread().execute(() ->
-                    connection.sendRequest(request, client.createClientCallback(reference, latch)));
-            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
+                    HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch)));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         Assertions.assertNotNull(reference.get(), "HTTP fixture completed without a response");
@@ -266,16 +269,16 @@ public class OpenApiHandlerMultipleSpecsTest {
                     request.getRequestHeaders().put(Headers.HOST, "localhost");
                     request.getRequestHeaders().put(Headers.CONTENT_TYPE, "application/json");
                     request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
-                    connection.sendRequest(request, client.createClientCallback(reference, latch, post));
+                    HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch, post));
                 }
             });
-            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("IOException: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         Assertions.assertNotNull(reference.get(), "HTTP fixture completed without a response");

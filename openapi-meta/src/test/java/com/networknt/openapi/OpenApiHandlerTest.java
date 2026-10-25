@@ -16,6 +16,8 @@
 
 package com.networknt.openapi;
 
+import com.networknt.test.HttpClientFixture;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -68,7 +70,7 @@ public class OpenApiHandlerTest {
             openApiHandler.setNext(handler);
             handler = openApiHandler;
             server = Undertow.builder()
-                    .addHttpListener(7080, "localhost")
+                    .addHttpListener(0, "localhost")
                     .setHandler(handler)
                     .build();
             server.start();
@@ -83,6 +85,7 @@ public class OpenApiHandlerTest {
             } catch (InterruptedException ignored) {
 
             }
+            HttpClientFixture.closeConnections(HttpClientFixture.address(server));
             server.stop();
             logger.info("The server is stopped.");
         }
@@ -111,7 +114,7 @@ public class OpenApiHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -124,14 +127,14 @@ public class OpenApiHandlerTest {
         try {
             ClientRequest request = new ClientRequest().setPath("/get").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -154,7 +157,7 @@ public class OpenApiHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -167,14 +170,14 @@ public class OpenApiHandlerTest {
         try {
             ClientRequest request = new ClientRequest().setPath("/v1/pets").setMethod(Methods.DELETE);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -195,7 +198,7 @@ public class OpenApiHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -214,16 +217,16 @@ public class OpenApiHandlerTest {
                     request.getRequestHeaders().put(Headers.HOST, "localhost");
                     request.getRequestHeaders().put(Headers.CONTENT_TYPE, "application/json");
                     request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
-                    connection.sendRequest(request, client.createClientCallback(reference, latch, post));
+                    HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch, post));
                 }
             });
-            latch.await(10, TimeUnit.SECONDS);
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("IOException: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();

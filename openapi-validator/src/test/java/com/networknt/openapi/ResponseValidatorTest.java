@@ -21,6 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
+import java.net.InetSocketAddress;
+import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -32,6 +34,7 @@ import static com.networknt.openapi.ValidatorHandlerTest.sendResponse;
 public class ResponseValidatorTest {
     static Map<String, Object> responses = Config.getInstance().getJsonMapConfig("responses");
     static Undertow server = null;
+    private static URI serverUri;
     static final Logger logger = LoggerFactory.getLogger(ResponseValidatorTest.class);
     @BeforeEach
     public void setUp() {
@@ -54,10 +57,12 @@ public class ResponseValidatorTest {
             handler = openApiHandler;
 
             server = Undertow.builder()
-                    .addHttpListener(7080, "localhost")
+                    .addHttpListener(0, "localhost")
                     .setHandler(handler)
                     .build();
             server.start();
+            int port = ((InetSocketAddress) server.getListenerInfo().get(0).getAddress()).getPort();
+            serverUri = URI.create("http://localhost:" + port);
         }
     }
 
@@ -77,14 +82,14 @@ public class ResponseValidatorTest {
     @Test
     public void testValidateResponseContentWithExchange() throws InterruptedException, ClientException, URISyntaxException, TimeoutException, ExecutionException {
         ClientRequest clientRequest = new ClientRequest();
-        CompletableFuture<ClientResponse> future = sendResponse(clientRequest, "response1");
+        CompletableFuture<ClientResponse> future = sendResponse(serverUri, clientRequest, "response1");
         Assertions.assertTrue(future.get(3, TimeUnit.SECONDS).getResponseCode() == 200);
     }
 
     @Test
     public void testValidateResponseContentWithExchangeError() throws InterruptedException, ClientException, URISyntaxException, TimeoutException, ExecutionException {
         ClientRequest clientRequest = new ClientRequest();
-        CompletableFuture<ClientResponse> future = sendResponse(clientRequest, "response2");
+        CompletableFuture<ClientResponse> future = sendResponse(serverUri, clientRequest, "response2");
         Assertions.assertTrue(future.get(3, TimeUnit.SECONDS).getResponseCode() > 300);
     }
 
