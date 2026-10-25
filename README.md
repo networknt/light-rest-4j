@@ -71,3 +71,8 @@ returns the same socket. Direct Undertow fixtures bind ephemeral ports; JWKS tes
 temporarily point client config at their ephemeral key server and restore the
 prior map afterward. The configuration-driven UnifiedSecurityHandler fixture
 retains its checked-in server port, with tracked sockets closed at its teardown.
+
+The fixture module is installed only for reactor/local test use: it sets both
+`maven.deploy.skip` and Central Publishing `skipPublishing` to true. Its inherited
+reuse tests assert the token URI equals the listener URI and that closing tracked
+connections actually closes the reused socket, before stopping the server.

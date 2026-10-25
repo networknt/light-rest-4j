@@ -10,6 +10,10 @@
     <artifactId>light-rest-test-support</artifactId>
     <name>REST test support</name>
     <description>Shared HTTP fixtures; consumers depend on this module only in test scope.</description>
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <skipPublishing>true</skipPublishing>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>com.networknt</groupId>

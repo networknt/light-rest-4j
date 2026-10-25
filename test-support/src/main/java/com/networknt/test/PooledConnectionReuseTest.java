@@ -15,6 +15,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 /** Inherited by each consumer module to qualify reuse under its own client config. */
@@ -33,6 +34,7 @@ public abstract class PooledConnectionReuseTest {
                 var token = client.borrow(address, Http2Client.WORKER, Http2Client.SSL,
                         Http2Client.BUFFER_POOL, OptionMap.EMPTY);
                 try {
+                    assertEquals(address, token.uri(), "Pool token must retain the listener URI used by teardown");
                     var connection = (ClientConnection) token.getRawConnection();
                     if (first == null) first = connection;
                     else assertSame(first, connection, "Second borrow must reuse the same socket");
@@ -48,6 +50,8 @@ public abstract class PooledConnectionReuseTest {
                     HttpClientFixture.restore(client, token);
                 }
             }
+            HttpClientFixture.closeConnections(address);
+            assertFalse(first.isOpen(), "Fixture teardown must close the reused socket");
         } finally {
             HttpClientFixture.closeConnections(address);
             server.stop();
