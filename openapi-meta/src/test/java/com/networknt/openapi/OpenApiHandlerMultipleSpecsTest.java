@@ -19,6 +19,7 @@ package com.networknt.openapi;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,6 +56,7 @@ public class OpenApiHandlerMultipleSpecsTest {
     static final Logger logger = LoggerFactory.getLogger(OpenApiHandlerTest.class);
 
     static Undertow server = null;
+    private static URI serverUri;
 
     @BeforeAll
     public static void setUp() {
@@ -65,10 +67,14 @@ public class OpenApiHandlerMultipleSpecsTest {
             openApiHandler.setNext(handler);
             handler = openApiHandler;
             server = Undertow.builder()
-                    .addHttpListener(7080, "localhost")
+                    // Do not reuse pooled connections from other classes that
+                    // stop and restart a server on the shared port 7080.
+                    .addHttpListener(0, "localhost")
                     .setHandler(handler)
                     .build();
             server.start();
+            int port = ((InetSocketAddress) server.getListenerInfo().get(0).getAddress()).getPort();
+            serverUri = URI.create("http://localhost:" + port);
         }
     }
 
@@ -108,7 +114,7 @@ public class OpenApiHandlerMultipleSpecsTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(serverUri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -121,8 +127,9 @@ public class OpenApiHandlerMultipleSpecsTest {
         try {
             ClientRequest request = new ClientRequest().setPath("/get").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            connection.getIoThread().execute(() ->
+                    connection.sendRequest(request, client.createClientCallback(reference, latch)));
+            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
@@ -131,6 +138,7 @@ public class OpenApiHandlerMultipleSpecsTest {
             client.restore(token);
 
         }
+        Assertions.assertNotNull(reference.get(), "HTTP fixture completed without a response");
         int statusCode = reference.get().getResponseCode();
         String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
         System.out.println("statusCode = " + statusCode + " responseBody = " + responseBody);
@@ -151,7 +159,7 @@ public class OpenApiHandlerMultipleSpecsTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(serverUri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -164,8 +172,9 @@ public class OpenApiHandlerMultipleSpecsTest {
         try {
             ClientRequest request = new ClientRequest().setPath("/market/get").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            connection.getIoThread().execute(() ->
+                    connection.sendRequest(request, client.createClientCallback(reference, latch)));
+            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
@@ -174,6 +183,7 @@ public class OpenApiHandlerMultipleSpecsTest {
             client.restore(token);
 
         }
+        Assertions.assertNotNull(reference.get(), "HTTP fixture completed without a response");
         int statusCode = reference.get().getResponseCode();
         String responseBody = reference.get().getAttachment(Http2Client.RESPONSE_BODY);
         System.out.println("statusCode = " + statusCode + " responseBody = " + responseBody);
@@ -194,7 +204,7 @@ public class OpenApiHandlerMultipleSpecsTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(serverUri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -207,8 +217,9 @@ public class OpenApiHandlerMultipleSpecsTest {
         try {
             ClientRequest request = new ClientRequest().setPath("/petstore/pets").setMethod(Methods.DELETE);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            connection.getIoThread().execute(() ->
+                    connection.sendRequest(request, client.createClientCallback(reference, latch)));
+            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
@@ -217,6 +228,7 @@ public class OpenApiHandlerMultipleSpecsTest {
             client.restore(token);
 
         }
+        Assertions.assertNotNull(reference.get(), "HTTP fixture completed without a response");
         int statusCode = reference.get().getResponseCode();
         Assertions.assertEquals(405, statusCode);
         if(statusCode == 405) {
@@ -235,7 +247,7 @@ public class OpenApiHandlerMultipleSpecsTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(serverUri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -257,7 +269,7 @@ public class OpenApiHandlerMultipleSpecsTest {
                     connection.sendRequest(request, client.createClientCallback(reference, latch, post));
                 }
             });
-            latch.await(10, TimeUnit.SECONDS);
+            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
         } catch (Exception e) {
             logger.error("IOException: ", e);
             throw new ClientException(e);
@@ -266,6 +278,7 @@ public class OpenApiHandlerMultipleSpecsTest {
             client.restore(token);
 
         }
+        Assertions.assertNotNull(reference.get(), "HTTP fixture completed without a response");
         int statusCode = reference.get().getResponseCode();
         Assertions.assertEquals(200, statusCode);
         if(statusCode == 200) {
