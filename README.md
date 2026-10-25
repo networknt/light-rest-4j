@@ -42,3 +42,11 @@ scalars. Examples such as yes/no/on/off, True/FALSE, Null/NULL, 012, 0x1F,
 The checked-in YAML corpus has no scalar differences; deployed specifications
 need a separate audit. Classic SnakeYAML pins remain for the final dependency
 cleanup phase.
+
+The source-build workflow resolves yaml-rule #36 and light-4j #2815 to their
+latest heads while open, then follows their base branches after merge. Other
+prerequisites use master. Each run logs the exact source commits tested and uses
+a fresh Maven repository. Rerun this check after prerequisite changes and before
+merging: an earlier green run qualifies only its recorded commits. Manual
+workflow dispatch is available. Source-build success does not qualify published
+artifact resolution.

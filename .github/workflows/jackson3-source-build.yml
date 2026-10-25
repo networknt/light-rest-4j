@@ -1,6 +1,7 @@
 name: Jackson 3 source build
 on:
   pull_request:
+  workflow_dispatch:
   push:
     branches: [master]
 permissions:
@@ -17,31 +18,47 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
+      - name: Resolve prerequisite pull requests or merged branches
+        id: prerequisites
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          ref=$(gh api repos/networknt/yaml-rule/pulls/36 --jq 'if .merged then .base.ref elif .state == "open" then .head.sha else error("Prerequisite PR was closed without merging") end')
+          echo "yaml_rule=$ref" >> "$GITHUB_OUTPUT"
+          ref=$(gh api repos/networknt/light-4j/pulls/2815 --jq 'if .merged then .base.ref elif .state == "open" then .head.sha else error("Prerequisite PR was closed without merging") end')
+          echo "light_4j=$ref" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
         with:
           repository: networknt/yaml-rule
-          ref: 2a4f51a20b3672801633993cbbcd3aad6e148a1a
+          ref: ${{ steps.prerequisites.outputs.yaml_rule }}
           path: sources/yaml-rule
       - uses: actions/checkout@v4
         with:
           repository: networknt/http-client
-          ref: 4ae8ccfe6858dce7b34f692872ba55a7edb8a16e
+          ref: master
           path: sources/http-client
       - uses: actions/checkout@v4
         with:
           repository: networknt/json-overlay
-          ref: e47b2653aadab2151c56c679ba966feaa4a8cb9f
+          ref: master
           path: sources/json-overlay
       - uses: actions/checkout@v4
         with:
           repository: networknt/openapi-parser
-          ref: 787eb4bc0e48e95ffe0c22501658636e6f57328c
+          ref: master
           path: sources/openapi-parser
       - uses: actions/checkout@v4
         with:
           repository: networknt/light-4j
-          ref: 89a4378dbe7e8413bd98b782a13cd64b68077140
+          ref: ${{ steps.prerequisites.outputs.light_4j }}
           path: sources/light-4j
+      - name: Record prerequisite commits
+        shell: bash
+        run: |
+          for source in sources/*; do
+            echo "$source $(git -C "$source" rev-parse HEAD)"
+          done | tee source-commits.txt
       - name: Build prerequisites from source and run full tests
         shell: bash
         env:
@@ -58,4 +75,5 @@ jobs:
           name: source-build-reports
           path: |
             source-build.log
+            source-commits.txt
             **/target/surefire-reports/**
