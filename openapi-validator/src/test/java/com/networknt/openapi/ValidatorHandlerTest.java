@@ -44,6 +44,7 @@ import org.xnio.OptionMap;
 
 import java.io.*;
 import java.net.URI;
+import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +62,7 @@ public class ValidatorHandlerTest {
     static final Logger logger = LoggerFactory.getLogger(ValidatorHandlerTest.class);
 
     static Undertow server = null;
+    private static URI serverUri;
 
     static Map<String, Object> responses = Config.getInstance().getJsonMapConfig("responses");
 
@@ -87,10 +89,12 @@ public class ValidatorHandlerTest {
             handler = openApiHandler;
 
             server = Undertow.builder()
-                    .addHttpListener(7080, "localhost")
+                    .addHttpListener(0, "localhost")
                     .setHandler(handler)
                     .build();
             server.start();
+            int port = ((InetSocketAddress) server.getListenerInfo().get(0).getAddress()).getPort();
+            serverUri = URI.create("http://localhost:" + port);
             clearLogFile();
         }
     }
@@ -145,7 +149,7 @@ public class ValidatorHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(serverUri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -158,8 +162,11 @@ public class ValidatorHandlerTest {
         try {
             ClientRequest request = new ClientRequest().setPath("/api").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            // Undertow connection state belongs to this I/O thread.
+            connection.getIoThread().execute(() ->
+                    connection.sendRequest(request, client.createClientCallback(reference, latch)));
+            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
+            Assertions.assertNotNull(reference.get(), "HTTP fixture failed before receiving a response");
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
@@ -185,7 +192,7 @@ public class ValidatorHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(serverUri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -198,8 +205,11 @@ public class ValidatorHandlerTest {
         try {
             ClientRequest request = new ClientRequest().setPath("/v1/pets").setMethod(Methods.DELETE);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            // Undertow connection state belongs to this I/O thread.
+            connection.getIoThread().execute(() ->
+                    connection.sendRequest(request, client.createClientCallback(reference, latch)));
+            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
+            Assertions.assertNotNull(reference.get(), "HTTP fixture failed before receiving a response");
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
@@ -226,7 +236,7 @@ public class ValidatorHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(serverUri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -249,7 +259,8 @@ public class ValidatorHandlerTest {
                 }
             });
 
-            latch.await(10, TimeUnit.SECONDS);
+            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
+            Assertions.assertNotNull(reference.get(), "HTTP fixture failed before receiving a response");
         } catch (Exception e) {
             logger.error("IOException: ", e);
             throw new ClientException(e);
@@ -277,7 +288,7 @@ public class ValidatorHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(serverUri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -302,7 +313,8 @@ public class ValidatorHandlerTest {
                 }
             });
 
-            latch.await(10, TimeUnit.SECONDS);
+            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
+            Assertions.assertNotNull(reference.get(), "HTTP fixture failed before receiving a response");
         } catch (Exception e) {
             logger.error("IOException: ", e);
             throw new ClientException(e);
@@ -329,7 +341,7 @@ public class ValidatorHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(serverUri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -354,7 +366,8 @@ public class ValidatorHandlerTest {
                 }
             });
 
-            latch.await(10, TimeUnit.SECONDS);
+            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
+            Assertions.assertNotNull(reference.get(), "HTTP fixture failed before receiving a response");
         } catch (Exception e) {
             logger.error("IOException: ", e);
             throw new ClientException(e);
@@ -382,7 +395,7 @@ public class ValidatorHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(serverUri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -405,7 +418,8 @@ public class ValidatorHandlerTest {
                 }
             });
 
-            latch.await(10, TimeUnit.SECONDS);
+            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
+            Assertions.assertNotNull(reference.get(), "HTTP fixture failed before receiving a response");
         } catch (Exception e) {
             logger.error("IOException: ", e);
             throw new ClientException(e);
@@ -432,7 +446,7 @@ public class ValidatorHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(serverUri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -445,8 +459,11 @@ public class ValidatorHandlerTest {
         try {
             ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            // Undertow connection state belongs to this I/O thread.
+            connection.getIoThread().execute(() ->
+                    connection.sendRequest(request, client.createClientCallback(reference, latch)));
+            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
+            Assertions.assertNotNull(reference.get(), "HTTP fixture failed before receiving a response");
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
@@ -472,7 +489,7 @@ public class ValidatorHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(serverUri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -485,8 +502,11 @@ public class ValidatorHandlerTest {
         try {
             ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.DELETE);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            // Undertow connection state belongs to this I/O thread.
+            connection.getIoThread().execute(() ->
+                    connection.sendRequest(request, client.createClientCallback(reference, latch)));
+            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
+            Assertions.assertNotNull(reference.get(), "HTTP fixture failed before receiving a response");
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
@@ -513,7 +533,7 @@ public class ValidatorHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(serverUri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -527,8 +547,11 @@ public class ValidatorHandlerTest {
             ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.DELETE);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(new HttpString("key"), "key");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            // Undertow connection state belongs to this I/O thread.
+            connection.getIoThread().execute(() ->
+                    connection.sendRequest(request, client.createClientCallback(reference, latch)));
+            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
+            Assertions.assertNotNull(reference.get(), "HTTP fixture failed before receiving a response");
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
@@ -568,7 +591,7 @@ public class ValidatorHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(serverUri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -583,8 +606,11 @@ public class ValidatorHandlerTest {
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(new HttpString("accessId"), "accessId");
             request.getRequestHeaders().put(new HttpString("requestId"), "requestId");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            // Undertow connection state belongs to this I/O thread.
+            connection.getIoThread().execute(() ->
+                    connection.sendRequest(request, client.createClientCallback(reference, latch)));
+            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
+            Assertions.assertNotNull(reference.get(), "HTTP fixture failed before receiving a response");
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
@@ -605,7 +631,7 @@ public class ValidatorHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(serverUri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -620,8 +646,11 @@ public class ValidatorHandlerTest {
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(new HttpString("accessId"), "accessId");
             request.getRequestHeaders().put(new HttpString("requestId"), "requestId");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            // Undertow connection state belongs to this I/O thread.
+            connection.getIoThread().execute(() ->
+                    connection.sendRequest(request, client.createClientCallback(reference, latch)));
+            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "HTTP fixture response timed out");
+            Assertions.assertNotNull(reference.get(), "HTTP fixture failed before receiving a response");
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
@@ -702,9 +731,12 @@ public class ValidatorHandlerTest {
     }
 
     public static CompletableFuture<ClientResponse> sendResponse(ClientRequest request, String response) throws ClientException, URISyntaxException, InterruptedException {
+        return sendResponse(serverUri, request, response);
+    }
+
+    public static CompletableFuture<ClientResponse> sendResponse(URI uri, ClientRequest request, String response) throws ClientException, InterruptedException {
         final Http2Client client = Http2Client.getInstance();
         final ClientConnection connection;
-        URI uri = new URI("http://localhost:7080");
         SimpleConnectionState.ConnectionToken token = null;
         try {
             token = client.borrow(uri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
