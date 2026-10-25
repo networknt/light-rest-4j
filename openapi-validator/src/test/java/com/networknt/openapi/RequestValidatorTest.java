@@ -1,5 +1,7 @@
 package com.networknt.openapi;
 
+import com.networknt.test.HttpClientFixture;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -70,7 +72,7 @@ public class RequestValidatorTest {
             handler = parameterHandler;
 
             server = Undertow.builder()
-                    .addHttpListener(7080, "localhost")
+                    .addHttpListener(0, "localhost")
                     .setHandler(handler)
                     .build();
             server.start();
@@ -467,7 +469,7 @@ public class RequestValidatorTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -495,16 +497,16 @@ public class RequestValidatorTest {
                     	 request.getRequestHeaders().put(Headers.COOKIE, String.join(";", cookieItems));
                     }
 
-                    connection.sendRequest(request, client.createClientCallback(reference, latch, ""));
+                    HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch, ""));
                 }
             });
-            latch.await(60, TimeUnit.SECONDS);
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("IOException: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
 

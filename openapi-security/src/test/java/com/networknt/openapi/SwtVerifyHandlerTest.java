@@ -1,5 +1,7 @@
 package com.networknt.openapi;
 
+import com.networknt.test.HttpClientFixture;
+
 import com.networknt.body.BodyConverter;
 import com.networknt.client.Http2Client;
 import com.networknt.client.simplepool.SimpleConnectionState;
@@ -51,7 +53,7 @@ public class SwtVerifyHandlerTest {
             OpenApiHandler openApiHandler = new OpenApiHandler();
             openApiHandler.setNext(swtVerifyHandler);
             server = Undertow.builder()
-                    .addHttpListener(7080, "localhost")
+                    .addHttpListener(0, "localhost")
                     .setHandler(openApiHandler)
                     .build();
             server.start();
@@ -131,7 +133,7 @@ public class SwtVerifyHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -145,14 +147,14 @@ public class SwtVerifyHandlerTest {
             ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer valid_token");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -171,7 +173,7 @@ public class SwtVerifyHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -187,14 +189,14 @@ public class SwtVerifyHandlerTest {
             request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer valid_token");
             request.getRequestHeaders().put(new HttpString("swt-client"), "new-client");
             request.getRequestHeaders().put(new HttpString("swt-secret"), "new-secret");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -213,7 +215,7 @@ public class SwtVerifyHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -227,14 +229,14 @@ public class SwtVerifyHandlerTest {
             ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer invalid_scope");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -260,7 +262,7 @@ public class SwtVerifyHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -275,14 +277,14 @@ public class SwtVerifyHandlerTest {
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer invalid_scope");
             request.getRequestHeaders().put(HttpStringConstants.SCOPE_TOKEN, "Bearer valid_token");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -301,7 +303,7 @@ public class SwtVerifyHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -316,14 +318,14 @@ public class SwtVerifyHandlerTest {
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(Headers.AUTHORIZATION, "Bearer invalid_scope");
             request.getRequestHeaders().put(HttpStringConstants.SCOPE_TOKEN, "Bearer invalid_scope");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -344,7 +346,7 @@ public class SwtVerifyHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -361,14 +363,14 @@ public class SwtVerifyHandlerTest {
             request.getRequestHeaders().put(HttpStringConstants.SCOPE_TOKEN, "Bearer valid_token");
             request.getRequestHeaders().put(Headers.CONNECTION, "upgrade");
             request.getRequestHeaders().put(Headers.UPGRADE, "foo/2");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -389,7 +391,7 @@ public class SwtVerifyHandlerTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -403,14 +405,14 @@ public class SwtVerifyHandlerTest {
             ClientRequest request = new ClientRequest().setPath("/v1/pets/111").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(Headers.AUTHORIZATION, "");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();

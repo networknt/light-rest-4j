@@ -59,3 +59,12 @@ commit SHAs. Each green result qualifies only the recorded combination.
 
 GitHub manual dispatch requires this workflow to exist on the default branch.
 Before merge, use the recorded commits to reproduce with local source checkouts.
+
+HTTP tests in openapi-meta, openapi-security and openapi-validator share the
+test-only `test-support` source via build-helper. `HttpClientFixture` owns I/O-thread
+sends, bounded response waits and closing borrowed sockets before pool restore.
+Direct Undertow fixtures bind ephemeral ports; JWKS tests temporarily point client
+config at their ephemeral key server and restore the prior map afterward. The
+configuration-driven UnifiedSecurityHandler fixture retains its checked-in server
+port, but every borrowed test connection is closed before return. No shared test
+support is packaged in the production jars.

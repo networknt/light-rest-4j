@@ -1,5 +1,7 @@
 package com.networknt.openapi;
 
+import com.networknt.test.HttpClientFixture;
+
 import tools.jackson.core.type.TypeReference;
 import com.networknt.body.BodyHandler;
 import com.networknt.client.Http2Client;
@@ -67,7 +69,7 @@ public class ValidatorHandlerMultipleSpecsTest {
             handler = openApiHandler;
 
             server = Undertow.builder()
-                    .addHttpListener(7080, "localhost")
+                    .addHttpListener(0, "localhost")
                     .setHandler(handler)
                     .build();
             server.start();
@@ -125,7 +127,7 @@ public class ValidatorHandlerMultipleSpecsTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -138,14 +140,14 @@ public class ValidatorHandlerMultipleSpecsTest {
         try {
             ClientRequest request = new ClientRequest().setPath("/api").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -165,7 +167,7 @@ public class ValidatorHandlerMultipleSpecsTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -178,14 +180,14 @@ public class ValidatorHandlerMultipleSpecsTest {
         try {
             ClientRequest request = new ClientRequest().setPath("/petstore/pets").setMethod(Methods.DELETE);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -206,7 +208,7 @@ public class ValidatorHandlerMultipleSpecsTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -225,17 +227,17 @@ public class ValidatorHandlerMultipleSpecsTest {
                     request.getRequestHeaders().put(Headers.HOST, "localhost");
                     request.getRequestHeaders().put(Headers.CONTENT_TYPE, "application/json");
                     request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
-                    connection.sendRequest(request, client.createClientCallback(reference, latch, post));
+                    HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch, post));
                 }
             });
 
-            latch.await(10, TimeUnit.SECONDS);
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("IOException: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -257,7 +259,7 @@ public class ValidatorHandlerMultipleSpecsTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -278,17 +280,17 @@ public class ValidatorHandlerMultipleSpecsTest {
                     request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
                     request.getRequestHeaders().put(new HttpString("accessId"), "001");
                     request.getRequestHeaders().put(new HttpString("requestId"), "64");
-                    connection.sendRequest(request, client.createClientCallback(reference, latch, post));
+                    HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch, post));
                 }
             });
 
-            latch.await(10, TimeUnit.SECONDS);
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("IOException: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -309,7 +311,7 @@ public class ValidatorHandlerMultipleSpecsTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -330,17 +332,17 @@ public class ValidatorHandlerMultipleSpecsTest {
                     request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
                     request.getRequestHeaders().put(new HttpString("accessId"), "001");
                     request.getRequestHeaders().put(new HttpString("requestId"), "65");  // the maximum for the request is 64 in the spec.
-                    connection.sendRequest(request, client.createClientCallback(reference, latch, post));
+                    HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch, post));
                 }
             });
 
-            latch.await(10, TimeUnit.SECONDS);
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("IOException: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -362,7 +364,7 @@ public class ValidatorHandlerMultipleSpecsTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -381,17 +383,17 @@ public class ValidatorHandlerMultipleSpecsTest {
                     request.getRequestHeaders().put(Headers.HOST, "localhost");
                     request.getRequestHeaders().put(Headers.CONTENT_TYPE, "application/json");
                     request.getRequestHeaders().put(Headers.TRANSFER_ENCODING, "chunked");
-                    connection.sendRequest(request, client.createClientCallback(reference, latch, post));
+                    HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch, post));
                 }
             });
 
-            latch.await(10, TimeUnit.SECONDS);
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("IOException: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -412,7 +414,7 @@ public class ValidatorHandlerMultipleSpecsTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -425,14 +427,14 @@ public class ValidatorHandlerMultipleSpecsTest {
         try {
             ClientRequest request = new ClientRequest().setPath("/petstore/pets/111").setMethod(Methods.GET);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -452,7 +454,7 @@ public class ValidatorHandlerMultipleSpecsTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -465,14 +467,14 @@ public class ValidatorHandlerMultipleSpecsTest {
         try {
             ClientRequest request = new ClientRequest().setPath("/petstore/pets/111").setMethod(Methods.DELETE);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -493,7 +495,7 @@ public class ValidatorHandlerMultipleSpecsTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -507,14 +509,14 @@ public class ValidatorHandlerMultipleSpecsTest {
             ClientRequest request = new ClientRequest().setPath("/petstore/pets/111").setMethod(Methods.DELETE);
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(new HttpString("key"), "key");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -548,7 +550,7 @@ public class ValidatorHandlerMultipleSpecsTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -563,14 +565,14 @@ public class ValidatorHandlerMultipleSpecsTest {
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(new HttpString("accessId"), "accessId");
             request.getRequestHeaders().put(new HttpString("requestId"), "requestId");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -585,7 +587,7 @@ public class ValidatorHandlerMultipleSpecsTest {
 
         try {
 
-            token = client.borrow(new URI("http://localhost:7080"), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
+            token = client.borrow(HttpClientFixture.address(server), Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
 
         } catch (Exception e) {
 
@@ -600,14 +602,14 @@ public class ValidatorHandlerMultipleSpecsTest {
             request.getRequestHeaders().put(Headers.HOST, "localhost");
             request.getRequestHeaders().put(new HttpString("accessId"), "accessId");
             request.getRequestHeaders().put(new HttpString("requestId"), "requestId");
-            connection.sendRequest(request, client.createClientCallback(reference, latch));
-            latch.await();
+            HttpClientFixture.send(connection, request, client.createClientCallback(reference, latch));
+            HttpClientFixture.awaitResponse(reference, latch);
         } catch (Exception e) {
             logger.error("Exception: ", e);
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         int statusCode = reference.get().getResponseCode();
@@ -684,7 +686,7 @@ public class ValidatorHandlerMultipleSpecsTest {
     public static CompletableFuture<ClientResponse> sendResponse(ClientRequest request, String response) throws ClientException, URISyntaxException, InterruptedException {
         final Http2Client client = Http2Client.getInstance();
         final ClientConnection connection;
-        URI uri = new URI("http://localhost:7080");
+        URI uri = HttpClientFixture.address(server);
         SimpleConnectionState.ConnectionToken token = null;
         try {
             token = client.borrow(uri, Http2Client.WORKER, Http2Client.SSL, Http2Client.BUFFER_POOL, OptionMap.EMPTY);
@@ -705,7 +707,7 @@ public class ValidatorHandlerMultipleSpecsTest {
             throw new ClientException(e);
         } finally {
 
-            client.restore(token);
+            HttpClientFixture.restore(client, token);
 
         }
         Thread.sleep(1200);
