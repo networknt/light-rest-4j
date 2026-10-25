@@ -16,7 +16,7 @@
 
 package com.networknt.openapi;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import com.networknt.config.Config;
 import com.networknt.handler.Handler;
 import com.networknt.handler.MiddlewareHandler;
@@ -144,7 +144,7 @@ public class OpenApiHandler implements MiddlewareHandler {
                 try {
                     OpenApiHelper h = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(inject));
                     loadedHelpers.put("/adm", h);
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                     logger.error("parse inject failed for adm");
                     throw new RuntimeException("parse inject failed for adm");
                 }

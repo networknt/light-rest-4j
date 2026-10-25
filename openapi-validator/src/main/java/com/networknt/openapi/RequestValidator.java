@@ -21,8 +21,8 @@ import static java.util.Objects.requireNonNull;
 import java.net.URLDecoder;
 import java.util.*;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.StringNode;
 import com.networknt.body.BodyConfig;
 import com.networknt.config.Config;
 import com.networknt.httpstring.AttachmentConstants;
@@ -191,7 +191,7 @@ public class RequestValidator {
 	                logger.info("Path parameter cannot be decoded, it will be used directly");
 	            }
 
-                return schemaValidator.validate(new TextNode(paramValue), Overlay.toJson((SchemaImpl)(parameter.get().getSchema())), paramName);
+                return schemaValidator.validate(new StringNode(paramValue), Overlay.toJson((SchemaImpl)(parameter.get().getSchema())), paramName);
             }
         }
         return status;
@@ -233,7 +233,7 @@ public class RequestValidator {
 
             Optional<Status> optional = queryParameterValues
                     .stream()
-                    .map((v) -> schemaValidator.validate(new TextNode(v), Overlay.toJson((SchemaImpl)queryParameter.getSchema()), queryParameter.getName()))
+                    .map((v) -> schemaValidator.validate(new StringNode(v), Overlay.toJson((SchemaImpl)queryParameter.getSchema()), queryParameter.getName()))
                     .filter(s -> s != null)
                     .findFirst();
 
@@ -337,13 +337,13 @@ public class RequestValidator {
                                   final Parameter headerParameter) {
         final HeaderValues headerValues = exchange.getRequestHeaders().get(new HttpString(headerParameter.getName()));
         if ((headerValues == null || headerValues.isEmpty())) {
-            if(headerParameter.getRequired()) {
+            if(headerParameter.isRequired()) {
                 return new Status(VALIDATOR_REQUEST_PARAMETER_HEADER_MISSING, headerParameter.getName(), openApiOperation.getPathString().original());
             }
         } else {
             Optional<Status> optional = headerValues
                     .stream()
-                    .map((v) -> schemaValidator.validate(new TextNode(v), Overlay.toJson((SchemaImpl)headerParameter.getSchema()), headerParameter.getName()))
+                    .map((v) -> schemaValidator.validate(new StringNode(v), Overlay.toJson((SchemaImpl)headerParameter.getSchema()), headerParameter.getName()))
                     .filter(s -> s != null)
                     .findFirst();
             return optional.orElse(null);

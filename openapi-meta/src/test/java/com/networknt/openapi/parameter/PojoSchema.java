@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.networknt.jsonoverlay.SerializationOptions;
 import com.networknt.oas.model.Discriminator;
 import com.networknt.oas.model.ExternalDocs;

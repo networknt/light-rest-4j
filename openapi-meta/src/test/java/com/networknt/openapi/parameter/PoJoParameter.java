@@ -2,7 +2,7 @@ package com.networknt.openapi.parameter;
 
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.networknt.jsonoverlay.SerializationOptions;
 import com.networknt.oas.model.Example;
 import com.networknt.oas.model.MediaType;
