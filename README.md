@@ -17,3 +17,28 @@ To get started your first project, please visit the [getting started](https://do
 For documentation on the handlers, please visit the [reference document](https://doc.networknt.com/style/light-rest-4j/).
 
 There are also numeric [tutorials](https://doc.networknt.com/tutorial/rest/) to show users how to build Restful services.
+
+
+### Jackson 3 development migration
+
+This development line uses Jackson 3.2.3 and json-schema-validator 3.0.8.
+Jackson core/databind types in public APIs now use `tools.jackson`; annotations
+remain under `com.fasterxml.jackson.annotation`. This is a source and binary
+API change. The existing project version is unchanged during implementation;
+coordinate a next-major release before publishing these artifacts.
+
+Build against the migrated light-4j, http-client, json-overlay, openapi-parser
+and yaml-rule sources/artifacts together. Old Jackson 2 snapshots under the same
+coordinates are incompatible. yaml-rule now resolves to the migrated 3.0.1
+coordinate. Framework JSON policies come from the migrated Config mapper.
+Handled malformed response JSON and injected-spec serialization errors retain
+their previous error paths with unchecked JacksonException handling. The #448
+routing publication and validator reload behavior is retained.
+
+OpenAPI YAML uses the upstream Jackson 3 YAML resolver. Use canonical `true`,
+`false`, `null` and decimal numbers for typed values; quote ambiguous string
+scalars. Examples such as yes/no/on/off, True/FALSE, Null/NULL, 012, 0x1F,
+0b11, 1_000 and ~ have different scalar types or values from Jackson 2.
+The checked-in YAML corpus has no scalar differences; deployed specifications
+need a separate audit. Classic SnakeYAML pins remain for the final dependency
+cleanup phase.

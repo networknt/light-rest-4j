@@ -15,9 +15,10 @@
  */
 package com.networknt.openapi;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.StringNode;
 import com.networknt.config.Config;
 import com.networknt.dump.StoreResponseStreamSinkConduit;
 import com.networknt.jsonoverlay.Overlay;
@@ -31,7 +32,6 @@ import io.undertow.util.Headers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -202,7 +202,7 @@ public class ResponseValidator {
                     logger.error("cannot deserialize json str: {}", s);
                     return null;
                 }
-            } catch (IOException e) {
+            } catch (JacksonException e) {
                 logger.error(e.getMessage());
             }
         }
@@ -288,7 +288,7 @@ public class ResponseValidator {
         } else {
             Optional<Status> optional = headerValues
                     .stream()
-                    .map((v) -> schemaValidator.validate(new TextNode(v),
+                    .map((v) -> schemaValidator.validate(new StringNode(v),
                             Overlay.toJson((SchemaImpl)operationHeader.getSchema()),
                             true, config.isHandleNullableField(), PathType.LEGACY, true))
                     .filter(s -> s != null)

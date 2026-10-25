@@ -16,10 +16,10 @@
 
 package com.networknt.openapi;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.StringNode;
 import com.networknt.schema.path.PathType;
 import com.networknt.status.Status;
 import org.junit.jupiter.api.Test;
@@ -31,15 +31,15 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SchemaValidatorTest {
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = com.networknt.config.Jackson2Defaults.mapper();
 
     @Test
     void shouldKeepLooseAndStrictTypeProfilesSeparate() throws Exception {
         SchemaValidator validator = new SchemaValidator();
         JsonNode integerSchema = MAPPER.readTree("{\"type\":\"integer\"}");
 
-        assertNull(validator.validate(new TextNode("42"), integerSchema, true, false));
-        assertNotNull(validator.validate(new TextNode("42"), integerSchema, false, false));
+        assertNull(validator.validate(new StringNode("42"), integerSchema, true, false));
+        assertNotNull(validator.validate(new StringNode("42"), integerSchema, false, false));
     }
 
     @Test
@@ -68,7 +68,7 @@ class SchemaValidatorTest {
         SchemaValidator validator = new SchemaValidator(null, true);
         JsonNode schema = MAPPER.readTree("{\"type\":\"integer\"}");
 
-        Status status = validator.validate(new TextNode("invalid"), schema, "requestId");
+        Status status = validator.validate(new StringNode("invalid"), schema, "requestId");
 
         assertNotNull(status);
         assertTrue(status.getDescription().contains("$.requestId:"), status.getDescription());
@@ -79,7 +79,7 @@ class SchemaValidatorTest {
         SchemaValidator validator = new SchemaValidator();
         JsonNode schema = MAPPER.readTree("{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"integer\"}");
 
-        Status status = validator.validate(new TextNode("invalid"), schema, false, false);
+        Status status = validator.validate(new StringNode("invalid"), schema, false, false);
 
         assertNotNull(status);
         assertEquals(SchemaValidator.VALIDATOR_SCHEMA, status.getCode());
@@ -90,7 +90,7 @@ class SchemaValidatorTest {
         SchemaValidator validator = new SchemaValidator();
         JsonNode invalidSchema = MAPPER.readTree("{\"type\":\"string\",\"pattern\":\"[\"}");
 
-        Status status = validator.validate(new TextNode("value"), invalidSchema, false, false);
+        Status status = validator.validate(new StringNode("value"), invalidSchema, false, false);
 
         assertNotNull(status);
         assertEquals(SchemaValidator.VALIDATOR_SCHEMA_INVALID_JSON, status.getCode());
