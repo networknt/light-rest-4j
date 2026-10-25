@@ -94,6 +94,7 @@ public class JwtVerifyHandlerTest {
             } catch (InterruptedException ignored) {
 
             }
+            HttpClientFixture.closeConnections(HttpClientFixture.address(server1));
             server1.stop();
             logger.info("The server1 is stopped.");
         }
@@ -103,6 +104,7 @@ public class JwtVerifyHandlerTest {
             } catch (InterruptedException ignored) {
 
             }
+            HttpClientFixture.closeConnections(HttpClientFixture.address(server2));
             server2.stop();
             tokenKeyServer.close();
             logger.info("The server2 is stopped.");

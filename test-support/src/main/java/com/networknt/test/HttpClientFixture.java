@@ -16,6 +16,8 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -25,6 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Test-only HTTP ownership, completion and connection-lifetime rules. */
 public final class HttpClientFixture {
+    private static final Map<URI, Set<ClientConnection>> CONNECTIONS = new ConcurrentHashMap<>();
+
     private HttpClientFixture() { }
 
     public static URI address(Undertow server) {
@@ -50,12 +54,15 @@ public final class HttpClientFixture {
 
     public static void restore(Http2Client client, SimpleConnectionState.ConnectionToken token) {
         if (token == null) return;
-        // A stopped fixture must never leave a live pooled socket for its successor.
-        try {
-            IoUtils.safeClose((ClientConnection) token.getRawConnection());
-        } finally {
-            client.restore(token);
-        }
+        CONNECTIONS.computeIfAbsent(token.uri(), ignored -> ConcurrentHashMap.newKeySet())
+                .add((ClientConnection) token.getRawConnection());
+        client.restore(token);
+    }
+
+    /** Keep reuse during a fixture, then close sockets before its listener stops. */
+    public static void closeConnections(URI address) {
+        Set<ClientConnection> connections = CONNECTIONS.remove(address);
+        if (connections != null) connections.forEach(IoUtils::safeClose);
     }
 
     @SuppressWarnings("unchecked")

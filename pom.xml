@@ -122,6 +122,7 @@
     </properties>
 
     <modules>
+        <module>test-support</module>
         <module>openapi-config</module>
         <module>openapi-meta</module>
         <module>validator-config</module>

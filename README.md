@@ -60,11 +60,14 @@ commit SHAs. Each green result qualifies only the recorded combination.
 GitHub manual dispatch requires this workflow to exist on the default branch.
 Before merge, use the recorded commits to reproduce with local source checkouts.
 
-HTTP tests in openapi-meta, openapi-security and openapi-validator share the
-test-only `test-support` source via build-helper. `HttpClientFixture` owns I/O-thread
-sends, bounded response waits and closing borrowed sockets before pool restore.
-Direct Undertow fixtures bind ephemeral ports; JWKS tests temporarily point client
-config at their ephemeral key server and restore the prior map afterward. The
-configuration-driven UnifiedSecurityHandler fixture retains its checked-in server
-port, but every borrowed test connection is closed before return. No shared test
-support is packaged in the production jars.
+HTTP tests in openapi-meta, openapi-security and openapi-validator depend in test
+scope on the `light-rest-test-support` reactor module. Its JUnit-dependent helper
+classes are compiled once into that fixture jar; production consumers do not
+inherit them at runtime. `HttpClientFixture` owns I/O-thread sends and bounded
+response waits. Restoring a token keeps its socket open for pool reuse, and each
+fixture closes its tracked sockets at teardown before stopping its listener.
+Each consumer module runs a two-request test asserting that the second borrow
+returns the same socket. Direct Undertow fixtures bind ephemeral ports; JWKS tests
+temporarily point client config at their ephemeral key server and restore the
+prior map afterward. The configuration-driven UnifiedSecurityHandler fixture
+retains its checked-in server port, with tracked sockets closed at its teardown.

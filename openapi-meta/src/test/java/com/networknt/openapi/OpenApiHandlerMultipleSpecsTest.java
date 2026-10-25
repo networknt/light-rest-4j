@@ -88,6 +88,7 @@ public class OpenApiHandlerMultipleSpecsTest {
             } catch (InterruptedException ignored) {
 
             }
+            HttpClientFixture.closeConnections(HttpClientFixture.address(server));
             server.stop();
             logger.info("The server is stopped.");
         }
