@@ -29,7 +29,7 @@ coordinate a next-major release before publishing these artifacts.
 
 Build against the migrated light-4j, http-client, json-overlay, openapi-parser
 and yaml-rule sources/artifacts together. Old Jackson 2 snapshots under the same
-coordinates are incompatible. yaml-rule now resolves to the migrated 3.0.1
+coordinates are incompatible. yaml-rule now resolves to the migrated 4.0.0-SNAPSHOT
 coordinate. Framework JSON policies come from the migrated Config mapper.
 Handled malformed response JSON and injected-spec serialization errors retain
 their previous error paths with unchecked JacksonException handling. The #448

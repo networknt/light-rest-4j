@@ -337,7 +337,7 @@ public class RequestValidator {
                                   final Parameter headerParameter) {
         final HeaderValues headerValues = exchange.getRequestHeaders().get(new HttpString(headerParameter.getName()));
         if ((headerValues == null || headerValues.isEmpty())) {
-            if(headerParameter.getRequired()) {
+            if(headerParameter.isRequired()) {
                 return new Status(VALIDATOR_REQUEST_PARAMETER_HEADER_MISSING, headerParameter.getName(), openApiOperation.getPathString().original());
             }
         } else {

@@ -1,0 +1,61 @@
+name: Jackson 3 source build
+on:
+  pull_request:
+  push:
+    branches: [master, migrate-jackson-3, fix-jackson3-build-coordinates]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: consumer
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/checkout@v4
+        with:
+          repository: networknt/yaml-rule
+          ref: 86aba6f60befdbeea2548fc950acffb717b7c919
+          path: sources/yaml-rule
+      - uses: actions/checkout@v4
+        with:
+          repository: networknt/http-client
+          ref: 4ae8ccfe6858dce7b34f692872ba55a7edb8a16e
+          path: sources/http-client
+      - uses: actions/checkout@v4
+        with:
+          repository: networknt/json-overlay
+          ref: e47b2653aadab2151c56c679ba966feaa4a8cb9f
+          path: sources/json-overlay
+      - uses: actions/checkout@v4
+        with:
+          repository: networknt/openapi-parser
+          ref: 787eb4bc0e48e95ffe0c22501658636e6f57328c
+          path: sources/openapi-parser
+      - uses: actions/checkout@v4
+        with:
+          repository: networknt/light-4j
+          ref: cf59b9e5e875e7376e495104d3c8735d34eac4ff
+          path: sources/light-4j
+      - name: Build prerequisites from source and run full tests
+        shell: bash
+        env:
+          JACKSON3_MAVEN_REPO: ${{ runner.temp }}/m2
+          JACKSON3_YAML_RULE: ${{ github.workspace }}/sources/yaml-rule
+          JACKSON3_HTTP_CLIENT: ${{ github.workspace }}/sources/http-client
+          JACKSON3_JSON_OVERLAY: ${{ github.workspace }}/sources/json-overlay
+          JACKSON3_OPENAPI_PARSER: ${{ github.workspace }}/sources/openapi-parser
+          JACKSON3_CONSUMER: ${{ github.workspace }}/consumer
+        run: bash sources/light-4j/scripts/verify-jackson3-bootstrap.sh 2>&1 | tee source-build.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: source-build-reports
+          path: |
+            source-build.log
+            **/target/surefire-reports/**
