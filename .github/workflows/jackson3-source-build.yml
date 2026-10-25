@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: networknt/light-4j
-          ref: 9b2df9157dcaf3533da0e5662721414a7b3228b5
+          ref: e270fd69913580c67b1e3d3da6c8458caf44a6e1
           path: sources/light-4j
       - name: Build prerequisites from source and run full tests
         shell: bash
