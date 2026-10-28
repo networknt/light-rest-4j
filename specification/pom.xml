@@ -74,4 +74,19 @@
 
     </dependencies>
 
+    <build>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+            </testResource>
+            <testResource>
+                <directory>examples/hsts</directory>
+                <targetPath>hsts-example</targetPath>
+                <includes>
+                    <include>values.yml</include>
+                </includes>
+            </testResource>
+        </testResources>
+    </build>
+
 </project>
