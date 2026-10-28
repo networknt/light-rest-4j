@@ -1,0 +1,6 @@
+# Merge into the application's values.yml; use only for an HTTPS-only public listener.
+server.enableHttps: true
+server.enableHttp: false
+header.enabled: true
+header.response.update:
+  Strict-Transport-Security: "max-age=31536000"
