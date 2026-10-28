@@ -15,8 +15,8 @@ not distinguish HTTP from HTTPS listeners, so this example cannot enforce TLS-on
 HSTS in one dual-listener process.
 
 For a complete registered configuration, see the consuming
-[http-sidecar handler configuration](https://github.com/networknt/http-sidecar/blob/2.x/src/main/resources/config/values.yml)
-and [HSTS integration guide](https://github.com/networknt/http-sidecar/blob/2.x/config/hsts/README.md).
+[http-sidecar handler configuration](https://github.com/networknt/http-sidecar/blob/d2b988fe3c28dc906d507522fa017b768d4545b5/src/main/resources/config/values.yml)
+and [HSTS integration guide](https://github.com/networknt/http-sidecar/blob/d2b988fe3c28dc906d507522fa017b768d4545b5/config/hsts/README.md).
 Keep header first in all applicable routes/chains, including custom fallback/error
 handling. Preserve existing handlers and merge existing prefix rules. Add the
 com.networknt:header dependency at the same version as the application's light-4j
