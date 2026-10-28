@@ -2,61 +2,39 @@
 
 ## HSTS for favicon and other browser responses (Checkmarx A02)
 
-HSTS is a policy for the entire public host. Configure the existing
-`com.networknt.header.HeaderHandler` in the consuming application so the policy
-covers the favicon, API/specification responses, redirects and errors. Setting
-it only in `FaviconHandler` leaves the other response paths uncovered.
+HSTS is a host-wide policy. Configure the existing HeaderHandler in the consuming
+application; setting it only in FaviconHandler leaves other response paths uncovered.
+The specification library does not activate host policy or add a header dependency.
 
-The [HTTPS-only values example](examples/hsts/values.yml) enables the existing
-header middleware with `Strict-Transport-Security: max-age=31536000`. Merge its
-entries into the application's `values.yml`, preserving any existing response
-header updates. Add the `com.networknt:header` dependency to the application,
-using the same version as its light-4j modules. The specification library does
-not add this dependency or activate a host-wide policy for applications.
+The [values example](examples/hsts/values.yml) uses a late root-prefix response rule
+so backend headers cannot replace the intended HSTS value. It is for a **dedicated
+HTTPS ingress instance**, and disables plaintext HTTP. Do not merge it into a normal
+co-located http-sidecar instance that needs localhost:9080 for egress. Use a separate
+ingress instance or enforce HSTS at a trusted TLS edge. Generic HeaderHandler does
+not distinguish HTTP from HTTPS listeners, so this example cannot enforce TLS-only
+HSTS in one dual-listener process.
 
-Register `com.networknt.header.HeaderHandler@header` in `handler.handlers` and
-put `header` before handlers that can finish a response in every browser-facing
-route's `exec` list. Include it in `handler.defaultHandlers` before the existing
-not-found terminal handler as well; a named chain is not automatically applied
-to all routes. In particular, the favicon route must include it:
+For a complete registered configuration, see the consuming
+[http-sidecar handler configuration](https://github.com/networknt/http-sidecar/blob/master/src/main/resources/config/values.yml)
+and [HSTS integration guide](https://github.com/networknt/http-sidecar/blob/master/config/hsts/README.md).
+Keep header first in all applicable routes/chains, including custom fallback/error
+handling. Preserve existing handlers and merge existing prefix rules. Add the
+com.networknt:header dependency at the same version as the application's light-4j
+modules when the application does not already include it. Keep public HTTP redirects
+outside the HSTS policy and use a browser-trusted certificate. With TLS offload,
+verify the edge policy and prevent untrusted direct-origin access.
 
-```yaml
-handler.handlers:
-  # Preserve the application's other registered handlers.
-  - com.networknt.header.HeaderHandler@header
-  - com.networknt.specification.FaviconHandler@favicon
+HstsConfigurationExampleTest parses the namespaced example and checks its policy
+contract without changing other specification tests' default configuration. Actual
+handler registration, TLS, proxy and direct-route behavior is tested in http-sidecar;
+the example alone does not register middleware in a consuming application.
 
-handler.paths:
-  # Merge into the existing paths; do not replace the application's routing table.
-  - path: '/favicon.ico'
-    method: 'GET'
-    exec:
-      - header
-      - favicon
-```
+The policy intentionally omits `includeSubDomains` and `preload`; either needs a
+separate domain-wide compatibility review. HSTS is learned over a secure connection,
+so first-visit protection requires an appropriate preload arrangement. See
+[RFC 6797](https://www.rfc-editor.org/rfc/rfc6797.html).
 
-For an application assembled through `HandlerProvider`/`service.yml`, wrap the
-complete routing/error handler with `HeaderHandler`, so unmatched routes and
-exception responses also pass through it. `FaviconHstsConfigurationTest` tests
-this composition using the exact values example, an actual TLS listener, the
-real favicon handler, and normal/redirect/not-found/exception paths.
-
-This profile is for a public HTTPS-only listener with a valid certificate.
-`HeaderHandler` is generic: it does not check the request scheme. Do not attach
-this HSTS configuration to a publicly accessible plaintext HTTP listener. If HTTP
-is needed for redirection, keep that listener's redirect handler outside the
-HSTS chain and advertise HSTS on its HTTPS destination. With TLS offload, ensure
-the trusted edge emits or preserves exactly one HSTS header on the public HTTPS
-response and prevents untrusted direct access to the origin; do not infer trust
-from a client-supplied forwarded-protocol header.
-
-The example intentionally omits `includeSubDomains` and `preload`. Enabling either
-requires a separate domain-wide review. HSTS is learned from a successful secure
-connection; first-visit protection additionally needs an appropriate preload
-arrangement. See [RFC 6797](https://www.rfc-editor.org/rfc/rfc6797.html).
-
-Before partner scan closure, capture the public HTTPS responses for
-`/favicon.ico`, a normal route, a redirect and error/not-found routes. Confirm
-exactly one intended HSTS value, verify the deployed listener/edge configuration,
-and rerun the scan against the actual deployed artifact. The library test and
-this example do not establish the partner's deployed configuration.
+Before closing the partner finding, deploy the reviewed configuration and capture
+public HTTPS headers for the favicon, normal, redirect and error responses. Verify
+one intended HSTS value and direct-origin access restrictions, then rerun the scan.
+Loopback tests do not establish the partner deployment's state.

@@ -57,12 +57,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.networknt</groupId>
-            <artifactId>header</artifactId>
-            <version>${version.light-4j}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <scope>test</scope>
@@ -87,7 +81,7 @@
             </testResource>
             <testResource>
                 <directory>examples/hsts</directory>
-                <targetPath>config</targetPath>
+                <targetPath>hsts-example</targetPath>
                 <includes>
                     <include>values.yml</include>
                 </includes>

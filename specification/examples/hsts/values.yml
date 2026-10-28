@@ -1,6 +1,16 @@
-# Merge into the application's values.yml; use only for an HTTPS-only public listener.
+# Dedicated HTTPS ingress instance only. Disables HTTP egress (normally localhost:9080).
+# Do NOT merge into a normal co-located dual-listener sidecar. See README.md.
 server.enableHttps: true
 server.enableHttp: false
 header.enabled: true
-header.response.update:
-  Strict-Transport-Security: "max-age=31536000"
+# Prefix response rules run at response-send time, after proxy backend headers are copied.
+# Preserve/merge any existing prefix rules when adopting this policy.
+header.pathPrefixHeader:
+  /:
+    response:
+      remove:
+        - X-Powered-By
+      update:
+        Cache-Control: no-store
+        X-Content-Type-Options: nosniff
+        Strict-Transport-Security: max-age=31536000
