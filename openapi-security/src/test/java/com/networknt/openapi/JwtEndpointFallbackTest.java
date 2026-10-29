@@ -4,12 +4,14 @@ import com.networknt.utility.Constants;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Methods;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@SetSystemProperty(key = "light_4j_config_password", value = "light")
 class JwtEndpointFallbackTest {
     @Test
     void scopeLookupUsesTheRequestsGenerationAfterReload() throws Exception {
