@@ -19,6 +19,7 @@ import io.undertow.util.Methods;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.text.StringEscapeUtils;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.util.SetSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.IoUtils;
@@ -35,16 +36,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * This is a test case for UnifiedSecurityHandler. It is using the petstore.yaml file in the test resources
  */
+@SetSystemProperty(key = "light_4j_config_password", value = "light")
 public class UnifiedSecurityHandlerTest {
     static final Logger logger = LoggerFactory.getLogger(UnifiedSecurityHandlerTest.class);
 
     static TestServer server = TestServer.getInstance();
-
-    static final boolean enableHttp2 = server.getServerConfig().isEnableHttp2();
-    static final boolean enableHttps = server.getServerConfig().isEnableHttps();
-    static final int httpPort = server.getServerConfig().getHttpPort();
-    static final int httpsPort = server.getServerConfig().getHttpsPort();
-    static final String url = enableHttp2 || enableHttps ? "https://localhost:" + httpsPort : "http://localhost:" + httpPort;
 
     static Undertow server2 = null;
     @BeforeAll

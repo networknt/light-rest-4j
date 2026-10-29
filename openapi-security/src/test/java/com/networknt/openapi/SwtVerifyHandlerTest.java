@@ -22,6 +22,7 @@ import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
 import org.apache.commons.text.StringEscapeUtils;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.util.SetSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.IoUtils;
@@ -36,6 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Disabled
+@SetSystemProperty(key = "light_4j_config_password", value = "light")
 public class SwtVerifyHandlerTest {
     static final Logger logger = LoggerFactory.getLogger(SwtVerifyHandlerTest.class);
 
