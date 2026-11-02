@@ -93,7 +93,7 @@
     </pluginRepositories>
 
     <properties>
-    <version.central-publishing-maven>0.11.0</version.central-publishing-maven>
+    <version.central-publishing-maven>0.12.0</version.central-publishing-maven>
         <java.version>25</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
