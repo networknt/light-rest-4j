@@ -8,6 +8,23 @@
 - Retain `OpenApiHandler.helper` and `helperMap` as deprecated best-effort read mirrors; direct writes no longer update routing, and combined reads of these separate fields are not atomic. Use one `routingSnapshot()` read for a consistent generation. The standalone response-validator constructor warns when no registered schema owner is available; URI validation still fails closed with `ERR11018`.
 - Serialize global metadata publication across handler instances, let concurrent traffic use the last good generation during reload, and reuse validator maps for live routing generations without letting old requests evict the current generation. Preserve the mapped-config `isEnabled()` contract and the public `findMatchingPrefix` utility's alias behavior. SWT fallback uses the selected spec's base path and canonical endpoint.
 
+## [2.5.0](https://github.com/networknt/light-rest-4j/tree/2.5.0) (2026-11-04)
+
+**Commits:**
+
+- upgrade to version 2.5.0 before release in 2.x branch ([c5bdae7](https://github.com/networknt/light-rest-4j/commit/c5bdae79dd1affd2da63fbc9c2e36f5d38c38775)) (by Steve Hu)
+- upgrade to version 2.5.0-SNAPSHOT after release in 2.x branch ([424e0e8](https://github.com/networknt/light-rest-4j/commit/424e0e8ed38237b02f7cbb9acfe74cc51cc60995)) (by Steve Hu)
+- upgrade encoder to 1.6.0 from 1.5.0 ([20d3721](https://github.com/networknt/light-rest-4j/commit/20d3721b90a6c516b91a2c02b3af48ff6fc31453)) (by Steve Hu)
+- upgrade jackson to 2.22.4 from 2.22.3 ([67dbc13](https://github.com/networknt/light-rest-4j/commit/67dbc13c31e93727ab86f0bf2248c92bfc8a4bf2)) (by Steve Hu)
+- upgrade logback to 1.6.6 from 1.6.5 ([d843107](https://github.com/networknt/light-rest-4j/commit/d8431071c7e039713fc01272a539946910dbd9e7)) (by Steve Hu)
+- Supply explicit passwords for encrypted security test fixtures (#455) ([9d1f2ba](https://github.com/networknt/light-rest-4j/commit/9d1f2baf544815b7a53ce42be166b508d144f16a)) (by Steve Hu)
+- docs: backport consuming HSTS configuration to 2.x (#453) ([c16ff27](https://github.com/networknt/light-rest-4j/commit/c16ff27f7418b498d9e6888013b0573ece78703c)) (by Steve Hu)
+- Fix OpenAPI routing publication and validator reload consistency (#448) ([795f64c](https://github.com/networknt/light-rest-4j/commit/795f64cd7ec80f66ae730680377b322fe550ffb7)) (by Steve Hu)
+- Fix response validation lookup in multi-spec mode (#447) ([829ffc6](https://github.com/networknt/light-rest-4j/commit/829ffc6e64a5df3f8197288228075b8bf357fc7e)) (by Steve Hu)
+- Fix unintended injected OpenAPI base paths (#445) ([1836dab](https://github.com/networknt/light-rest-4j/commit/1836dab2a872d3c6978402c09ec679ed3daee248)) (by Steve Hu)
+- upgrade maven-version to 2.23.0 from 2.22.0 ([522ad7f](https://github.com/networknt/light-rest-4j/commit/522ad7fd27a7fef26984c1bd9081f91e7ef4c452)) (by Steve Hu)
+- upgrade to version 2.4.2-SNAPSHOT after release in master branch ([f157c9d](https://github.com/networknt/light-rest-4j/commit/f157c9dd21f6179afc5b10540cb0a949312f4d6f)) (by Steve Hu)
+
 ## [2.4.1](https://github.com/networknt/light-rest-4j/tree/2.4.1) (2026-10-11)
 
 **Commits:**
