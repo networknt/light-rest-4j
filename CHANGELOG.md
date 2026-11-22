@@ -8,6 +8,17 @@
 - Retain `OpenApiHandler.helper` and `helperMap` as deprecated best-effort read mirrors; direct writes no longer update routing, and combined reads of these separate fields are not atomic. Use one `routingSnapshot()` read for a consistent generation. The standalone response-validator constructor warns when no registered schema owner is available; URI validation still fails closed with `ERR11018`.
 - Serialize global metadata publication across handler instances, let concurrent traffic use the last good generation during reload, and reuse validator maps for live routing generations without letting old requests evict the current generation. Preserve the mapped-config `isEnabled()` contract and the public `findMatchingPrefix` utility's alias behavior. SWT fallback uses the selected spec's base path and canonical endpoint.
 
+## [2.5.1](https://github.com/networknt/light-rest-4j/tree/2.5.1) (2026-11-21)
+
+**Commits:**
+
+- upgrade to version 2.5.1 before release in 2.x branch ([cc325f5](https://github.com/networknt/light-rest-4j/commit/cc325f536401ed8362af6805d24907c1d35d5539)) (by Steve Hu)
+- upgrade logback to 1.6.8 from 1.6.7 ([d6696d2](https://github.com/networknt/light-rest-4j/commit/d6696d2c4084fb4fa4e3da4b90eb526675b359e5)) (by Steve Hu)
+- upgrade logback to 1.6.7 from 1.6.6 ([3d2a321](https://github.com/networknt/light-rest-4j/commit/3d2a32142531988671f67b0f0704fd8b8e7b5767)) (by Steve Hu)
+- upgrade maven-version to 2.25.2 from 2.23.0 ([ee88880](https://github.com/networknt/light-rest-4j/commit/ee8888064434376cf3b19a2094785767e773ce92)) (by Steve Hu)
+- upgrade maven-surefire to 3.6.1 from 3.6.0 ([236d597](https://github.com/networknt/light-rest-4j/commit/236d597384129a07585c3708a63dac52ea862cfb)) (by Steve Hu)
+- upgrade to version 2.5.1-SNAPSHOT after release in 2.x branch ([96d20b7](https://github.com/networknt/light-rest-4j/commit/96d20b7eb019c2f5493d87a224e473294fb37a8f)) (by Steve Hu)
+
 ## [2.5.0](https://github.com/networknt/light-rest-4j/tree/2.5.0) (2026-11-04)
 
 **Commits:**
