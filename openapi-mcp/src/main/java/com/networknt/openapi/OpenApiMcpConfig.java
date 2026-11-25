@@ -25,6 +25,8 @@ import com.networknt.config.schema.StringField;
 import com.networknt.server.ModuleRegistry;
 import tools.jackson.core.type.TypeReference;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +67,8 @@ public class OpenApiMcpConfig {
             configFieldName = MAX_RESPONSE_BODY_SIZE,
             externalizedKeyName = MAX_RESPONSE_BODY_SIZE,
             defaultValue = "1048576",
+            min = 1,
+            max = Integer.MAX_VALUE - 1,
             description = "Maximum size of a backend response body, in bytes. A larger body is replaced by an error message."
     )
     private int maxResponseBodySize = 1048576;
@@ -82,12 +86,32 @@ public class OpenApiMcpConfig {
      * Loads openapi-mcp.yaml and registers it with the module registry.
      *
      * @return the configuration
+     * @throws ConfigException if downstreamHost is not an absolute http or https URL, or maxResponseBodySize is not
+     *                         between 1 and Integer.MAX_VALUE - 1
      */
     public static OpenApiMcpConfig load() {
         OpenApiMcpConfig config = new OpenApiMcpConfig(Config.getInstance().getJsonMapConfig(CONFIG_NAME));
+        config.validate();
         ModuleRegistry.registerModule(CONFIG_NAME, OpenApiMcpConfig.class.getName(),
                 Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(CONFIG_NAME), null);
         return config;
+    }
+
+    private void validate() {
+        URI uri;
+        try {
+            uri = downstreamHost == null ? null : new URI(downstreamHost);
+        } catch (URISyntaxException e) {
+            uri = null;
+        }
+        if (uri == null || uri.getHost() == null
+                || !"http".equalsIgnoreCase(uri.getScheme()) && !"https".equalsIgnoreCase(uri.getScheme())) {
+            throw new ConfigException("openapi-mcp " + DOWNSTREAM_HOST + " must be an absolute http or https URL, e.g. https://pets.example.com: " + downstreamHost);
+        }
+        // The response body is read up to one byte over the limit.
+        if (maxResponseBodySize < 1 || maxResponseBodySize == Integer.MAX_VALUE) {
+            throw new ConfigException("openapi-mcp " + MAX_RESPONSE_BODY_SIZE + " must be between 1 and " + (Integer.MAX_VALUE - 1) + ": " + maxResponseBodySize);
+        }
     }
 
     private static List<String> toList(Object value) {

@@ -18,6 +18,8 @@
       "type" : "integer",
       "description" : "Maximum size of a backend response body, in bytes. A larger body is replaced by an error message.",
       "default" : 1048576,
+      "minimum" : 1,
+      "maximum" : 2147483646,
       "format" : "int32"
     }
   }

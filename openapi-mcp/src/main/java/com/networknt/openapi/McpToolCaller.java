@@ -65,7 +65,7 @@ final class McpToolCaller {
         HttpClient.Builder builder = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofMillis(request.getConnectTimeout()));
-        if (downstreamHost.startsWith("https:")) {
+        if (downstreamHost.regionMatches(true, 0, "https:", 0, 6)) {
             try {
                 builder.sslContext(Http2Client.createSSLContext());
             } catch (IOException e) {
@@ -148,7 +148,8 @@ final class McpToolCaller {
      * @param arguments the tool arguments
      * @param headers   the backend request headers
      * @return the path and query of the backend request
-     * @throws IllegalArgumentException if a path argument is missing, or an argument has an unsupported value
+     * @throws IllegalArgumentException if a path argument is missing or is a . or .. segment, or an argument has an
+     *                                  unsupported value
      */
     static String target(McpTool tool, JsonNode arguments, Map<String, List<String>> headers) {
         String path = tool.path();
@@ -162,12 +163,29 @@ final class McpToolCaller {
             }
             List<String> values = values(name, value);
             switch (parameter.in()) {
-                case "path" -> path = path.replace("{" + name + "}", values.stream().map(McpToolCaller::encode).collect(Collectors.joining(",")));
+                case "path" -> path = path.replace("{" + name + "}", pathSegment(name, values));
                 case "query" -> values.forEach(item -> query.append(query.isEmpty() ? '?' : '&').append(encode(name)).append('=').append(encode(item)));
                 default -> headers.put(name, List.of(String.join(",", values)));
             }
         }
         return path + query;
+    }
+
+    /**
+     * The encoded value of a path argument. A value of . or .. is refused: dots are not percent-encoded, so it would
+     * be a dot segment, which a backend that normalizes paths removes, calling a path outside the exposed endpoint.
+     *
+     * @param name   the parameter name, used in the error message
+     * @param values the argument's values
+     * @return the comma-separated, percent-encoded values
+     * @throws IllegalArgumentException if the value is . or ..
+     */
+    private static String pathSegment(String name, List<String> values) {
+        String segment = values.stream().map(McpToolCaller::encode).collect(Collectors.joining(","));
+        if (segment.equals(".") || segment.equals("..")) {
+            throw new IllegalArgumentException("Invalid value for path parameter " + name + ": " + segment + " is not allowed");
+        }
+        return segment;
     }
 
     /**
@@ -301,7 +319,7 @@ final class McpToolCaller {
     }
 
     /**
-     * A tool result.
+     * A tool result, without the resultType that only 2026-07-28 results have.
      *
      * @param isError whether the result is an error
      * @param content the content items
@@ -309,7 +327,6 @@ final class McpToolCaller {
      */
     private static Map<String, Object> result(boolean isError, List<Map<String, Object>> content) {
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("resultType", "complete");
         result.put("content", content);
         result.put("isError", isError);
         return result;
@@ -327,13 +344,4 @@ final class McpToolCaller {
         item.put("text", text);
         return item;
     }
-
-//    /**
-//     *
-//     */
-//    static final class InvalidArgumentException extends RuntimeException {
-//        InvalidArgumentException(String message) {
-//            super(message);
-//        }
-//    }
 }

@@ -16,6 +16,7 @@
 package com.networknt.openapi;
 
 import com.networknt.config.Config;
+import com.networknt.httpstring.AttachmentConstants;
 import io.undertow.Undertow;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.BlockingHandler;
@@ -47,6 +48,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -68,6 +70,7 @@ class OpenApiMcpHandlerTest {
     private static Undertow backend;
     private static Undertow mcp;
     private static volatile BackendRequest lastRequest;
+    private static volatile Map<String, Object> lastAuditInfo;
 
     // What the backend received.
     private record BackendRequest(String target, Map<String, List<String>> headers, String body) { }
@@ -81,7 +84,13 @@ class OpenApiMcpHandlerTest {
         config.put("downstreamHost", "http://localhost:" + port(backend));
         config.put("endpoints", List.of("/pets/{petId}@get", "/pets/{petId}@delete", "/pets/{petId}/photo@get", "/pets@post"));
         Config.getInstance().putInConfigCache(OpenApiMcpConfig.CONFIG_NAME, config);
-        mcp = Undertow.builder().addHttpListener(0, "localhost").setHandler(new OpenApiMcpHandler()).build();
+        OpenApiMcpHandler handler = new OpenApiMcpHandler();
+        // Attaches the audit info first, as JwtVerifyHandler does, so that the test can read what the handler adds.
+        mcp = Undertow.builder().addHttpListener(0, "localhost").setHandler(exchange -> {
+            lastAuditInfo = new ConcurrentHashMap<>();
+            exchange.putAttachment(AttachmentConstants.AUDIT_INFO, lastAuditInfo);
+            handler.handleRequest(exchange);
+        }).build();
         mcp.start();
     }
 
@@ -129,7 +138,7 @@ class OpenApiMcpHandlerTest {
                 { "jsonrpc": "2.0", "id": 0,
                   "result": {
                     "resultType": "complete",
-                    "supportedVersions": ["2026-07-28"],
+                    "supportedVersions": ["2026-07-28", "2025-11-25", "2025-06-18", "2025-03-26"],
                     "capabilities": { "tools": {} },
                     "_meta": { "io.modelcontextprotocol/serverInfo": { "name": "Pet Store", "version": "1.0.0" } },
                     "ttlMs": 300000,
@@ -220,6 +229,7 @@ class OpenApiMcpHandlerTest {
                 response);
 
         assertEquals("GET /pets/123?fields=name", lastRequest.target());
+        assertEquals("getPet", lastAuditInfo.get("toolName"));
         Map<String, List<String>> headers = lastRequest.headers();
         assertEquals(List.of("localhost:" + port(backend)), headers.get("Host"));
         assertEquals(List.of("Bearer backend-token"), headers.get("Authorization"));
@@ -332,8 +342,54 @@ class OpenApiMcpHandlerTest {
         assertResponse(400, """
                 { "jsonrpc": "2.0", "id": 9,
                   "error": { "code": -32022, "message": "Unsupported protocol version",
-                             "data": { "supported": ["2026-07-28"], "requested": "2025-11-25" } } }""",
-                send("{ \"jsonrpc\": \"2.0\", \"id\": 9, \"method\": \"tools/list\" }", "MCP-Protocol-Version", "2025-11-25"));
+                             "data": { "supported": ["2026-07-28", "2025-11-25", "2025-06-18", "2025-03-26"], "requested": "2024-11-05" } } }""",
+                send("{ \"jsonrpc\": \"2.0\", \"id\": 9, \"method\": \"tools/list\" }", "MCP-Protocol-Version", "2024-11-05"));
+    }
+
+    // The client's version if it is a supported legacy version, otherwise the latest legacy version.
+    static Stream<Arguments> initialize() {
+        return Stream.of(
+                Arguments.of("", "2025-03-26", "2025-03-26"),
+                Arguments.of("2025-06-18", "2025-06-18", "2025-06-18"),
+                Arguments.of("", "2025-11-25", "2025-11-25"),
+                Arguments.of("", "2024-11-05", "2025-11-25"),
+                Arguments.of("", "2026-07-28", "2025-11-25"));
+    }
+
+    @ParameterizedTest(name = "header {0}, requested {1}")
+    @MethodSource
+    void initialize(String header, String requested, String negotiated) throws Exception {
+        assertResponse(200, """
+                { "jsonrpc": "2.0", "id": 11,
+                  "result": { "protocolVersion": "%s", "capabilities": { "tools": {} },
+                              "serverInfo": { "name": "Pet Store", "version": "1.0.0" } } }""".formatted(negotiated),
+                post("""
+                        { "jsonrpc": "2.0", "id": 11, "method": "initialize",
+                          "params": { "protocolVersion": "%s", "capabilities": {}, "clientInfo": { "name": "test", "version": "1" } } }"""
+                        .formatted(requested), List.of("MCP-Protocol-Version", header)));
+    }
+
+    @Test
+    void legacyToolsList() throws Exception {
+        HttpResponse<String> response = post("{ \"jsonrpc\": \"2.0\", \"id\": 12, \"method\": \"tools/list\" }",
+                List.of("MCP-Protocol-Version", "2025-11-25"));
+        assertEquals(200, response.statusCode(), response.body());
+        JsonNode result = MAPPER.readTree(response.body()).get("result");
+        assertEquals(List.of("tools"), List.copyOf(result.propertyNames()));
+        assertEquals(List.of("getPet", "deletePet", "getPetPhoto", "createPet"),
+                result.get("tools").valueStream().map(tool -> tool.get("name").stringValue()).toList());
+    }
+
+    @Test
+    void legacyToolsCall() throws Exception {
+        HttpResponse<String> response = post("""
+                { "jsonrpc": "2.0", "id": 13, "method": "tools/call",
+                  "params": { "name": "getPet", "arguments": { "petId": "123" } } }""", List.of("MCP-Protocol-Version", "2025-06-18"));
+        assertEquals("GET /pets/123", lastRequest.target());
+        assertResponse(200, """
+                { "jsonrpc": "2.0", "id": 13,
+                  "result": { "content": [ { "type": "text", "text": "{\\"id\\":\\"123\\",\\"name\\":\\"Rex\\"}" } ], "isError": false } }""",
+                response);
     }
 
     @Test
@@ -343,6 +399,21 @@ class OpenApiMcpHandlerTest {
                 send("""
                         { "jsonrpc": "2.0", "id": 10, "method": "tools/call",
                           "params": { "name": "adoptPet", "arguments": {} } }"""));
+        assertFalse(lastAuditInfo.containsKey("toolName"));
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void methodNotAllowed(String method) throws Exception {
+        HttpResponse<String> response = CLIENT.send(HttpRequest.newBuilder(mcpUri()).method(method, HttpRequest.BodyPublishers.noBody())
+                .header("MCP-Protocol-Version", "2025-11-25").header("Mcp-Session-Id", "s-1").build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(405, response.statusCode());
+        assertEquals(List.of("POST"), response.headers().allValues("Allow"));
+        assertEquals("", response.body());
+    }
+
+    static Stream<String> methodNotAllowed() {
+        return Stream.of("GET", "DELETE");
     }
 
     // The MCP protocol checks, other than those covered by the examples above.
@@ -355,11 +426,15 @@ class OpenApiMcpHandlerTest {
                 Arguments.of("body is not JSON", "{", List.of("Mcp-Method", "tools/list"), 400, -32700),
                 Arguments.of("batch", "[" + toolsList + "]", List.of("Mcp-Method", "tools/list"), 400, -32600),
                 Arguments.of("notification", "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/cancelled\"}", List.of(), 202, null),
-                Arguments.of("no MCP-Protocol-Version", toolsList, List.of("MCP-Protocol-Version", "", "Mcp-Method", "tools/list"), 400, -32020),
+                Arguments.of("no MCP-Protocol-Version: served as 2025-03-26", "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}",
+                        List.of("MCP-Protocol-Version", ""), 200, null),
                 Arguments.of("no _meta", "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}", List.of("Mcp-Method", "tools/list"), 400, -32602),
                 Arguments.of("_meta version differs", toolsList.replace("\"2026-07-28\"", "\"2025-11-25\""), List.of("Mcp-Method", "tools/list"), 400, -32020),
                 Arguments.of("Mcp-Method differs", toolsList, List.of("Mcp-Method", "tools/call"), 400, -32020),
                 Arguments.of("unknown method", toolsList.replace("tools/list", "resources/list"), List.of("Mcp-Method", "resources/list"), 404, -32601),
+                Arguments.of("initialize in 2026-07-28", toolsList.replace("tools/list", "initialize"), List.of("Mcp-Method", "initialize"), 404, -32601),
+                Arguments.of("unknown legacy method", "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"resources/list\"}",
+                        List.of("MCP-Protocol-Version", "2025-11-25"), 200, -32601),
                 Arguments.of("no Mcp-Name", getPet.replace("ARGUMENTS", "{\"petId\":\"123\"}"), List.of("Mcp-Method", "tools/call"), 400, -32020),
                 Arguments.of("arguments is not an object", getPet.replace("ARGUMENTS", "[]"), List.of("Mcp-Method", "tools/call", "Mcp-Name", "getPet"), 200, -32602));
     }

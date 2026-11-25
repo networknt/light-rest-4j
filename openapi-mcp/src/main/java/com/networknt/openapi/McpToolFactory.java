@@ -34,6 +34,12 @@ final class McpToolFactory {
     private static final String SCHEMA_REF = "#/components/schemas/";
     private static final Set<String> LOCATIONS = Set.of("path", "query", "header");
     private static final Set<String> RESERVED_PARAMETER_NAMES = Set.of("body");
+    // Header parameters that OpenAPI says SHALL be ignored, in lowercase.
+    private static final Set<String> IGNORED_HEADER_PARAMETERS = Set.of("accept", "content-type", "authorization");
+    // Schema keywords whose values are data, not schemas, so a $ref key in them is not a reference.
+    private static final Set<String> DATA_KEYWORDS = Set.of("example", "examples", "default", "enum", "const");
+    // Schema keywords whose values map names to schemas, so every value is a schema whatever its name.
+    private static final Set<String> SCHEMA_MAP_KEYWORDS = Set.of("properties", "patternProperties", "$defs", "definitions", "dependentSchemas");
 
     // The parsed spec.
     private final OpenApi3 openApi3;
@@ -221,23 +227,67 @@ final class McpToolFactory {
         }
 
         /**
-         * Copies a schema as written, except that each #/components/schemas/X reference becomes #/$defs/X, and X (with whatever it references) is copied into toolDefs.
-         * Specs are resolved, so every schema $ref is #/components/schemas/X, and OpenAPI limits schema names to A-Z, a-z, 0-9, ., - and _, so X needs no JSON pointer escaping.
+         * Copies a schema as written, except that each #/components/schemas/X reference becomes #/$defs/X, and X
+         * (with whatever it references) is copied into toolDefs. OpenAPI limits schema names to A-Z, a-z, 0-9, ., -
+         * and _, so X needs no JSON pointer escaping.
          *
-         * @param schema - schema being copied
-         * @return - copied
+         * @param schema the schema to copy
+         * @return the copy
+         * @throws ConfigException if the schema has a $ref that is not to a component schema
          */
         private ObjectNode copy(JsonNode schema) {
             ObjectNode copy = (ObjectNode) schema.deepCopy();
-            for (JsonNode parent : copy.findParents("$ref")) {
-                String name = parent.get("$ref").stringValue().substring(SCHEMA_REF.length());
-                ((ObjectNode) parent).put("$ref", "#/$defs/" + name);
-                if (!toolDefs.has(name)) {
-                    toolDefs.putNull(name); // stops recursive schemas from being copied again
-                    toolDefs.set(name, copy(schemas.get(name)));
+            rewriteRefs(copy);
+            return copy;
+        }
+
+        /**
+         * Rewrites the $refs of a schema and of the schemas in it. The values of {@link #DATA_KEYWORDS} and of
+         * x- extensions are data, so they are left as they are.
+         *
+         * @param schema the schema, which is changed
+         */
+        private void rewriteRefs(ObjectNode schema) {
+            JsonNode ref = schema.get("$ref");
+            if (ref != null && ref.isString()) schema.put("$ref", defsRef(ref.stringValue()));
+            for (Map.Entry<String, JsonNode> field : schema.properties()) {
+                String keyword = field.getKey();
+                if (keyword.equals("$ref") || DATA_KEYWORDS.contains(keyword) || keyword.startsWith("x-")) continue;
+                if (SCHEMA_MAP_KEYWORDS.contains(keyword)) {
+                    field.getValue().values().forEach(this::rewriteRefsIn);
+                } else {
+                    rewriteRefsIn(field.getValue());
                 }
             }
-            return copy;
+        }
+
+        /**
+         * Rewrites the $refs of a schema, or of each schema in an array (e.g. allOf); other values have none.
+         *
+         * @param node the schema or array, which is changed
+         */
+        private void rewriteRefsIn(JsonNode node) {
+            if (node.isObject()) rewriteRefs((ObjectNode) node);
+            else if (node.isArray()) node.values().forEach(this::rewriteRefsIn);
+        }
+
+        /**
+         * The $defs reference for a component schema reference, copying the schema into toolDefs the first time.
+         *
+         * @param ref the $ref value
+         * @return #/$defs/X for #/components/schemas/X
+         * @throws ConfigException if the $ref is not to a component schema, e.g. to a property inside one
+         */
+        private String defsRef(String ref) {
+            String name = ref.startsWith(SCHEMA_REF) ? ref.substring(SCHEMA_REF.length()) : "";
+            if (name.contains("/") || !schemas.has(name)) {
+                throw error(endpoint, "its schema $ref " + ref + " is not a reference to a component schema (" + SCHEMA_REF + "<name>)");
+            }
+            if (!toolDefs.has(name)) {
+                toolDefs.putNull(name); // stops recursive schemas from being copied again
+                toolDefs.set(name, copy(schemas.get(name)));
+            }
+            return "#/$defs/" + name;
         }
 
         /**
@@ -308,7 +358,8 @@ final class McpToolFactory {
 
     /**
      * The parameters of an operation. An operation parameter replaces a path item parameter with the same name and
-     * location, as in OpenAPI.
+     * location, as in OpenAPI. Header parameters named Accept, Content-Type or Authorization are left out, because
+     * OpenAPI says they SHALL be ignored; Authorization in particular is the forwarded token.
      *
      * @param pathItem  the path item
      * @param operation the operation
@@ -320,6 +371,8 @@ final class McpToolFactory {
             for (Parameter parameter : list)
                 parameters.put(parameter.getIn() + " " + parameter.getName(), parameter);
         }
+        parameters.values().removeIf(parameter -> "header".equals(parameter.getIn())
+                && IGNORED_HEADER_PARAMETERS.contains(parameter.getName().toLowerCase(Locale.ROOT)));
         return parameters.values();
     }
 

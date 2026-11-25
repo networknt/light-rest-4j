@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -79,6 +80,62 @@ class McpToolFactoryTest {
                 {'type': 'object',
                  'properties': {'petId': {'type': 'string'}, 'X-Trace': {'type': 'integer'}, 'body': {'type': 'object', 'description': 'The pet.'}},
                  'required': ['petId', 'X-Trace']}"""), tool.definition().get("inputSchema"));
+    }
+
+    @Test
+    void ignoredHeaderParameters() {
+        OpenApiHelper spec = spec("""
+                {'paths': {'/pets': {'get': {'operationId': 'listPets', 'parameters': [
+                   {'name': 'Authorization', 'in': 'header', 'required': true, 'schema': {'type': 'string'}},
+                   {'name': 'accept', 'in': 'header', 'schema': {'type': 'string'}},
+                   {'name': 'Content-Type', 'in': 'header', 'schema': {'type': 'string'}},
+                   {'name': 'Authorization', 'in': 'query', 'schema': {'type': 'string'}},
+                   {'name': 'X-Locale', 'in': 'header', 'schema': {'type': 'string'}}]}}}}""");
+        McpTool tool = McpToolFactory.create(spec, List.of("/pets@get")).get(0);
+
+        assertEquals(List.of(new McpTool.Parameter("Authorization", "query"), new McpTool.Parameter("X-Locale", "header")), tool.parameters());
+        assertEquals(json("{'type': 'object', 'properties': {'Authorization': {'type': 'string'}, 'X-Locale': {'type': 'string'}}}"),
+                tool.definition().get("inputSchema"));
+    }
+
+    @Test
+    void schemaRefs() {
+        OpenApiHelper spec = spec("""
+                {'paths': {'/pets': {'post': {'operationId': 'createPet', 'requestBody': {'content': {'application/json': {'schema': {
+                   'type': 'object',
+                   'example': {'$ref': 'x.json'},
+                   'x-note': {'$ref': 'y.json'},
+                   'properties': {
+                     '$ref': {'type': 'string', 'default': {'$ref': 'z.json'}},
+                     'example': {'$ref': '#/components/schemas/A'},
+                     'tags': {'type': 'array', 'items': {'$ref': '#/components/schemas/A'}, 'enum': [{'$ref': 'w.json'}]}}}}}}}}},
+                 'components': {'schemas': {'A': {'allOf': [{'$ref': '#/components/schemas/B'}]}, 'B': {'type': 'string'}}}}""");
+        McpTool tool = McpToolFactory.create(spec, List.of("/pets@post")).get(0);
+
+        assertEquals(json("""
+                {'type': 'object',
+                 'properties': {'body': {
+                   'type': 'object',
+                   'example': {'$ref': 'x.json'},
+                   'x-note': {'$ref': 'y.json'},
+                   'properties': {
+                     '$ref': {'type': 'string', 'default': {'$ref': 'z.json'}},
+                     'example': {'$ref': '#/$defs/A'},
+                     'tags': {'type': 'array', 'items': {'$ref': '#/$defs/A'}, 'enum': [{'$ref': 'w.json'}]}}}},
+                 '$defs': {'A': {'allOf': [{'$ref': '#/$defs/B'}]}, 'B': {'type': 'string'}}}"""), tool.definition().get("inputSchema"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"#/components/schemas/A/properties/n", "#/components/schemas/Missing", "#/components/parameters/P"})
+    void schemaRefsThatFailStartup(String ref) {
+        OpenApiHelper spec = spec("""
+                {'paths': {'/pets': {'post': {'operationId': 'createPet', 'requestBody': {'content': {'application/json': {'schema': {
+                   'type': 'object', 'properties': {'n': {'$ref': '%s'}}}}}}}}},
+                 'components': {'schemas': {'A': {'type': 'object', 'properties': {'n': {'type': 'string'}}}},
+                                'parameters': {'P': {'name': 'p', 'in': 'query'}}}}""".formatted(ref));
+        ConfigException e = assertThrows(ConfigException.class, () -> McpToolFactory.create(spec, List.of("/pets@post")));
+        assertEquals("openapi-mcp cannot expose /pets@post: its schema $ref " + ref
+                + " is not a reference to a component schema (#/components/schemas/<name>)", e.getMessage());
     }
 
     private static OpenApiHelper spec(String json) {

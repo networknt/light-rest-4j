@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.cfg.JsonNodeFeature;
@@ -32,6 +33,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class McpToolCallerTest {
     private static final ObjectMapper MAPPER = JsonMapper.builder()
@@ -47,13 +49,23 @@ class McpToolCallerTest {
                 Arguments.of("{'petId': 'a/b c'}", "/pets/a%2Fb%20c"),
                 Arguments.of("{'petId': '~*+%7E-._é'}", "/pets/~%2A%2B%257E-._%C3%A9"),
                 Arguments.of("{'petId': [1, 2], 'tags': ['x', 'y z'], 'all': true}", "/pets/1,2?tags=x&tags=y%20z&all=true"),
-                Arguments.of("{'petId': 'p', 'limit': 12345678901234567890.10, 'tags': null}", "/pets/p?limit=12345678901234567890.10"));
+                Arguments.of("{'petId': 'p', 'limit': 12345678901234567890.10, 'tags': null}", "/pets/p?limit=12345678901234567890.10"),
+                Arguments.of("{'petId': '...'}", "/pets/..."),
+                Arguments.of("{'petId': ['.', '.']}", "/pets/.,."));
     }
 
     @ParameterizedTest(name = "{1}")
     @MethodSource
     void targets(String arguments, String target) {
         assertEquals(target, McpToolCaller.target(TOOL, json(arguments), new HashMap<>()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"'.'", "'..'", "['..']"})
+    void dotSegmentPathArgument(String petId) {
+        Exception e = assertThrows(IllegalArgumentException.class,
+                () -> McpToolCaller.target(TOOL, json("{'petId': " + petId + "}"), new HashMap<>()));
+        assertTrue(e.getMessage().startsWith("Invalid value for path parameter petId: ."), e.getMessage());
     }
 
     @Test
@@ -80,7 +92,7 @@ class McpToolCallerTest {
     @MethodSource
     void results(int status, String contentType, byte[] body, List<Map<String, Object>> content, boolean isError) {
         McpToolCaller caller = new McpToolCaller("http://localhost", 10, MAPPER);
-        assertEquals(Map.of("resultType", "complete", "content", content, "isError", isError),
+        assertEquals(Map.of("content", content, "isError", isError),
                 caller.result(status, contentType, body));
     }
 

@@ -19,16 +19,16 @@ The handler only translates between MCP and REST. Authentication, token exchange
 ```
 
 ### Specification
-The handler reads the same `openapi.yaml` (or `openapi.yml` / `openapi.json`) as the OpenApiHandler. It must describe the backend API, and be a single, resolved OpenAPI 3.0 spec (every `$ref` points into the spec itself).
+The handler reads the same `openapi.yaml` (or `openapi.yml` / `openapi.json`) as the OpenApiHandler. It must describe the backend API, and be a single, resolved OpenAPI 3.0 spec (every `$ref` points into the spec itself). Every schema `$ref` must be to a component schema, `#/components/schemas/<name>`.
 
 ### Configuration
 `openapi-mcp.yaml` has three settings, usually set in `values.yml`:
 
 | Setting | Default | Description |
 | --- | --- | --- |
-| `downstreamHost` | (required) | Base URL of the backend API, e.g. `https://pets.example.com`. It may include a path prefix. |
+| `downstreamHost` | (required) | Base URL of the backend API, an absolute `http` or `https` URL, e.g. `https://pets.example.com`. It may include a path prefix. |
 | `endpoints` | (required) | Endpoints exposed as tools, as `{path}@{method}`. The path includes the base path of the spec's first `servers` URL. Tools are listed in this order. |
-| `maxResponseBodySize` | `1048576` (1 MiB) | Maximum size of a backend response body, in bytes. A larger body is replaced by an error message. |
+| `maxResponseBodySize` | `1048576` (1 MiB) | Maximum size of a backend response body, in bytes, from 1 to 2147483646. A larger body is replaced by an error message. |
 
 TLS and the backend timeouts come from `client.yml` (`tls`, `request.connectTimeout` and `request.timeout`).
 
@@ -42,7 +42,7 @@ openapi-mcp.endpoints:
 ```
 
 ### Handler chain
-Register the handler in `handler.yml` as the last handler of the MCP endpoint's chain, and route only `POST` to it:
+Register the handler in `handler.yml` as the last handler of the MCP endpoint's chain. Route `POST` to it, and also `GET` and `DELETE`, which it answers with `405 Method Not Allowed`, as the MCP spec recommends for servers without a `GET` stream or sessions (older MCP clients may send them):
 
 ```yaml
 handler.handlers:
@@ -50,6 +50,7 @@ handler.handlers:
   - com.networknt.correlation.CorrelationHandler@correlation
   - com.networknt.cors.CorsHttpHandler@cors
   - com.networknt.openapi.JwtVerifyHandler@security
+  - com.networknt.audit.AuditHandler@audit
   - com.networknt.openapi.OpenApiMcpHandler@openapiMcp
 
 handler.chains:
@@ -58,6 +59,7 @@ handler.chains:
     - correlation
     - cors
     - security
+    - audit
     - openapiMcp
 
 handler.paths:
@@ -65,18 +67,37 @@ handler.paths:
     method: 'POST'
     exec:
       - mcp
+  - path: '/mcp'
+    method: 'GET'
+    exec:
+      - mcp
+  - path: '/mcp'
+    method: 'DELETE'
+    exec:
+      - mcp
 ```
 
 - `/mcp` is not in the spec, so do not put OpenApiHandler or ValidatorHandler in the chain. With JwtVerifyHandler, set `skipVerifyScopeWithoutSpec: true` (or `enableVerifyScope: false`) in `security.yml`.
 - Do not put BodyHandler in the chain. The handler reads the request body itself.
 - The CORS handler rejects requests with an invalid `Origin`, as MCP requires.
-- The headers of the MCP request are forwarded to the backend the way ProxyHandler forwards them, including `Authorization`. MCP forbids passing the client's token through to the backend, so put a handler that replaces it, such as TokenExchangeHandler, earlier in the chain.
+- The headers of the MCP request are forwarded to the backend the way ProxyHandler forwards them, including `Authorization`, so the backend receives the token that reaches openapi-mcp. If the backend needs a different token than the MCP client sends (e.g. one from another issuer or for another audience), put a handler that replaces it, such as TokenExchangeHandler, earlier in the chain.
+- For each `tools/call`, the handler adds the tool name to the request's audit info, so AuditHandler records which tool was called. Add `toolName` to the `audit` list in `audit.yml`:
+
+  ```yaml
+  # values.yml
+  audit.audit: ["client_id", "user_id", "scope_client_id", "endpoint", "serviceId", "toolName"]
+  # AuditHandler records only error statuses unless this is false.
+  audit.auditOnError: false
+  ```
+
+  AuditHandler's `statusCode` is the status of the MCP response, which is 200 even when the backend call failed.
 
 ## Limitations
-- **MCP version:** only `2026-07-28` over the Streamable HTTP transport. It is stateless: there is no `initialize` handshake, no session, and no SSE streaming. Earlier versions are rejected.
-- **MCP methods:** only `server/discover`, `tools/list` and `tools/call`. Resources, prompts, subscriptions, tasks, pagination, `outputSchema` and `structuredContent` are not supported.
+- **MCP versions:** `2026-07-28`, and the earlier `2025-11-25`, `2025-06-18` and `2025-03-26` (with the `initialize` handshake), over the Streamable HTTP transport. The handler is stateless in every version: it issues no session ID, offers no `GET` stream, and never responds with SSE. JSON-RPC batches and `2024-11-05` (HTTP+SSE) are not supported.
+- **MCP methods:** `server/discover` (`2026-07-28`) or `initialize` (earlier versions), plus `tools/list` and `tools/call`. Resources, prompts, subscriptions, tasks, `ping`, pagination, `outputSchema` and `structuredContent` are not supported.
 - **Request bodies:** only `application/json`. The tool argument `body` is forwarded as JSON.
-- **Parameters:** path, query and header parameters, serialized the OpenAPI default way. Cookie parameters are not supported, and a parameter may not be named `body`.
+- **Parameters:** path, query and header parameters, serialized the OpenAPI default way. Cookie parameters are not supported, and a parameter may not be named `body`. Header parameters named `Accept`, `Content-Type` or `Authorization` are ignored, as OpenAPI requires, so a tool call cannot replace the forwarded token. A path argument of `.` or `..` is refused with `isError: true`, so that it cannot reach a path outside the endpoint.
+- **Input schemas:** parameter and request body schemas are copied as written, with referenced component schemas copied into `$defs`. OpenAPI 3.0-specific keywords (e.g. `nullable`, or a boolean `exclusiveMinimum`) are not converted to JSON Schema 2020-12, the default dialect of MCP tool schemas. openapi-parser drops the keys next to a `$ref`, so a schema with a `$ref` keeps only the `$ref`.
 - **Response bodies:**
 
   | Backend Content-Type | Tool result content |
@@ -88,5 +109,5 @@ handler.paths:
 
 - **Errors:** a non-2xx backend status, a body over `maxResponseBodySize`, and connection or timeout failures are returned as a tool result with `isError: true`. Redirects are not followed.
 - **Validation:** tool arguments are not validated against the input schema; the backend is expected to reject invalid input.
-- **Startup:** the server fails to start if a configured endpoint is not in the spec, has no `operationId`, shares its `operationId` with another, or cannot be exposed (non-JSON request body, cookie parameter, a parameter named `body`, or two parameters with the same name).
+- **Startup:** the server fails to start if `downstreamHost` or `maxResponseBodySize` is invalid, or a configured endpoint is not in the spec, has no `operationId`, shares its `operationId` with another, or cannot be exposed (non-JSON request body, cookie parameter, a parameter named `body`, two parameters with the same name, or a schema `$ref` that is not to a component schema).
 - **Other:** a single spec and a fixed `downstreamHost` (no service discovery). Every caller sees every tool. Config and spec changes need a restart.
