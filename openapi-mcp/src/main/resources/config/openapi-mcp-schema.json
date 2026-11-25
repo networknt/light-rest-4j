@@ -1,0 +1,24 @@
+{
+  "$schema" : "http://json-schema.org/draft-07/schema#",
+  "type" : "object",
+  "required" : [ "downstreamHost", "endpoints", "maxResponseBodySize" ],
+  "properties" : {
+    "downstreamHost" : {
+      "type" : "string",
+      "description" : "Base URL of the backend API, e.g. https://pets.example.com. The endpoint path is appended to it."
+    },
+    "endpoints" : {
+      "type" : "array",
+      "description" : "Endpoints exposed as MCP tools, in the light-4j endpoint format {path}@{method}, e.g. /v1/pets/{petId}@get.\nThe path includes the base path of the spec's first servers URL. Tools are listed in this order.\nThe format is a YAML list, or a JSON array or comma-separated string in values.yml.",
+      "items" : {
+        "type" : "string"
+      }
+    },
+    "maxResponseBodySize" : {
+      "type" : "integer",
+      "description" : "Maximum size of a backend response body, in bytes. A larger body is replaced by an error message.",
+      "default" : 1048576,
+      "format" : "int32"
+    }
+  }
+}

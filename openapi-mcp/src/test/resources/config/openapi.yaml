@@ -1,0 +1,94 @@
+openapi: 3.0.3
+info:
+  title: Pet Store
+  version: 1.0.0
+paths:
+  /pets/{petId}:
+    parameters:
+      - name: petId
+        in: path
+        required: true
+        description: The pet's ID.
+        schema: { type: string }
+    get:
+      operationId: getPet
+      summary: Get a pet
+      description: Get a pet by its ID.
+      parameters:
+        - name: fields
+          in: query
+          schema: { type: string }
+        - name: X-Locale
+          in: header
+          schema: { type: string }
+      responses:
+        '200':
+          description: The pet.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pet' }
+        '404':
+          description: No pet has this ID.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    delete:
+      operationId: deletePet
+      description: Delete a pet.
+      responses:
+        '204':
+          description: The pet was deleted.
+  /pets/{petId}/photo:
+    get:
+      operationId: getPetPhoto
+      description: Get a pet's photo.
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The photo.
+          content:
+            image/png: {}
+  /pets:
+    post:
+      operationId: createPet
+      description: Create a pet.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NewPet' }
+          application/xml:
+            schema: { $ref: '#/components/schemas/NewPet' }
+      responses:
+        '201':
+          description: The new pet.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pet' }
+components:
+  schemas:
+    NewPet:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        price: { type: number }
+        owner: { $ref: '#/components/schemas/Owner' }
+    Owner:
+      type: object
+      properties:
+        name: { type: string }
+    Pet:
+      allOf:
+        - $ref: '#/components/schemas/NewPet'
+        - type: object
+          properties:
+            id: { type: string }
+    Error:
+      type: object
+      properties:
+        message: { type: string }

@@ -1,0 +1,9 @@
+# Configuration of the openapi-mcp handler, which exposes the endpoints of an OpenAPI specification as MCP tools.
+# Base URL of the backend API, e.g. https://pets.example.com. The endpoint path is appended to it.
+downstreamHost: ${openapi-mcp.downstreamHost:}
+# Endpoints exposed as MCP tools, in the light-4j endpoint format {path}@{method}, e.g. /v1/pets/{petId}@get.
+# The path includes the base path of the spec's first servers URL. Tools are listed in this order.
+# The format is a YAML list, or a JSON array or comma-separated string in values.yml.
+endpoints: ${openapi-mcp.endpoints:}
+# Maximum size of a backend response body, in bytes. A larger body is replaced by an error message.
+maxResponseBodySize: ${openapi-mcp.maxResponseBodySize:1048576}

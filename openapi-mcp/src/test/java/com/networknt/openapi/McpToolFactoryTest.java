@@ -1,0 +1,91 @@
+/*
+ * Copyright (c) 2016 Network New Technologies Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.networknt.openapi;
+
+import com.networknt.config.ConfigException;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+
+import java.util.List;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class McpToolFactoryTest {
+
+    // Each kind of endpoint that fails startup, plus an endpoint that is not in the spec.
+    // Each case is the /pets@post operation and the exposed endpoint; /pets@get (listPets) is also exposed.
+    static Stream<Arguments> endpointsThatFailStartup() {
+        return Stream.of(
+                Arguments.of("{}", "/pets@post", "has no operationId"),
+                Arguments.of("{'operationId': 'listPets'}", "/pets@post", "operationId listPets is also used by another exposed endpoint"),
+                Arguments.of("{'operationId': 'createPet', 'requestBody': {'content': {'application/xml': {}}}}",
+                        "/pets@post", "its requestBody offers no application/json content type [application/xml]"),
+                Arguments.of("{'operationId': 'createPet', 'parameters': [{'name': 'body', 'in': 'query'}]}",
+                        "/pets@post", "parameter name body is reserved"),
+                Arguments.of("{'operationId': 'createPet', 'parameters': [{'name': 'id', 'in': 'path'}, {'name': 'id', 'in': 'query'}]}",
+                        "/pets@post", "two parameters are named id"),
+                Arguments.of("{'operationId': 'createPet', 'parameters': [{'name': 'session', 'in': 'cookie'}]}",
+                        "/pets@post", "cookie parameter session is not supported"),
+                Arguments.of("{'operationId': 'createPet'}", "/pets/{id}@get", "it is not in the spec"));
+    }
+
+    @ParameterizedTest(name = "{2}")
+    @MethodSource
+    void endpointsThatFailStartup(String operation, String endpoint, String problem) {
+        OpenApiHelper spec = spec("{'paths': {'/pets': {'get': {'operationId': 'listPets'}, 'post': " + operation + "}}}");
+        ConfigException e = assertThrows(ConfigException.class,
+                () -> McpToolFactory.create(spec, List.of("/pets@get", endpoint)));
+        assertTrue(e.getMessage().startsWith("openapi-mcp cannot expose " + endpoint + ": "), e.getMessage());
+        assertTrue(e.getMessage().contains(problem), e.getMessage());
+    }
+
+    @Test
+    void endpointWithBasePathAndParameterRefs() {
+        OpenApiHelper spec = spec("""
+                {'servers': [{'url': 'https://pets.example.com/v1/'}],
+                 'paths': {'/pets/{petId}': {
+                   'parameters': [{'$ref': '#/components/parameters/PetId'}, {'name': 'X-Trace', 'in': 'header', 'schema': {'type': 'string'}}],
+                   'put': {'operationId': 'updatePet',
+                           'parameters': [{'name': 'X-Trace', 'in': 'header', 'required': true, 'schema': {'type': 'integer'}}],
+                           'requestBody': {'description': 'The pet.', 'content': {'application/json': {'schema': {'type': 'object'}}}}}}},
+                 'components': {'parameters': {'PetId': {'name': 'petId', 'in': 'path', 'required': true, 'schema': {'type': 'string'}}}}}""");
+        McpTool tool = McpToolFactory.create(spec, List.of("/v1/pets/{petId}@PUT")).get(0);
+
+        assertEquals("PUT", tool.method());
+        assertEquals("/v1/pets/{petId}", tool.path());
+        assertEquals(List.of(new McpTool.Parameter("petId", "path"), new McpTool.Parameter("X-Trace", "header")), tool.parameters());
+        assertTrue(tool.hasBody());
+        assertEquals(json("""
+                {'type': 'object',
+                 'properties': {'petId': {'type': 'string'}, 'X-Trace': {'type': 'integer'}, 'body': {'type': 'object', 'description': 'The pet.'}},
+                 'required': ['petId', 'X-Trace']}"""), tool.definition().get("inputSchema"));
+    }
+
+    private static OpenApiHelper spec(String json) {
+        return new OpenApiHelper("{'openapi': '3.0.0', 'info': {'title': 't', 'version': '1'}, ".replace('\'', '"') + json.substring(1).replace('\'', '"'));
+    }
+
+    private static JsonNode json(String json) {
+        return JsonMapper.builder().build().readTree(json.replace('\'', '"'));
+    }
+}
