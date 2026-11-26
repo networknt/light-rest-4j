@@ -26,7 +26,7 @@ The handler reads the same `openapi.yaml` (or `openapi.yml` / `openapi.json`) as
 
 | Setting | Default | Description |
 | --- | --- | --- |
-| `downstreamHost` | (required) | Base URL of the backend API, an absolute `http` or `https` URL, e.g. `https://pets.example.com`. It may include a path prefix. |
+| `downstreamHost` | (required) | Base URL of the backend API, an absolute `http` or `https` URL without a query, fragment or user info, e.g. `https://pets.example.com`. It may include a path prefix. |
 | `endpoints` | (required) | Endpoints exposed as tools, as `{path}@{method}`. The path includes the base path of the spec's first `servers` URL. Tools are listed in this order. |
 | `maxResponseBodySize` | `1048576` (1 MiB) | Maximum size of a backend response body, in bytes, from 1 to 2147483646. A larger body is replaced by an error message. |
 
@@ -90,13 +90,13 @@ handler.paths:
   audit.auditOnError: false
   ```
 
-  AuditHandler's `statusCode` is the status of the MCP response, which is 200 even when the backend call failed.
+  Keep `audit.statusCode` or `audit.responseTime` on (both are by default): with both off, AuditHandler writes its record before openapi-mcp runs, so the record has no tool name. AuditHandler's `statusCode` is the status of the MCP response, which is 200 even when the backend call failed.
 
 ## Limitations
 - **MCP versions:** `2026-07-28`, and the earlier `2025-11-25`, `2025-06-18` and `2025-03-26` (with the `initialize` handshake), over the Streamable HTTP transport. The handler is stateless in every version: it issues no session ID, offers no `GET` stream, and never responds with SSE. JSON-RPC batches and `2024-11-05` (HTTP+SSE) are not supported.
-- **MCP methods:** `server/discover` (`2026-07-28`) or `initialize` (earlier versions), plus `tools/list` and `tools/call`. Resources, prompts, subscriptions, tasks, `ping`, pagination, `outputSchema` and `structuredContent` are not supported.
+- **MCP methods:** `server/discover` (`2026-07-28`) or `initialize` and `ping` (earlier versions), plus `tools/list` and `tools/call`. Resources, prompts, subscriptions, tasks, pagination, `outputSchema` and `structuredContent` are not supported.
 - **Request bodies:** only `application/json`. The tool argument `body` is forwarded as JSON.
-- **Parameters:** path, query and header parameters, serialized the OpenAPI default way. Cookie parameters are not supported, and a parameter may not be named `body`. Header parameters named `Accept`, `Content-Type` or `Authorization` are ignored, as OpenAPI requires, so a tool call cannot replace the forwarded token. A path argument of `.` or `..` is refused with `isError: true`, so that it cannot reach a path outside the endpoint.
+- **Parameters:** path, query and header parameters, serialized only the OpenAPI default way: a parameter with a different `style` or `explode`, or with `content` instead of a schema, fails startup. Cookie parameters are not supported, and a parameter may not be named `body`. Header parameters named `Accept`, `Content-Type` or `Authorization` are ignored, as OpenAPI requires, so a tool call cannot replace the forwarded token. Header parameters for headers that the handler sets itself (`Accept-Encoding`, `X-Forwarded-*`) or that the HTTP client cannot send (`Host`, `Connection`, `Content-Length`, `Expect`, `Upgrade`) fail startup. An empty path argument, or one of `.` or `..`, is refused with `isError: true`, so that it cannot reach a path outside the endpoint.
 - **Input schemas:** parameter and request body schemas are copied as written, with referenced component schemas copied into `$defs`. OpenAPI 3.0-specific keywords (e.g. `nullable`, or a boolean `exclusiveMinimum`) are not converted to JSON Schema 2020-12, the default dialect of MCP tool schemas. openapi-parser drops the keys next to a `$ref`, so a schema with a `$ref` keeps only the `$ref`.
 - **Response bodies:**
 
@@ -109,5 +109,5 @@ handler.paths:
 
 - **Errors:** a non-2xx backend status, a body over `maxResponseBodySize`, and connection or timeout failures are returned as a tool result with `isError: true`. Redirects are not followed.
 - **Validation:** tool arguments are not validated against the input schema; the backend is expected to reject invalid input.
-- **Startup:** the server fails to start if `downstreamHost` or `maxResponseBodySize` is invalid, or a configured endpoint is not in the spec, has no `operationId`, shares its `operationId` with another, or cannot be exposed (non-JSON request body, cookie parameter, a parameter named `body`, two parameters with the same name, or a schema `$ref` that is not to a component schema).
+- **Startup:** the server fails to start if `downstreamHost` or `maxResponseBodySize` is invalid, or a configured endpoint is not in the spec, has no `operationId`, shares its `operationId` with another, or cannot be exposed (non-JSON request body, cookie parameter, a parameter named `body`, two parameters with the same name, a header parameter the handler cannot send, a non-default parameter serialization, a `{name}` in the path with no path parameter, or a schema `$ref` that is not to a component schema).
 - **Other:** a single spec and a fixed `downstreamHost` (no service discovery). Every caller sees every tool. Config and spec changes need a restart.

@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Builds the MCP tools for the exposed endpoints of a spec. An endpoint that cannot be exposed fails startup with
@@ -36,6 +38,12 @@ final class McpToolFactory {
     private static final Set<String> RESERVED_PARAMETER_NAMES = Set.of("body");
     // Header parameters that OpenAPI says SHALL be ignored, in lowercase.
     private static final Set<String> IGNORED_HEADER_PARAMETERS = Set.of("accept", "content-type", "authorization");
+    // Header parameters that cannot be tool arguments, in lowercase: openapi-mcp sets Accept-Encoding and the
+    // X-Forwarded-* headers itself, and the JDK HTTP client refuses to send the others.
+    private static final Set<String> UNSUPPORTED_HEADER_PARAMETERS = Set.of("accept-encoding", "host", "connection", "content-length", "expect", "upgrade");
+    private static final String X_FORWARDED_PREFIX = "x-forwarded-";
+    // A {name} in a path template.
+    private static final Pattern PATH_TEMPLATE = Pattern.compile("\\{([^}]+)}");
     // Schema keywords whose values are data, not schemas, so a $ref key in them is not a reference.
     private static final Set<String> DATA_KEYWORDS = Set.of("example", "examples", "default", "enum", "const");
     // Schema keywords whose values map names to schemas, so every value is a schema whatever its name.
@@ -92,10 +100,29 @@ final class McpToolFactory {
         final var operation = pathItem == null ? null : pathItem.getOperation(openapiMethod);
         mcpEndpointCheck(operation, endpoint);
 
-        return new OpenApiMcpToolBuilder(schemas, endpoint, openapiPath, openapiMethod, operation)
+        McpTool tool = new OpenApiMcpToolBuilder(schemas, endpoint, openapiPath, openapiMethod, operation)
                 .withRequestBody(operation.getRequestBody())
                 .withParameters(parameters(pathItem, operation))
                 .build();
+        pathTemplateCheck(endpoint, openapiPath.substring(basePath.length()), tool.parameters());
+        return tool;
+    }
+
+    /**
+     * Checks that every {name} in the path has a path parameter to fill it. Only the spec's path is checked, not the
+     * base path, which may contain server variables.
+     *
+     * @param endpoint   the exposed endpoint, as {path}@{method}
+     * @param path       the path, as the key under paths
+     * @param parameters the tool's parameters
+     * @throws ConfigException if a {name} has no path parameter
+     */
+    private static void pathTemplateCheck(String endpoint, String path, List<McpTool.Parameter> parameters) {
+        Matcher matcher = PATH_TEMPLATE.matcher(path);
+        while (matcher.find()) {
+            if (!parameters.contains(new McpTool.Parameter(matcher.group(1), "path")))
+                throw error(endpoint, "its path has {" + matcher.group(1) + "}, but no path parameter " + matcher.group(1));
+        }
     }
 
     /**
@@ -157,8 +184,9 @@ final class McpToolFactory {
          *
          * @param parameters the path item and operation parameters, merged
          * @return this builder
-         * @throws ConfigException if a parameter is not in the path, query or header, is named body, or has the
-         *                         same name as another parameter
+         * @throws ConfigException if a parameter is not in the path, query or header, is named body, has the same
+         *                         name as another parameter, is a header that openapi-mcp or the HTTP client sets,
+         *                         or is not serialized the OpenAPI default way
          */
         OpenApiMcpToolBuilder withParameters(Collection<Parameter> parameters) {
             for (Parameter parameter : parameters) {
@@ -177,7 +205,9 @@ final class McpToolFactory {
             String parameterName = parameter.getName();
             mcpParameterCheck(toolProperties, endpoint, parameterIn, parameterName);
 
-            JsonNode schema = Overlay.toJson((ParameterImpl) parameter).path("schema");
+            JsonNode written = Overlay.toJson((ParameterImpl) parameter);
+            serializationCheck(endpoint, parameterIn, parameterName, written);
+            JsonNode schema = written.path("schema");
             var resolvedParameter = property(schema);
 
             if (parameter.getDescription() instanceof String description)
@@ -346,6 +376,12 @@ final class McpToolFactory {
         if (!LOCATIONS.contains(newParameterLocation))
             throw error(newParameterEndpoint, newParameterLocation + " parameter " + newPropertyName + " is not supported");
 
+        // Headers that openapi-mcp sets itself, or that the HTTP client cannot send.
+        String lowerCaseName = newPropertyName.toLowerCase(Locale.ROOT);
+        if (newParameterLocation.equals("header")
+                && (UNSUPPORTED_HEADER_PARAMETERS.contains(lowerCaseName) || lowerCaseName.startsWith(X_FORWARDED_PREFIX)))
+            throw error(newParameterEndpoint, "header parameter " + newPropertyName + " is not supported: the header is set by openapi-mcp or the HTTP client");
+
         // Make sure we are not using any reserved field names.
         if (RESERVED_PARAMETER_NAMES.contains(newPropertyName))
             throw error(newParameterEndpoint, "parameter name " + newPropertyName + " is reserved for the request body");
@@ -353,6 +389,28 @@ final class McpToolFactory {
         // No duplicates
         if (existingProperties.has(newPropertyName))
             throw error(newParameterEndpoint, "two parameters are named " + newPropertyName);
+    }
+
+    /**
+     * Checks that a parameter is serialized the OpenAPI default way, which is the only way McpToolCaller serializes
+     * arguments: style simple with explode false for path and header parameters, and style form with explode true
+     * for query parameters. A parameter defined with content instead of a schema is not supported either.
+     *
+     * @param endpoint  the OpenAPI endpoint the parameter is in
+     * @param in        the parameter location: path, query or header
+     * @param name      the parameter name
+     * @param parameter the parameter as written
+     * @throws ConfigException if the parameter has a non-default style or explode, or a content
+     */
+    private static void serializationCheck(String endpoint, String in, String name, JsonNode parameter) {
+        boolean query = in.equals("query");
+        String defaultStyle = query ? "form" : "simple";
+        if (parameter.has("content"))
+            throw error(endpoint, in + " parameter " + name + " defines content, which is not supported; use a schema");
+        if (parameter.has("style") && !defaultStyle.equals(parameter.get("style").stringValue(null)))
+            throw error(endpoint, in + " parameter " + name + " has style " + parameter.get("style").asString() + "; only the default style " + defaultStyle + " is supported");
+        if (parameter.has("explode") && parameter.get("explode").asBoolean() != query)
+            throw error(endpoint, in + " parameter " + name + " has explode " + parameter.get("explode") + "; only the default explode " + query + " is supported");
     }
 
 

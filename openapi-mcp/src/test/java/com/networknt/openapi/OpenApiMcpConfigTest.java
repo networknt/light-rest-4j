@@ -46,6 +46,9 @@ class OpenApiMcpConfigTest {
                 Arguments.of("downstreamHost", "localhost:9080", "openapi-mcp downstreamHost must be an absolute http or https URL"),
                 Arguments.of("downstreamHost", "/petstore", "openapi-mcp downstreamHost must be an absolute http or https URL"),
                 Arguments.of("downstreamHost", "ftp://pets.example.com", "openapi-mcp downstreamHost must be an absolute http or https URL"),
+                Arguments.of("downstreamHost", "https://pets.example.com?code=k", "openapi-mcp downstreamHost must not have a query, fragment or user info"),
+                Arguments.of("downstreamHost", "https://pets.example.com/#x", "openapi-mcp downstreamHost must not have a query, fragment or user info"),
+                Arguments.of("downstreamHost", "https://user:secret@pets.example.com", "openapi-mcp downstreamHost must not have a query, fragment or user info"),
                 Arguments.of("maxResponseBodySize", 0, "openapi-mcp maxResponseBodySize must be between 1 and 2147483646: 0"),
                 Arguments.of("maxResponseBodySize", -1, "openapi-mcp maxResponseBodySize must be between 1 and 2147483646: -1"),
                 Arguments.of("maxResponseBodySize", Integer.MAX_VALUE, "openapi-mcp maxResponseBodySize must be between 1 and 2147483646: 2147483647"));

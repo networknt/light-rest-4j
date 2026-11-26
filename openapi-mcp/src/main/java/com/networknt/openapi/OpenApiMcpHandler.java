@@ -204,8 +204,9 @@ public class OpenApiMcpHandler implements LightHttpHandler {
 
     /**
      * Answers a request of a legacy version (2025-03-26 to 2025-11-25), without a session. initialize negotiates
-     * the version, and other requests are answered statelessly, whether or not the client initialized. An unknown
-     * method is replied with 200, because in these versions a 404 tells the client that its session has ended.
+     * the version, and other requests are answered statelessly, whether or not the client initialized. ping gets
+     * the empty result these versions require. An unknown method is replied with 200, because in these versions a
+     * 404 tells the client that its session has ended.
      *
      * @param exchange the MCP request
      * @param id       the JSON-RPC request id
@@ -224,6 +225,7 @@ public class OpenApiMcpHandler implements LightHttpHandler {
             }
             case "tools/list" -> result(id, Map.of("tools", toolDefinitions()));
             case "tools/call" -> callTool(exchange, id, params, false);
+            case "ping" -> result(id, Map.of());
             default -> error(200, id, -32601, "Method not found: " + method);
         };
     }
@@ -249,9 +251,9 @@ public class OpenApiMcpHandler implements LightHttpHandler {
     }
 
     /**
-     * Answers a tools/call request by calling the backend for the tool. In 2026-07-28 the Mcp-Name header must
-     * match the tool name. The tool must exist, and the arguments, if present, must be an object. The tool name is
-     * added to the exchange's audit info, so that AuditHandler can record it.
+     * Answers a tools/call request by calling the backend for the tool. The tool name must be a string, and in
+     * 2026-07-28 the Mcp-Name header must match it. The tool must exist, and the arguments, if present, must be an
+     * object. The tool name is added to the exchange's audit info, so that AuditHandler can record it.
      *
      * @param exchange the MCP request, whose headers are forwarded to the backend
      * @param id       the JSON-RPC request id
@@ -260,7 +262,8 @@ public class OpenApiMcpHandler implements LightHttpHandler {
      * @return the reply, with the tool result or a JSON-RPC error
      */
     private Reply callTool(HttpServerExchange exchange, JsonNode id, JsonNode params, boolean modern) {
-        String name = params.path("name").asString();
+        if (!params.path("name").isString()) return error(200, id, -32602, "Invalid params: name must be a string");
+        String name = params.get("name").stringValue();
         if (modern && !name.equals(exchange.getRequestHeaders().getFirst(MCP_NAME))) {
             return error(400, id, -32020, "Header mismatch: Mcp-Name header does not match params.name " + name);
         }

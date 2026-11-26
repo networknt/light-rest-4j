@@ -47,6 +47,20 @@ class McpToolFactoryTest {
                         "/pets@post", "two parameters are named id"),
                 Arguments.of("{'operationId': 'createPet', 'parameters': [{'name': 'session', 'in': 'cookie'}]}",
                         "/pets@post", "cookie parameter session is not supported"),
+                Arguments.of("{'operationId': 'createPet', 'parameters': [{'name': 'Accept-Encoding', 'in': 'header'}]}",
+                        "/pets@post", "header parameter Accept-Encoding is not supported: the header is set by openapi-mcp or the HTTP client"),
+                Arguments.of("{'operationId': 'createPet', 'parameters': [{'name': 'X-Forwarded-For', 'in': 'header'}]}",
+                        "/pets@post", "header parameter X-Forwarded-For is not supported"),
+                Arguments.of("{'operationId': 'createPet', 'parameters': [{'name': 'host', 'in': 'header'}]}",
+                        "/pets@post", "header parameter host is not supported"),
+                Arguments.of("{'operationId': 'createPet', 'parameters': [{'name': 'ids', 'in': 'query', 'explode': false}]}",
+                        "/pets@post", "query parameter ids has explode false; only the default explode true is supported"),
+                Arguments.of("{'operationId': 'createPet', 'parameters': [{'name': 'ids', 'in': 'query', 'style': 'pipeDelimited'}]}",
+                        "/pets@post", "query parameter ids has style pipeDelimited; only the default style form is supported"),
+                Arguments.of("{'operationId': 'createPet', 'parameters': [{'name': 'X-Ids', 'in': 'header', 'explode': true}]}",
+                        "/pets@post", "header parameter X-Ids has explode true; only the default explode false is supported"),
+                Arguments.of("{'operationId': 'createPet', 'parameters': [{'name': 'filter', 'in': 'query', 'content': {'application/json': {}}}]}",
+                        "/pets@post", "query parameter filter defines content, which is not supported"),
                 Arguments.of("{'operationId': 'createPet'}", "/pets/{id}@get", "it is not in the spec"));
     }
 
@@ -80,6 +94,30 @@ class McpToolFactoryTest {
                 {'type': 'object',
                  'properties': {'petId': {'type': 'string'}, 'X-Trace': {'type': 'integer'}, 'body': {'type': 'object', 'description': 'The pet.'}},
                  'required': ['petId', 'X-Trace']}"""), tool.definition().get("inputSchema"));
+    }
+
+    @Test
+    void pathTemplateWithoutPathParameter() {
+        OpenApiHelper spec = spec("""
+                {'paths': {'/pets/{petId}/photos/{photoId}': {'get': {'operationId': 'getPhoto', 'parameters': [
+                   {'name': 'petId', 'in': 'path', 'required': true, 'schema': {'type': 'string'}},
+                   {'name': 'photoId', 'in': 'query', 'schema': {'type': 'string'}}]}}}}""");
+        ConfigException e = assertThrows(ConfigException.class,
+                () -> McpToolFactory.create(spec, List.of("/pets/{petId}/photos/{photoId}@get")));
+        assertEquals("openapi-mcp cannot expose /pets/{petId}/photos/{photoId}@get: its path has {photoId}, but no path parameter photoId",
+                e.getMessage());
+    }
+
+    @Test
+    void defaultSerializationWrittenOut() {
+        OpenApiHelper spec = spec("""
+                {'paths': {'/pets/{petId}': {'get': {'operationId': 'getPet', 'parameters': [
+                   {'name': 'petId', 'in': 'path', 'required': true, 'style': 'simple', 'explode': false, 'schema': {'type': 'string'}},
+                   {'name': 'tags', 'in': 'query', 'style': 'form', 'explode': true, 'schema': {'type': 'array', 'items': {'type': 'string'}}},
+                   {'name': 'X-Ids', 'in': 'header', 'style': 'simple', 'explode': false, 'schema': {'type': 'string'}}]}}}}""");
+        McpTool tool = McpToolFactory.create(spec, List.of("/pets/{petId}@get")).get(0);
+        assertEquals(List.of(new McpTool.Parameter("petId", "path"), new McpTool.Parameter("tags", "query"), new McpTool.Parameter("X-Ids", "header")),
+                tool.parameters());
     }
 
     @Test

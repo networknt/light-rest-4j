@@ -86,8 +86,8 @@ public class OpenApiMcpConfig {
      * Loads openapi-mcp.yaml and registers it with the module registry.
      *
      * @return the configuration
-     * @throws ConfigException if downstreamHost is not an absolute http or https URL, or maxResponseBodySize is not
-     *                         between 1 and Integer.MAX_VALUE - 1
+     * @throws ConfigException if downstreamHost is not an absolute http or https URL without a query, fragment or
+     *                         user info, or maxResponseBodySize is not between 1 and Integer.MAX_VALUE - 1
      */
     public static OpenApiMcpConfig load() {
         OpenApiMcpConfig config = new OpenApiMcpConfig(Config.getInstance().getJsonMapConfig(CONFIG_NAME));
@@ -107,6 +107,10 @@ public class OpenApiMcpConfig {
         if (uri == null || uri.getHost() == null
                 || !"http".equalsIgnoreCase(uri.getScheme()) && !"https".equalsIgnoreCase(uri.getScheme())) {
             throw new ConfigException("openapi-mcp " + DOWNSTREAM_HOST + " must be an absolute http or https URL, e.g. https://pets.example.com: " + downstreamHost);
+        }
+        // The endpoint path is appended to it, so it cannot end in a query or fragment.
+        if (uri.getRawQuery() != null || uri.getRawFragment() != null || uri.getRawUserInfo() != null) {
+            throw new ConfigException("openapi-mcp " + DOWNSTREAM_HOST + " must not have a query, fragment or user info: " + downstreamHost);
         }
         // The response body is read up to one byte over the limit.
         if (maxResponseBodySize < 1 || maxResponseBodySize == Integer.MAX_VALUE) {

@@ -61,11 +61,11 @@ class McpToolCallerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"'.'", "'..'", "['..']"})
-    void dotSegmentPathArgument(String petId) {
+    @ValueSource(strings = {"'.'", "'..'", "['..']", "''", "[]"})
+    void refusedPathArgument(String petId) {
         Exception e = assertThrows(IllegalArgumentException.class,
                 () -> McpToolCaller.target(TOOL, json("{'petId': " + petId + "}"), new HashMap<>()));
-        assertTrue(e.getMessage().startsWith("Invalid value for path parameter petId: ."), e.getMessage());
+        assertTrue(e.getMessage().startsWith("Invalid value for path parameter petId: "), e.getMessage());
     }
 
     @Test

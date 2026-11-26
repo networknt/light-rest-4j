@@ -148,7 +148,7 @@ final class McpToolCaller {
      * @param arguments the tool arguments
      * @param headers   the backend request headers
      * @return the path and query of the backend request
-     * @throws IllegalArgumentException if a path argument is missing or is a . or .. segment, or an argument has an
+     * @throws IllegalArgumentException if a path argument is missing, empty, . or .., or an argument has an
      *                                  unsupported value
      */
     static String target(McpTool tool, JsonNode arguments, Map<String, List<String>> headers) {
@@ -172,16 +172,20 @@ final class McpToolCaller {
     }
 
     /**
-     * The encoded value of a path argument. A value of . or .. is refused: dots are not percent-encoded, so it would
-     * be a dot segment, which a backend that normalizes paths removes, calling a path outside the exposed endpoint.
+     * The encoded value of a path argument. An empty value, or a value of . or .., is refused: it would leave an empty
+     * segment or a dot segment, which a backend that normalizes paths (collapsing // or removing dot segments) or
+     * matches a trailing / maps to a path outside the exposed endpoint. Dots are not percent-encoded.
      *
      * @param name   the parameter name, used in the error message
      * @param values the argument's values
      * @return the comma-separated, percent-encoded values
-     * @throws IllegalArgumentException if the value is . or ..
+     * @throws IllegalArgumentException if the value is empty, . or ..
      */
     private static String pathSegment(String name, List<String> values) {
         String segment = values.stream().map(McpToolCaller::encode).collect(Collectors.joining(","));
+        if (segment.isEmpty()) {
+            throw new IllegalArgumentException("Invalid value for path parameter " + name + ": an empty value is not allowed");
+        }
         if (segment.equals(".") || segment.equals("..")) {
             throw new IllegalArgumentException("Invalid value for path parameter " + name + ": " + segment + " is not allowed");
         }

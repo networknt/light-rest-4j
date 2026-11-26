@@ -381,6 +381,12 @@ class OpenApiMcpHandlerTest {
     }
 
     @Test
+    void legacyPing() throws Exception {
+        assertResponse(200, "{ \"jsonrpc\": \"2.0\", \"id\": 14, \"result\": {} }",
+                post("{ \"jsonrpc\": \"2.0\", \"id\": 14, \"method\": \"ping\" }", List.of("MCP-Protocol-Version", "2025-06-18")));
+    }
+
+    @Test
     void legacyToolsCall() throws Exception {
         HttpResponse<String> response = post("""
                 { "jsonrpc": "2.0", "id": 13, "method": "tools/call",
@@ -435,6 +441,11 @@ class OpenApiMcpHandlerTest {
                 Arguments.of("initialize in 2026-07-28", toolsList.replace("tools/list", "initialize"), List.of("Mcp-Method", "initialize"), 404, -32601),
                 Arguments.of("unknown legacy method", "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"resources/list\"}",
                         List.of("MCP-Protocol-Version", "2025-11-25"), 200, -32601),
+                Arguments.of("ping in 2026-07-28", toolsList.replace("tools/list", "ping"), List.of("Mcp-Method", "ping"), 404, -32601),
+                Arguments.of("non-string name", getPet.replace("\"getPet\"", "{}").replace("ARGUMENTS", "{}"),
+                        List.of("Mcp-Method", "tools/call", "Mcp-Name", "getPet"), 200, -32602),
+                Arguments.of("legacy non-string name", "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":{}}}",
+                        List.of("MCP-Protocol-Version", "2025-11-25"), 200, -32602),
                 Arguments.of("no Mcp-Name", getPet.replace("ARGUMENTS", "{\"petId\":\"123\"}"), List.of("Mcp-Method", "tools/call"), 400, -32020),
                 Arguments.of("arguments is not an object", getPet.replace("ARGUMENTS", "[]"), List.of("Mcp-Method", "tools/call", "Mcp-Name", "getPet"), 200, -32602));
     }
