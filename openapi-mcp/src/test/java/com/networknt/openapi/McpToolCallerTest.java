@@ -51,6 +51,7 @@ class McpToolCallerTest {
                 Arguments.of("{'petId': [1, 2], 'tags': ['x', 'y z'], 'all': true}", "/pets/1,2?tags=x&tags=y%20z&all=true"),
                 Arguments.of("{'petId': 'p', 'limit': 12345678901234567890.10, 'tags': null}", "/pets/p?limit=12345678901234567890.10"),
                 Arguments.of("{'petId': '...'}", "/pets/..."),
+                Arguments.of("{'petId': 'a/.../b..'}", "/pets/a%2F...%2Fb.."),
                 Arguments.of("{'petId': ['.', '.']}", "/pets/.,."));
     }
 
@@ -61,7 +62,7 @@ class McpToolCallerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"'.'", "'..'", "['..']", "''", "[]"})
+    @ValueSource(strings = {"'.'", "'..'", "['..']", "''", "[]", "'../../admin'", "'a/../b'", "'x/.'", "'..\\\\x'", "'a\\\\.'"})
     void refusedPathArgument(String petId) {
         Exception e = assertThrows(IllegalArgumentException.class,
                 () -> McpToolCaller.target(TOOL, json("{'petId': " + petId + "}"), new HashMap<>()));

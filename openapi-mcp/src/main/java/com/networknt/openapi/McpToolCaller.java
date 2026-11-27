@@ -188,8 +188,8 @@ final class McpToolCaller {
      * @param arguments the tool arguments
      * @param headers   the backend request headers
      * @return the path and query of the backend request
-     * @throws IllegalArgumentException if a path argument is missing, empty, . or .., or an argument has an
-     *                                  unsupported value
+     * @throws IllegalArgumentException if a path argument is missing, empty, or has a . or .. piece, or an argument has
+     *                                  an unsupported value
      */
     static String target(McpTool tool, JsonNode arguments, Map<String, List<String>> headers) {
         String path = tool.path();
@@ -212,24 +212,29 @@ final class McpToolCaller {
     }
 
     /**
-     * The encoded value of a path argument. An empty value, or a value of . or .., is refused: it would leave an empty
-     * segment or a dot segment, which a backend that normalizes paths (collapsing // or removing dot segments) or
-     * matches a trailing / maps to a path outside the exposed endpoint. Dots are not percent-encoded.
+     * The encoded value of a path argument. An empty value is refused, and so is a value with a . or .. piece between
+     * / or \ characters, or at either end. An empty value would leave an empty segment, which a backend that
+     * collapses // or matches a trailing / maps to another endpoint. A . or .. piece is a dot segment, which a backend
+     * that normalizes paths removes, calling a path outside the exposed endpoint: dots are not percent-encoded, and a
+     * layer that decodes %2F or %5C before normalizing turns ../x into one too.
      *
      * @param name   the parameter name, used in the error message
      * @param values the argument's values
      * @return the comma-separated, percent-encoded values
-     * @throws IllegalArgumentException if the value is empty, . or ..
+     * @throws IllegalArgumentException if the value is empty, or has a . or .. piece
      */
     private static String pathSegment(String name, List<String> values) {
-        String segment = values.stream().map(McpToolCaller::encode).collect(Collectors.joining(","));
-        if (segment.isEmpty()) {
+        String value = String.join(",", values);
+        if (value.isEmpty()) {
             throw new IllegalArgumentException("Invalid value for path parameter " + name + ": an empty value is not allowed");
         }
-        if (segment.equals(".") || segment.equals("..")) {
-            throw new IllegalArgumentException("Invalid value for path parameter " + name + ": " + segment + " is not allowed");
+        for (String piece : value.split("[/\\\\]", -1)) {
+            if (piece.equals(".") || piece.equals("..")) {
+                throw new IllegalArgumentException("Invalid value for path parameter " + name + ": " + value
+                        + " is not allowed, because " + piece + " would be a dot segment");
+            }
         }
-        return segment;
+        return values.stream().map(McpToolCaller::encode).collect(Collectors.joining(","));
     }
 
     /**
