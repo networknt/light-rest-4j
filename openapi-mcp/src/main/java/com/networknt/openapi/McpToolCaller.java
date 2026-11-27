@@ -13,6 +13,7 @@ import io.undertow.util.StatusCodes;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -33,7 +34,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -47,6 +49,15 @@ final class McpToolCaller {
             "accept-encoding", "connection", "keep-alive", "te", "transfer-encoding", "trailer", "proxy-connection", "upgrade");
     // The most digits a number argument may have when written out in full, as Jackson's default maxNumberLength.
     private static final int MAX_NUMBER_DIGITS = 1000;
+    private static final ScheduledThreadPoolExecutor BODY_READ_WATCHDOG = new ScheduledThreadPoolExecutor(1, task -> {
+        Thread thread = new Thread(task, "openapi-mcp-body-read-watchdog");
+        thread.setDaemon(true);
+        return thread;
+    });
+
+    static {
+        BODY_READ_WATCHDOG.setRemoveOnCancelPolicy(true);
+    }
 
     private final HttpClient client;
     // The base URL of the backend, without a trailing /.
@@ -72,10 +83,20 @@ final class McpToolCaller {
                 .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofMillis(request.getConnectTimeout()));
         if (downstreamHost.regionMatches(true, 0, "https:", 0, 6)) {
+            String tlsError = "openapi-mcp requires an initialized TLS context for HTTPS. "
+                    + "Enable tls.loadTrustStore and configure tls.trustStore or "
+                    + "tls.loadDefaultTrustStore in client.yml.";
             try {
-                builder.sslContext(Http2Client.createSSLContext());
-            } catch (IOException e) {
-                throw new ConfigException("openapi-mcp cannot create the TLS context from client.yml: " + e.getMessage());
+                SSLContext context = Http2Client.createSSLContext();
+                if (context == null) {
+                    throw new ConfigException(tlsError);
+                }
+                context.getDefaultSSLParameters(); // Fails if the context has not been initialized.
+                builder.sslContext(context);
+            } catch (IOException | IllegalStateException e) {
+                ConfigException failure = new ConfigException(tlsError);
+                failure.initCause(e);
+                throw failure;
             }
         }
         this.client = builder.build();
@@ -133,14 +154,14 @@ final class McpToolCaller {
      */
     private byte[] readBody(InputStream in, long deadline) throws IOException {
         AtomicBoolean timedOut = new AtomicBoolean();
-        CompletableFuture<Void> watchdog = CompletableFuture.runAsync(() -> {
+        ScheduledFuture<?> watchdog = BODY_READ_WATCHDOG.schedule(() -> {
             timedOut.set(true);
             try {
                 in.close();
             } catch (IOException ignored) {
                 // The read fails either way.
             }
-        }, CompletableFuture.delayedExecutor(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS));
+        }, Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
         try {
             return in.readNBytes(maxResponseBodySize + 1);
         } catch (IOException e) {
@@ -216,7 +237,8 @@ final class McpToolCaller {
      * / or \ characters, or at either end. An empty value would leave an empty segment, which a backend that
      * collapses // or matches a trailing / maps to another endpoint. A . or .. piece is a dot segment, which a backend
      * that normalizes paths removes, calling a path outside the exposed endpoint: dots are not percent-encoded, and a
-     * layer that decodes %2F or %5C before normalizing turns ../x into one too.
+     * layer that decodes %2F or %5C before normalizing turns ../x into one too. A backend can also strip
+     * semicolon-delimited path parameters before normalizing, so only the part before the first semicolon is checked.
      *
      * @param name   the parameter name, used in the error message
      * @param values the argument's values
@@ -229,7 +251,9 @@ final class McpToolCaller {
             throw new IllegalArgumentException("Invalid value for path parameter " + name + ": an empty value is not allowed");
         }
         for (String piece : value.split("[/\\\\]", -1)) {
-            if (piece.equals(".") || piece.equals("..")) {
+            int parameterStart = piece.indexOf(';');
+            String segment = parameterStart < 0 ? piece : piece.substring(0, parameterStart);
+            if (segment.equals(".") || segment.equals("..")) {
                 throw new IllegalArgumentException("Invalid value for path parameter " + name + ": " + value
                         + " is not allowed, because " + piece + " would be a dot segment");
             }
