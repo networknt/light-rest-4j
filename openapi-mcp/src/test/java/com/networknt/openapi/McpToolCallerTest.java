@@ -75,6 +75,19 @@ class McpToolCallerTest {
         assertEquals("Unsupported value for parameter tags: only strings, numbers, booleans and arrays of them are supported", e.getMessage());
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"1e999999999", "1e-999999999", "1e1000", "[1, 1e1000]"})
+    void numberTooLongWrittenOut(String limit) {
+        Exception e = assertThrows(IllegalArgumentException.class,
+                () -> McpToolCaller.target(TOOL, json("{'petId': 'p', 'limit': " + limit + "}"), new HashMap<>()));
+        assertEquals("Unsupported value for parameter limit: a number may have at most 1000 digits when written out in full", e.getMessage());
+    }
+
+    @Test
+    void numberOf1000Digits() {
+        assertEquals("/pets/p?limit=1" + "0".repeat(999), McpToolCaller.target(TOOL, json("{'petId': 'p', 'limit': 1e999}"), new HashMap<>()));
+    }
+
     static Stream<Arguments> results() {
         byte[] eleven = "12345678901".getBytes(StandardCharsets.UTF_8);
         return Stream.of(

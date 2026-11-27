@@ -15,6 +15,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -41,6 +42,8 @@ final class McpToolCaller {
     // Inbound headers that describe the MCP request rather than the backend request.
     private static final Set<String> NOT_FORWARDED = Set.of("host", "content-type", "content-length", "expect", "accept",
             "accept-encoding", "connection", "keep-alive", "te", "transfer-encoding", "trailer", "proxy-connection", "upgrade");
+    // The most digits a number argument may have when written out in full, as Jackson's default maxNumberLength.
+    private static final int MAX_NUMBER_DIGITS = 1000;
 
     private final HttpClient client;
     // The base URL of the backend, without a trailing /.
@@ -199,18 +202,36 @@ final class McpToolCaller {
      * @param name  the parameter name, used in the error message
      * @param value the argument: a string, number or boolean, or an array of them
      * @return the values
-     * @throws IllegalArgumentException if the argument is an object, or an array of anything else
+     * @throws IllegalArgumentException if the argument is an object, an array of anything else, or a number with
+     *                                  more than 1000 digits when written out in full
      */
     private static List<String> values(String name, JsonNode value) {
         List<String> values = new ArrayList<>();
         for (JsonNode item : value.isArray() ? value.values() : List.of(value)) {
             if (item.isString()) values.add(item.stringValue());
-            else if (item.isNumber()) values.add(item.decimalValue().toPlainString());
+            else if (item.isNumber()) values.add(plainNumber(name, item.decimalValue()));
             else if (item.isBoolean()) values.add(String.valueOf(item.booleanValue()));
             else throw new IllegalArgumentException("Unsupported value for parameter " + name
                         + ": only strings, numbers, booleans and arrays of them are supported");
         }
         return values;
+    }
+
+    /**
+     * A number written out in full, without an exponent. toPlainString writes about precision + |scale| digits, so a
+     * short argument such as 1e999999999 would be a billion digits; the limit is that of Jackson's number length.
+     *
+     * @param name   the parameter name, used in the error message
+     * @param number the number
+     * @return the number's digits
+     * @throws IllegalArgumentException if the number has more than 1000 digits when written out in full
+     */
+    private static String plainNumber(String name, BigDecimal number) {
+        if ((long) number.precision() + Math.abs((long) number.scale()) > MAX_NUMBER_DIGITS) {
+            throw new IllegalArgumentException("Unsupported value for parameter " + name
+                    + ": a number may have at most " + MAX_NUMBER_DIGITS + " digits when written out in full");
+        }
+        return number.toPlainString();
     }
 
     /**
