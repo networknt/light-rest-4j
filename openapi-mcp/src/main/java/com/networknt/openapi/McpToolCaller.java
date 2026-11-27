@@ -33,6 +33,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -99,10 +102,11 @@ final class McpToolCaller {
             return result(true, List.of(text(e.getMessage())));
         }
         try {
+            long deadline = System.nanoTime() + timeout.toNanos();
             HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
             byte[] body;
             try (InputStream in = response.body()) {
-                body = in.readNBytes(maxResponseBodySize + 1);
+                body = readBody(in, deadline);
             }
             return result(response.statusCode(), response.headers().firstValue("Content-Type").orElse(null), body);
         } catch (HttpTimeoutException e) {
@@ -112,6 +116,39 @@ final class McpToolCaller {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return failure("interrupted");
+        }
+    }
+
+    /**
+     * Reads a response body, up to one byte over the size limit, before the deadline of the request timeout. The
+     * JDK 25 HttpClient stops its request timeout once the response headers arrive, so a backend that stalls after
+     * them would block the read, and the worker thread, with no end. At the deadline, the stream is closed, which
+     * ends a read that is still blocked.
+     *
+     * @param in       the response body
+     * @param deadline the deadline, in System.nanoTime() terms
+     * @return the body, read up to one byte over the size limit
+     * @throws HttpTimeoutException if the deadline passed before the body was read
+     * @throws IOException          if the body cannot be read
+     */
+    private byte[] readBody(InputStream in, long deadline) throws IOException {
+        AtomicBoolean timedOut = new AtomicBoolean();
+        CompletableFuture<Void> watchdog = CompletableFuture.runAsync(() -> {
+            timedOut.set(true);
+            try {
+                in.close();
+            } catch (IOException ignored) {
+                // The read fails either way.
+            }
+        }, CompletableFuture.delayedExecutor(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS));
+        try {
+            return in.readNBytes(maxResponseBodySize + 1);
+        } catch (IOException e) {
+            // On JDK 26 and later, the HttpClient's own timeout can close the stream first.
+            if (timedOut.get() || e.getCause() instanceof HttpTimeoutException) throw new HttpTimeoutException("request timed out");
+            throw e;
+        } finally {
+            watchdog.cancel(false);
         }
     }
 

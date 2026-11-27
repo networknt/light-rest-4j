@@ -30,7 +30,7 @@ The handler reads the same `openapi.yaml` (or `openapi.yml` / `openapi.json`) as
 | `endpoints` | (required) | Endpoints exposed as tools, as `{path}@{method}`. The path includes the base path of the spec's first `servers` URL. Tools are listed in this order. |
 | `maxResponseBodySize` | `1048576` (1 MiB) | Maximum size of a backend response body, in bytes, from 1 to 2147483646. A larger body is replaced by an error message. |
 
-TLS and the backend timeouts come from `client.yml` (`tls`, `request.connectTimeout` and `request.timeout`).
+TLS and the backend timeouts come from `client.yml` (`tls`, `request.connectTimeout` and `request.timeout`). `request.timeout` covers the whole backend call, including reading the response body.
 
 ```yaml
 # values.yml

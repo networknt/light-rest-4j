@@ -116,6 +116,14 @@ class OpenApiMcpHandlerTest {
             case "GET /pets/123" -> send(exchange, 200, "application/json", "{\"id\":\"123\",\"name\":\"Rex\"}");
             case "GET /pets/999" -> send(exchange, 404, "application/json", "{\"message\":\"Pet 999 not found\"}");
             case "GET /pets/slow" -> Thread.sleep(2000);
+            case "GET /pets/stall-body" -> {
+                // Headers and part of the body, then a stall longer than client.timeout (1000 ms).
+                exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
+                exchange.setResponseContentLength(100);
+                exchange.getOutputStream().write("partial".getBytes(StandardCharsets.UTF_8));
+                exchange.getOutputStream().flush();
+                Thread.sleep(3000);
+            }
             case "POST /pets" -> send(exchange, 201, "application/json", "{\"id\":\"124\"," + body.substring(1));
             case "DELETE /pets/123" -> exchange.setStatusCode(204);
             case "GET /pets/123/photo" -> {
@@ -336,6 +344,21 @@ class OpenApiMcpHandlerTest {
                 send("""
                         { "jsonrpc": "2.0", "id": 8, "method": "tools/call",
                           "params": { "name": "getPet", "arguments": { "petId": "slow" } } }"""));
+    }
+
+    // The JDK 25 HttpClient stops its request timeout once the response headers arrive.
+    @Test
+    void backendStallsAfterHeaders() throws Exception {
+        long start = System.nanoTime();
+        HttpResponse<String> response = send("""
+                { "jsonrpc": "2.0", "id": 8, "method": "tools/call",
+                  "params": { "name": "getPet", "arguments": { "petId": "stall-body" } } }""");
+        long elapsedMs = (System.nanoTime() - start) / 1_000_000;
+        assertResponse(200, """
+                { "jsonrpc": "2.0", "id": 8,
+                  "result": { "resultType": "complete", "content": [ { "type": "text", "text": "Backend request failed: timed out" } ], "isError": true } }""",
+                response);
+        assertTrue(elapsedMs < 2500, "answered after " + elapsedMs + " ms, not at the 1000 ms client.timeout");
     }
 
     @Test
