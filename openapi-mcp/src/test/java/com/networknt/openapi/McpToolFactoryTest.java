@@ -38,6 +38,10 @@ class McpToolFactoryTest {
     static Stream<Arguments> endpointsThatFailStartup() {
         return Stream.of(
                 Arguments.of("{}", "/pets@post", "has no operationId"),
+                Arguments.of("{'operationId': ''}", "/pets@post", "operationId  is not a valid tool name"),
+                Arguments.of("{'operationId': 'create pet'}", "/pets@post", "operationId create pet is not a valid tool name"),
+                Arguments.of("{'operationId': 'créerAnimal'}", "/pets@post", "operationId créerAnimal is not a valid tool name"),
+                Arguments.of("{'operationId': '" + "a".repeat(129) + "'}", "/pets@post", "is not a valid tool name: it must be 1 to 128 characters"),
                 Arguments.of("{'operationId': 'listPets'}", "/pets@post", "operationId listPets is also used by another exposed endpoint"),
                 Arguments.of("{'operationId': 'createPet', 'requestBody': {'content': {'application/xml': {}}}}",
                         "/pets@post", "its requestBody offers no application/json content type [application/xml]"),
@@ -94,6 +98,13 @@ class McpToolFactoryTest {
                 {'type': 'object',
                  'properties': {'petId': {'type': 'string'}, 'X-Trace': {'type': 'integer'}, 'body': {'type': 'object', 'description': 'The pet.'}},
                  'required': ['petId', 'X-Trace']}"""), tool.definition().get("inputSchema"));
+    }
+
+    @Test
+    void longestToolName() {
+        String name = "admin.pets-v2_" + "x".repeat(114);
+        OpenApiHelper spec = spec("{'paths': {'/pets': {'get': {'operationId': '" + name + "'}}}}");
+        assertEquals(name, McpToolFactory.create(spec, List.of("/pets@get")).get(0).name());
     }
 
     @Test

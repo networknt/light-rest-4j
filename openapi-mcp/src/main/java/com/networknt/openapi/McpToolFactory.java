@@ -44,6 +44,7 @@ final class McpToolFactory {
     private static final String X_FORWARDED_PREFIX = "x-forwarded-";
     // A {name} in a path template.
     private static final Pattern PATH_TEMPLATE = Pattern.compile("\\{([^}]+)}");
+    private static final Pattern TOOL_NAME = Pattern.compile("[A-Za-z0-9_.-]{1,128}");
     // Schema keywords whose values are data, not schemas, so a $ref key in them is not a reference.
     private static final Set<String> DATA_KEYWORDS = Set.of("example", "examples", "default", "enum", "const");
     // Schema keywords whose values map names to schemas, so every value is a schema whatever its name.
@@ -354,6 +355,12 @@ final class McpToolFactory {
 
         if (operation.getOperationId() == null) {
             throw error(endpoint, "it has no operationId");
+        }
+
+        // The MCP tool name rules; they also keep the name a plain ASCII Mcp-Name header value.
+        if (!TOOL_NAME.matcher(operation.getOperationId()).matches()) {
+            throw error(endpoint, "operationId " + operation.getOperationId()
+                    + " is not a valid tool name: it must be 1 to 128 characters of A-Z, a-z, 0-9, _, - and .");
         }
     }
 
