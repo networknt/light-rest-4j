@@ -17,6 +17,7 @@ package com.networknt.openapi;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.networknt.config.Config;
 import com.networknt.config.ConfigException;
 import com.networknt.config.schema.ArrayField;
@@ -126,7 +127,9 @@ public class OpenApiMcpConfig {
         if (s.isEmpty()) return List.of();
         if (s.startsWith("[")) {
             try {
-                return Config.getInstance().getMapper().readValue(s, new TypeReference<List<String>>() {});
+                return Config.getInstance().getMapper().readerFor(new TypeReference<List<String>>() {})
+                        .with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                        .readValue(s);
             } catch (JsonProcessingException | RuntimeException e) {
                 throw new ConfigException("openapi-mcp " + ENDPOINTS + " is not a valid JSON array of strings: " + s);
             }

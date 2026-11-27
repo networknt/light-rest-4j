@@ -1,6 +1,7 @@
 package com.networknt.openapi;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.cfg.JsonNodeFeature;
@@ -57,6 +58,7 @@ public class OpenApiMcpHandler implements LightHttpHandler {
     private static final long TTL_MS = 300_000;
     // Numbers are read as BigDecimal and not normalized, so that the body argument keeps its exact numbers.
     private static final ObjectMapper MAPPER = JsonMapper.builder()
+            .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
             .enable(JsonNodeFeature.USE_BIG_DECIMAL_FOR_FLOATS)
             .disable(JsonNodeFeature.STRIP_TRAILING_BIGDECIMAL_ZEROES)
             .build();

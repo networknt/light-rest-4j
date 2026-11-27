@@ -41,6 +41,8 @@ class OpenApiMcpConfigTest {
     // A config value, and the start of the error message. A null value leaves the setting out.
     static Stream<Arguments> invalidConfig() {
         return Stream.of(
+                Arguments.of("endpoints", "[\"/pets@get\"] x", "openapi-mcp endpoints is not a valid JSON array of strings"),
+                Arguments.of("endpoints", "[\"/pets@get\"] []", "openapi-mcp endpoints is not a valid JSON array of strings"),
                 Arguments.of("downstreamHost", null, "openapi-mcp downstreamHost must be an absolute http or https URL"),
                 Arguments.of("downstreamHost", "", "openapi-mcp downstreamHost must be an absolute http or https URL"),
                 Arguments.of("downstreamHost", "localhost:9080", "openapi-mcp downstreamHost must be an absolute http or https URL"),

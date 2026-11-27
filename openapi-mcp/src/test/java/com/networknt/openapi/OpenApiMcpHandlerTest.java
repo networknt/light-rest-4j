@@ -454,6 +454,8 @@ class OpenApiMcpHandlerTest {
                 + "\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientCapabilities\":{}}}}";
         return Stream.of(
                 Arguments.of("body is not JSON", "{", List.of("Mcp-Method", "tools/list"), 400, -32700),
+                Arguments.of("trailing non-JSON content", toolsList + " garbage", List.of("Mcp-Method", "tools/list"), 400, -32700),
+                Arguments.of("trailing JSON object", toolsList + toolsList, List.of("Mcp-Method", "tools/list"), 400, -32700),
                 Arguments.of("batch", "[" + toolsList + "]", List.of("Mcp-Method", "tools/list"), 400, -32600),
                 Arguments.of("notification", "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/cancelled\"}", List.of(), 202, null),
                 Arguments.of("no MCP-Protocol-Version: served as 2025-03-26", "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}",
