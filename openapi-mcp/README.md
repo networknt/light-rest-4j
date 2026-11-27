@@ -19,7 +19,7 @@ The handler only translates between MCP and REST. Authentication, token exchange
 ```
 
 ### Specification
-The handler reads the same `openapi.yaml` (or `openapi.yml` / `openapi.json`) as the OpenApiHandler. It must describe the backend API, and be a single, resolved OpenAPI 3.0 spec (every `$ref` points into the spec itself). Every schema `$ref` must be to a component schema, `#/components/schemas/<name>`.
+The handler reads the same `openapi.yaml` (or `openapi.yml` / `openapi.json`) as the OpenApiHandler. It must describe the backend API, and be a single, resolved OpenAPI 3.0 spec (every `$ref` points into the spec itself). Every schema `$ref` must be to a component schema, `#/components/schemas/<name>`. The path of the first `servers` URL (the base path) must not contain a server variable such as `{version}`; put a variable path prefix in `downstreamHost` instead.
 
 ### Configuration
 `openapi-mcp.yaml` has three settings, usually set in `values.yml`:
@@ -109,5 +109,5 @@ handler.paths:
 
 - **Errors:** a non-2xx backend status, a body over `maxResponseBodySize`, and connection or timeout failures are returned as a tool result with `isError: true`. Redirects are not followed.
 - **Validation:** tool arguments are not validated against the input schema; the backend is expected to reject invalid input.
-- **Startup:** the server fails to start if `downstreamHost` or `maxResponseBodySize` is invalid, or a configured endpoint is not in the spec, has no `operationId` or one that is not a valid MCP tool name (1 to 128 characters of `A-Z`, `a-z`, `0-9`, `_`, `-` and `.`), shares its `operationId` with another, or cannot be exposed (non-JSON request body, cookie parameter, a parameter named `body`, two parameters with the same name, a header parameter the handler cannot send, a non-default parameter serialization, a `{name}` in the path with no path parameter, or a schema `$ref` that is not to a component schema).
+- **Startup:** the server fails to start if `downstreamHost` or `maxResponseBodySize` is invalid, if the spec's base path has a server variable, or if a configured endpoint is not in the spec, has no `operationId` or one that is not a valid MCP tool name (1 to 128 characters of `A-Z`, `a-z`, `0-9`, `_`, `-` and `.`), shares its `operationId` with another, or cannot be exposed (non-JSON request body, cookie parameter, a parameter named `body`, two parameters with the same name, a header parameter the handler cannot send, a non-default parameter serialization, a `{name}` in the path with no path parameter, or a schema `$ref` that is not to a component schema).
 - **Other:** a single spec and a fixed `downstreamHost` (no service discovery). Every caller sees every tool. Config and spec changes need a restart.

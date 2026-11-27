@@ -101,6 +101,16 @@ class McpToolFactoryTest {
     }
 
     @Test
+    void serverVariableInBasePath() {
+        OpenApiHelper spec = spec("""
+                {'servers': [{'url': 'https://api.example.com/{version}', 'variables': {'version': {'default': 'v1'}}}],
+                 'paths': {'/pets': {'get': {'operationId': 'listPets'}}}}""");
+        ConfigException e = assertThrows(ConfigException.class, () -> McpToolFactory.create(spec, List.of("/{version}/pets@get")));
+        assertEquals("openapi-mcp cannot expose /{version}/pets@get: the base path /{version} of the spec's first servers URL "
+                + "has a server variable, which is not supported", e.getMessage());
+    }
+
+    @Test
     void longestToolName() {
         String name = "admin.pets-v2_" + "x".repeat(114);
         OpenApiHelper spec = spec("{'paths': {'/pets': {'get': {'operationId': '" + name + "'}}}}");

@@ -97,6 +97,10 @@ final class McpToolFactory {
      * @throws ConfigException if the endpoint cannot be exposed
      */
     private McpTool convertEndpointToTool(final String endpoint) {
+        // OpenApiHelper keeps a server variable in the base path as written, and nothing fills it in.
+        if (basePath.contains("{")) {
+            throw error(endpoint, "the base path " + basePath + " of the spec's first servers URL has a server variable, which is not supported");
+        }
         final var openapiPath = StringUtils.substringBeforeLast(endpoint, "@");
         final var openapiMethod = StringUtils.substringAfterLast(endpoint, "@").toLowerCase(Locale.ROOT);
         final var pathItem = openapiPath.startsWith(basePath) ? openApi3.getPath(openapiPath.substring(basePath.length())) : null;
@@ -112,8 +116,8 @@ final class McpToolFactory {
     }
 
     /**
-     * Checks that every {name} in the path has a path parameter to fill it. Only the spec's path is checked, not the
-     * base path, which may contain server variables.
+     * Checks that every {name} in the path has a path parameter to fill it. Only the spec's path is checked; a base
+     * path with a server variable fails startup before this check.
      *
      * @param endpoint   the exposed endpoint, as {path}@{method}
      * @param path       the path, as the key under paths
