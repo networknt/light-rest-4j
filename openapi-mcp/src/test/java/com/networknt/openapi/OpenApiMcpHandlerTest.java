@@ -222,7 +222,8 @@ class OpenApiMcpHandlerTest {
                         { "jsonrpc": "2.0", "id": 2, "method": "tools/call",
                           "params": { "name": "getPet", "arguments": { "petId": "123", "fields": "name", "X-Locale": "en-CA" } } }""",
                 "Authorization", "Bearer backend-token", "X-Correlation-Id", "7d2a6b0c", "Accept-Encoding", "gzip",
-                "X-Forwarded-For", "198.51.100.1", "service_id", "com.networknt.petstore-1.0.0");
+                "X-Forwarded-For", "198.51.100.1", "service_id", "com.networknt.petstore-1.0.0",
+                "Trailer", "X-Checksum", "Proxy-Connection", "keep-alive");
         assertResponse(200, """
                 { "jsonrpc": "2.0", "id": 2,
                   "result": { "resultType": "complete", "content": [ { "type": "text", "text": "{\\"id\\":\\"123\\",\\"name\\":\\"Rex\\"}" } ], "isError": false } }""",
@@ -241,7 +242,7 @@ class OpenApiMcpHandlerTest {
         assertEquals(List.of("localhost"), headers.get("X-Forwarded-Host"));
         assertEquals(List.of(String.valueOf(port(mcp))), headers.get("X-Forwarded-Port"));
         assertEquals(List.of("localhost"), headers.get("X-Forwarded-Server"));
-        for (String name : List.of("Accept", "Content-Type", "MCP-Protocol-Version", "Mcp-Method", "Mcp-Name", "service_id")) {
+        for (String name : List.of("Accept", "Content-Type", "MCP-Protocol-Version", "Mcp-Method", "Mcp-Name", "service_id", "Trailer", "Proxy-Connection")) {
             assertFalse(headers.containsKey(name), name + " is forwarded");
         }
         // The JDK client sends Content-Length: 0 for a request without a body, instead of the inbound Content-Length.

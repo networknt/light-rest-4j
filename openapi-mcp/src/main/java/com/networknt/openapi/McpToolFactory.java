@@ -36,8 +36,10 @@ final class McpToolFactory {
     private static final String SCHEMA_REF = "#/components/schemas/";
     private static final Set<String> LOCATIONS = Set.of("path", "query", "header");
     private static final Set<String> RESERVED_PARAMETER_NAMES = Set.of("body");
-    // Header parameters that OpenAPI says SHALL be ignored, in lowercase.
-    private static final Set<String> IGNORED_HEADER_PARAMETERS = Set.of("accept", "content-type", "authorization");
+    // Header parameters that are left out of the tools, in lowercase: the ones OpenAPI says SHALL be ignored, and the
+    // hop-by-hop headers of the connection to the backend, which the HTTP client manages.
+    private static final Set<String> IGNORED_HEADER_PARAMETERS = Set.of("accept", "content-type", "authorization",
+            "transfer-encoding", "te", "keep-alive", "trailer", "proxy-connection");
     // Header parameters that cannot be tool arguments, in lowercase: openapi-mcp sets Accept-Encoding and the
     // X-Forwarded-* headers itself, and the JDK HTTP client refuses to send the others.
     private static final Set<String> UNSUPPORTED_HEADER_PARAMETERS = Set.of("accept-encoding", "host", "connection", "content-length", "expect", "upgrade");
@@ -424,7 +426,9 @@ final class McpToolFactory {
     /**
      * The parameters of an operation. An operation parameter replaces a path item parameter with the same name and
      * location, as in OpenAPI. Header parameters named Accept, Content-Type or Authorization are left out, because
-     * OpenAPI says they SHALL be ignored; Authorization in particular is the forwarded token.
+     * OpenAPI says they SHALL be ignored; Authorization in particular is the forwarded token. So are the hop-by-hop
+     * headers Transfer-Encoding, TE, Keep-Alive, Trailer and Proxy-Connection, which describe the connection to the
+     * backend; a Transfer-Encoding argument next to the client's Content-Length would garble the request framing.
      *
      * @param pathItem  the path item
      * @param operation the operation

@@ -138,6 +138,11 @@ class McpToolFactoryTest {
                    {'name': 'Authorization', 'in': 'header', 'required': true, 'schema': {'type': 'string'}},
                    {'name': 'accept', 'in': 'header', 'schema': {'type': 'string'}},
                    {'name': 'Content-Type', 'in': 'header', 'schema': {'type': 'string'}},
+                   {'name': 'Transfer-Encoding', 'in': 'header', 'schema': {'type': 'string'}},
+                   {'name': 'te', 'in': 'header', 'schema': {'type': 'string'}},
+                   {'name': 'Keep-Alive', 'in': 'header', 'schema': {'type': 'string'}},
+                   {'name': 'Trailer', 'in': 'header', 'schema': {'type': 'string'}},
+                   {'name': 'Proxy-Connection', 'in': 'header', 'schema': {'type': 'string'}},
                    {'name': 'Authorization', 'in': 'query', 'schema': {'type': 'string'}},
                    {'name': 'X-Locale', 'in': 'header', 'schema': {'type': 'string'}}]}}}}""");
         McpTool tool = McpToolFactory.create(spec, List.of("/pets@get")).get(0);

@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 final class McpToolCaller {
     // Inbound headers that describe the MCP request rather than the backend request.
     private static final Set<String> NOT_FORWARDED = Set.of("host", "content-type", "content-length", "expect", "accept",
-            "accept-encoding", "connection", "keep-alive", "te", "transfer-encoding", "upgrade");
+            "accept-encoding", "connection", "keep-alive", "te", "transfer-encoding", "trailer", "proxy-connection", "upgrade");
 
     private final HttpClient client;
     // The base URL of the backend, without a trailing /.
