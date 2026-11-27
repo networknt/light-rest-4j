@@ -15,6 +15,9 @@
  */
 package com.networknt.openapi;
 
+import com.networknt.client.ClientConfig;
+import com.networknt.config.Config;
+import com.networknt.config.ConfigException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -25,6 +28,7 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.cfg.JsonNodeFeature;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +36,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,6 +48,47 @@ class McpToolCallerTest {
     private static final McpTool TOOL = new McpTool("listPets", "GET", "/pets/{petId}",
             List.of(new McpTool.Parameter("petId", "path"), new McpTool.Parameter("tags", "query"), new McpTool.Parameter("limit", "query"), new McpTool.Parameter("all", "query")),
             false, Map.of());
+
+    static Stream<Arguments> missingTlsContext() {
+        return Stream.of(
+                Arguments.of("missing TLS section", null),
+                Arguments.of("no trust store loaded", Map.of("loadTrustStore", false)));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("missingTlsContext")
+    void rejectsMissingOrUninitializedTlsContext(String scenario, Map<String, Object> tls) {
+        ConfigException e = httpsStartupFailure(tls);
+        assertEquals("openapi-mcp requires an initialized TLS context for HTTPS. "
+                + "Enable tls.loadTrustStore and configure tls.trustStore or tls.loadDefaultTrustStore in client.yml.",
+                e.getMessage());
+    }
+
+    @Test
+    void reportsTlsInitializationIoError() {
+        ConfigException e = httpsStartupFailure(Map.of("loadTrustStore", false, "tlsVersion", "invalid-tls-version"));
+        IOException cause = assertInstanceOf(IOException.class, e.getCause());
+        assertEquals("openapi-mcp cannot create the TLS context from client.yml: " + cause.getMessage(), e.getMessage());
+    }
+
+    private static ConfigException httpsStartupFailure(Map<String, Object> tls) {
+        Config config = Config.getInstance();
+        String name = ClientConfig.CONFIG_NAME;
+        Map<String, Object> client = new HashMap<>(config.getJsonMapConfig(name));
+        client.remove(ClientConfig.TLS);
+        if (tls != null) {
+            Map<String, Object> settings = new HashMap<>(Map.of(
+                    "verifyHostname", true, "loadKeyStore", false, "loadDefaultTrustStore", false, "loadTrustStore", false));
+            settings.putAll(tls);
+            client.put(ClientConfig.TLS, settings);
+        }
+        config.putInConfigCache(name, client);
+        try {
+            return assertThrows(ConfigException.class, () -> new McpToolCaller("https://localhost", 10, MAPPER));
+        } finally {
+            config.clearConfigCache(name);
+        }
+    }
 
     static Stream<Arguments> targets() {
         return Stream.of(

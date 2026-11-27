@@ -93,7 +93,12 @@ final class McpToolCaller {
                 }
                 context.getDefaultSSLParameters(); // Fails if the context has not been initialized.
                 builder.sslContext(context);
-            } catch (IOException | IllegalStateException e) {
+            } catch (IOException e) {
+                ConfigException failure = new ConfigException("openapi-mcp cannot create the TLS context from client.yml: "
+                        + e.getMessage());
+                failure.initCause(e);
+                throw failure;
+            } catch (IllegalStateException e) {
                 ConfigException failure = new ConfigException(tlsError);
                 failure.initCause(e);
                 throw failure;
