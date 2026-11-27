@@ -129,6 +129,7 @@
         <module>openapi-security</module>
         <module>access-control</module>
         <module>specification</module>
+        <module>openapi-mcp</module>
     </modules>
 
     <dependencyManagement>
